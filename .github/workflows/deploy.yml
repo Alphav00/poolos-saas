@@ -1,0 +1,41 @@
+name: Deploy
+# Deploys the Worker to poolos.pathofphi.com when main changes.
+# Needs the repository secret CLOUDFLARE_API_TOKEN (see docs/DEPLOY.md).
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency: deploy-production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 6434b48ad9cb48899c80a75c8804bade
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - name: Build the web app
+        run: pnpm --filter @poolos/web build
+      - name: Apply database migrations
+        working-directory: apps/api
+        run: pnpm exec wrangler d1 migrations apply poolos --remote
+      - name: Deploy the Worker
+        working-directory: apps/api
+        run: pnpm exec wrangler deploy
+      - name: Check it is up and behind Access
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos.pathofphi.com/api/health)
+          echo "health: $code"
+          code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos.pathofphi.com/)
+          echo "home without sign-in: $code (expect 302 to the Access login)"
+          test "$code" = "302"

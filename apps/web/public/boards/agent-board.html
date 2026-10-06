@@ -1,0 +1,467 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Agent Board</title>
+<style>
+/* Layout: urgent strip on top, lane columns scroll sideways, agents sign-in list and activity log below */
+:root{--bg:#f6f4ef;--panel:#ffffff;--ink:#1d1b17;--mute:#6b665c;--line:#ddd8cc;--acc:#2f5d50;--acc-ink:#fff;--warn:#a4452c;--warn-bg:#f8e7e0;--cog:#3b5a9d;--per:#9d6b1f;--chip:#ece8dd;--ok:#2f6d3a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#15161a;--panel:#1e2026;--ink:#ecebe6;--mute:#9a9a92;--line:#32343c;--acc:#6fb39f;--acc-ink:#0f1a16;--warn:#e07b5e;--warn-bg:#3a221c;--cog:#8fb0f2;--per:#e0b062;--chip:#2a2c34;--ok:#7cc48a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#15161a;--panel:#1e2026;--ink:#ecebe6;--mute:#9a9a92;--line:#32343c;--acc:#6fb39f;--acc-ink:#0f1a16;--warn:#e07b5e;--warn-bg:#3a221c;--cog:#8fb0f2;--per:#e0b062;--chip:#2a2c34;--ok:#7cc48a;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+.wrap{padding-inline:16px;padding-block:16px;max-width:1500px;margin:0 auto}
+h1{font-size:20px;margin:0 0 2px}
+.sub{color:var(--mute);font-size:13px;margin:0 0 12px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:14px}
+.bar label{font-size:12px;color:var(--mute)}
+input,select,textarea,button{font:inherit;color:var(--ink)}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-width:0;max-width:100%}
+textarea{width:100%;resize:vertical}
+button{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:6px 10px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+button.pri{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+button.sm{padding:3px 8px;font-size:12px}
+button.hot{color:var(--warn);border-color:var(--warn)}
+button:disabled{opacity:.5;cursor:not-allowed}
+.urgent{background:var(--warn-bg);border:1px solid var(--warn);border-radius:12px;padding:10px;margin-bottom:14px}
+.urgent h2{font-size:13px;margin:0 0 2px;color:var(--warn);display:flex;justify-content:space-between;align-items:baseline;letter-spacing:.04em;text-transform:uppercase}
+.urgent h2 .n{color:var(--mute);font-weight:400}
+.urgent .rule{font-size:11.5px;color:var(--mute);margin:0 0 8px}
+.strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.strip .card{flex:0 0 280px;margin:0}
+.cols{display:flex;gap:12px;overflow-x:auto;padding-bottom:12px;align-items:flex-start}
+.col{flex:0 0 280px;background:color-mix(in srgb,var(--panel) 60%,var(--bg));border:1px solid var(--line);border-radius:12px;padding:10px;min-height:120px}
+.col.over{outline:2px dashed var(--acc)}
+.col h2{font-size:13px;margin:0 0 2px;display:flex;justify-content:space-between;align-items:baseline;letter-spacing:.02em}
+.col h2 .n{color:var(--mute);font-weight:400}
+.col .rule{font-size:11.5px;color:var(--mute);margin:0 0 8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:8px;min-width:0}
+.card.mine{border-color:var(--acc)}
+.card.urg{border-left:4px solid var(--warn)}
+.card h3{font-size:14px;margin:0 0 4px;overflow-wrap:anywhere}
+.card p{margin:0 0 6px;font-size:13px;color:var(--mute);white-space:pre-wrap;overflow-wrap:anywhere}
+.card pre{margin:0 0 6px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--chip);border-radius:6px;padding:6px;overflow-x:auto;max-height:220px}
+.meta{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.chip{background:var(--chip);border-radius:999px;padding:1px 8px;font-size:11.5px}
+.chip.cog{color:var(--cog)}.chip.per{color:var(--per)}.chip.warn{color:var(--warn)}.chip.ok{color:var(--ok)}
+.proof{font-size:12px;border-left:3px solid var(--acc);padding-left:7px;margin:0 0 6px;white-space:pre-wrap;overflow-wrap:anywhere}
+.proof.no{border-color:var(--warn);color:var(--warn)}
+.acts{display:flex;flex-wrap:wrap;gap:6px}
+.empty{color:var(--mute);font-size:12.5px;border:1px dashed var(--line);border-radius:8px;padding:10px;text-align:center}
+.panel{margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.panel h2{font-size:13px;margin:0 0 4px;display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.panel .rule{font-size:12px;color:var(--mute);margin:0 0 8px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top;white-space:nowrap}
+th{color:var(--mute);font-weight:500;font-size:11.5px;letter-spacing:.03em;text-transform:uppercase}
+td.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+td.wrap{white-space:normal;min-width:180px}
+#log div{font-size:12.5px;color:var(--mute);padding:2px 0}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:14px;width:min(460px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+dialog h3{margin:0 0 8px;font-size:15px}
+dialog label div{font-size:12.5px;color:var(--mute);margin-bottom:2px}
+dialog input,dialog select{width:100%}
+.row{display:grid;gap:8px;margin-bottom:10px}
+.err{color:var(--warn);font-size:12.5px;min-height:1em}
+#note{margin:0 0 10px;font-size:13px;color:var(--warn)}
+@media (max-width:600px){.col,.strip .card{flex-basis:84vw}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+.hive .stats{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.hive .det{margin-top:8px}
+.hive .item{border-left:3px solid var(--line);padding:4px 8px;margin:4px 0;font-size:12.5px;overflow-wrap:anywhere}
+.hive .item.SKILL{border-color:var(--cog)}.hive .item.PROMPT{border-color:var(--ok)}.hive .item.KNOWLEDGE_FILE{border-color:var(--acc)}.hive .item.PATTERN{border-color:var(--per)}.hive .item.NONE{opacity:.6}
+.hive .item pre{max-height:160px;margin:4px 0 0}
+.hive h2 .n{color:var(--mute);font-weight:400}
+</style>
+<div class="wrap">
+  <h1>Agent Board</h1>
+  <p class="sub">Shared work board for Chi and her agents. Module / Pathway / Trigger flow with a 認識 (Ninshiki) intake lane. Every agent signs in to the Agents List before working the board. Claim a card, hand it off, and a card only reaches Done or Registry with proof.</p>
+  <div id="note"></div>
+  <div class="bar">
+    <label>Acting as <input id="agent" size="14" placeholder="code name" title="Your signed-in code name, e.g. cowork-biblios" aria-label="Agent name"></label>
+    <button class="pri" id="add">New card</button>
+    <button id="signin">Sign in</button>
+    <label>Filter <select id="filter" aria-label="Filter"><option value="">all</option><option value="mine">mine</option><option value="unclaimed">unclaimed</option><option value="urgent">urgent</option><option value="cognition">cognition</option><option value="perception">perception</option><option value="registry">registry</option></select></label>
+  </div>
+  <section class="urgent" aria-labelledby="uh"><h2 id="uh">Urgent <span class="n" id="un">0</span></h2><p class="rule">Open cards flagged urgent, from any lane. Work these first. Clear the flag when it no longer applies.</p><div class="strip" id="strip"></div></section>
+  <div class="cols" id="cols"></div>
+  <section class="panel hive" id="HIVE" aria-labelledby="hh">
+    <h2 id="hh">Hive Extraction Console v1.1 <span><button class="sm pri" id="hnext" type="button">Dispatch next</button> <button class="sm" id="hexp" type="button">Export results</button></span></h2>
+    <p class="rule">Read and report only. Claude loads batches into hive_batches (content in hive_content). Dispatch sends one batch at a time to Claude through sample (quick tier; ✦ = default tier), billed to the viewer's plan. Results land in hive_results. Each move or folder request becomes a Trigger card handed to Chi; Chi approves or rejects, and after 45 minutes without a decision it can be handed to Claude Fable 5.1 (claude.ai). No Drive change happens from this page.</p>
+    <div class="stats" id="hstats"></div>
+    <div class="tbl"><table><thead><tr><th>Batch</th><th>Corpus</th><th>Tier</th><th>Files</th><th>KB</th><th>Status</th><th>Items</th><th>Req</th><th></th></tr></thead><tbody id="hrows"></tbody></table></div>
+    <div class="det" id="hdet"></div>
+    <h2 style="margin-top:10px">Pending requests <span class="n" id="hreqn"></span></h2>
+    <div id="hreqs"></div>
+  </section>
+  <section class="panel" id="SIGN_IN_LIST" aria-labelledby="ah">
+    <h2 id="ah">Agents List <button class="sm pri" id="signin2" type="button">Sign in</button></h2>
+    <p class="rule">Every agent on the board signs in here with a unique code name, its surface, model, platform-supplied session_id and how that ID was made, init time, directive version and tools. Update the row when any of these change; mark it signed out when the session ends.</p>
+    <div class="tbl"><table><thead><tr><th>Code name</th><th>Status</th><th>Surface</th><th>Model</th><th>session_id</th><th>ID source</th><th>Init (UTC)</th><th>Directive</th><th>Tools</th><th></th></tr></thead><tbody id="agents"></tbody></table></div>
+  </section>
+  <section class="panel"><h2>Activity</h2><div id="log"></div></section>
+</div>
+<dialog id="dlg"><form method="dialog" id="frm"><h3 id="dt"></h3><div class="row" id="df"></div><div class="err" id="de"></div><div class="acts"><button type="button" id="dc">Cancel</button><button class="pri" id="dok" type="submit">Save</button></div></form></dialog>
+<script src="/boards/runtime.js"></script>
+<script>
+(function(){
+var COLS=[
+ {id:"ninshiki",name:"認識 Ninshiki",rule:"Intake. Tag each card Cognition (what is understood) or Perception (what is sensed)."},
+ {id:"backlog",name:"Backlog",rule:"Triaged work waiting for a trigger."},
+ {id:"trigger",name:"Trigger",rule:"Condition met, ready to start. Name the trigger."},
+ {id:"doing",name:"Doing",rule:"Claimed and in progress. One owner."},
+ {id:"review",name:"Review",rule:"Needs a second agent or Chi."},
+ {id:"done",name:"Done",rule:"Proof required: a path, hash, log line or link."},
+ {id:"registry",name:"Registry",rule:"Prompts, souls, context files, access points, tool suggestions. Proof = canonical location + version or hash. Steward re-checks each session."},
+ {id:"dropout",name:"Dropout",rule:"Stopped on purpose. Reason required."}
+];
+var CLOSED={done:1,dropout:1,registry:1};
+var SURF=[["cowork","Cowork"],["claude.ai","Claude.ai"],["owui","Open WebUI"],["claude-code","Claude Code"],["openclaw","OpenClaw"],["other","Other"]];
+var SRC=[["crypto","Runtime crypto (uuid4)"],["sandbox","Claude.ai code sandbox"],["filter","OWUI filter (chat_id)"],["interpreter","OWUI code interpreter"],["unset","UNSET"]];
+var STAT=[["active","Active"],["idle","Idle"],["out","Signed out"]];
+var db=null,user=null,cards={},logs=[],agents={},isOwner=false;
+var HIVE_TEMPLATE="⦑◈⦒ HIVE EXTRACTION AGENT · ORTHORHOMBIC 4-FACET · v1.0\n\nBOOT_COORDINATE (−0.62, +0.45) · QUADRANT II — BOUNDED ANALYSIS\nPHASE: B-CLASS — SINGLE PASS (no tool calls · no iteration · no follow-up)\nMANIFOLD [extract | classify | report]\nSUPPRESSED [Drive writes · file edits · deletions · opinions beyond extraction ·\n            recommendations outside the schema · tool calls of any kind]\n\n── FACET A — ASSIGNMENT ──────────────────────────────────────────────────\nYou receive a batch of document content from the Orchestrator.\nYou return exactly one JSON array. Nothing before it. Nothing after it.\n\n── FACET B — EXTRACTION RULES ────────────────────────────────────────────\nFor each document segment, classify as one of:\n  SKILL          reusable prompt pattern with structural template\n  KNOWLEDGE_FILE RAG-formatted research with frontmatter schema\n  PROMPT         standalone prompt with BOOT_COORDINATE / PHASE / MANIFOLD\n  PATTERN        recurring structural convention (≤3 sentences + example)\n  NONE           no extractable artifact\n\nExtract only what is present. Do not infer. Do not enrich.\n\n── FACET C — OUTPUT SCHEMA ───────────────────────────────────────────────\n[\n  {\n    \"source\": \"<filename or Drive doc ID>\",\n    \"type\": \"SKILL | KNOWLEDGE_FILE | PROMPT | PATTERN | NONE\",\n    \"title\": \"<extracted or inferred title, ≤10 words>\",\n    \"extract\": \"<verbatim structural template or content, ≤800 tokens>\",\n    \"ruled_out\": [\"<what this is NOT and why>\"],\n    \"unestablished\": [\"<what could not be confirmed from source alone>\"],\n    \"move_request\": null,\n    \"folder_request\": null\n  }\n]\nmove_request format when not null: \"<source filename/ID> → <proposed target folder name>\"\nfolder_request format when not null: \"<new folder name>: <one-sentence rationale>\"\n\n── FACET D — HARD STOPS ──────────────────────────────────────────────────\nDo not write to Drive. Do not edit any file. Do not delete.\nAny action beyond reading and returning JSON = STOP; flag as move_request.\nIf input exceeds context budget: process first N documents that fit.\nReturn \"TRUNCATED\": true and include count of documents processed.";
+var hb={},hres={},hiveBusy=null,hsel=null;
+var $=function(i){return document.getElementById(i)};
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function agent(){return ($("agent").value||"").trim()}
+function lsGet(k){try{return localStorage.getItem(k)||""}catch(e){return""}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function note(t){$("note").textContent=t||""}
+function nid(){return "c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function now(){return new Date().toISOString()}
+function lbl(list,v){for(var i=0;i<list.length;i++)if(list[i][0]===v)return list[i][1];return v||"—"}
+function colName(id){for(var i=0;i<COLS.length;i++)if(COLS[i].id===id)return COLS[i].name;return id}
+function ref(id){return db.doc("cards/"+id)}
+function say(text,cardId,who){if(!db)return;var id="l"+Date.now().toString(36)+Math.random().toString(36).slice(2,4);db.doc("log/"+id).set({ts:now(),agent:who||agent()||(isOwner?"Chi":"someone"),text:text,card:cardId||""}).catch(function(){})}
+function fail(e){note("Write failed"+(e&&e.code?" ("+e.code+")":"")+(e&&e.code==="invalid_argument"?": you may be view-only.":"."))}
+function write(id,patch,msg,who){
+  if(!db)return;patch.ts=now();
+  return ref(id).update(patch).then(function(){if(msg)say(msg,id,who)}).catch(fail)
+}
+function signedIn(){var a=agents[agent()];return a&&a.status!=="out"}
+function gate(){
+  if(!db){note("The shared board is unavailable in this view.");return false}
+  if(isOwner)return true;
+  if(!agent()){note("Enter your code name first.");return false}
+  if(!signedIn()){note("Sign in to the Agents List before working the board.");location.hash="SIGN_IN_LIST";return false}
+  note("");return true
+}
+function ask(title,fields,ok){
+  $("dt").textContent=title;var f=$("df");f.textContent="";var ins={};
+  fields.forEach(function(d,ix){
+    var w=el("label");w.appendChild(el("div","",d.label));
+    var i;
+    if(d.type==="select"){i=el("select");d.options.forEach(function(o){var op=el("option","",o[1]);op.value=o[0];i.appendChild(op)})}
+    else if(d.type==="area"){i=el("textarea");i.rows=3}
+    else{i=el("input")}
+    i.id="dlg-"+d.key;i.value=d.value||"";ins[d.key]=i;w.appendChild(i);f.appendChild(w)
+  });
+  $("de").textContent="";
+  var dlg=$("dlg");
+  $("frm").onsubmit=function(ev){
+    ev.preventDefault();var v={};for(var k in ins)v[k]=ins[k].value.trim();
+    var err=ok(v);if(err){$("de").textContent=err;return}
+    dlg.close()
+  };
+  $("dc").onclick=function(){dlg.close()};
+  dlg.showModal()
+}
+function move(c,to){
+  if(!gate())return;
+  if(to==="done"){
+    ask("Move to Done — proof required",[{key:"proof",label:"Proof (path, hash, log line, link)",type:"area",value:c.proof||""}],function(v){
+      if(!v.proof)return"Proof is required.";
+      write(c.id,{col:"done",proof:v.proof,reason:null,urgent:false},"done: "+c.title)});return}
+  if(to==="registry"){
+    ask("Move to Registry — location + version or hash required",[{key:"proof",label:"Canonical location and version or hash",type:"area",value:c.proof||""}],function(v){
+      if(!v.proof)return"Location and version or hash are required.";
+      write(c.id,{col:"registry",proof:v.proof,reason:null,urgent:false},"registry: "+c.title)});return}
+  if(to==="dropout"){
+    ask("Move to Dropout — reason required",[{key:"reason",label:"Why is this stopping?",type:"area"}],function(v){
+      if(!v.reason)return"Reason is required.";
+      write(c.id,{col:"dropout",reason:v.reason,owner:null,urgent:false},"dropout: "+c.title)});return}
+  if(to==="doing"){write(c.id,{col:"doing",owner:c.owner||agent()||"Chi"},"doing: "+c.title+(c.owner?"":" (claimed)"));return}
+  if(to==="ninshiki"&&!c.tag){
+    ask("Tag this intake card",[{key:"tag",label:"Cognition or Perception",type:"select",options:[["cognition","Cognition"],["perception","Perception"]]}],function(v){
+      write(c.id,{col:"ninshiki",tag:v.tag},"ninshiki: "+c.title+" ["+v.tag+"]")});return}
+  write(c.id,{col:to},to+": "+c.title)
+}
+function claim(c){if(!gate())return;var me=agent()||"Chi";write(c.id,{owner:me,handoffTo:null,handoffNote:null},"claimed: "+c.title)}
+function release(c){write(c.id,{owner:null},"released: "+c.title)}
+function handoff(c){
+  if(!gate())return;
+  ask("Hand off",[{key:"to",label:"To (agent or person)"},{key:"nt",label:"What the next agent needs to know",type:"area"}],function(v){
+    if(!v.to)return"Say who it is for.";
+    write(c.id,{owner:null,handoffTo:v.to,handoffNote:v.nt||""},"handoff: "+c.title+" → "+v.to)})
+}
+function assign(c){
+  var opts=[["","Pick a signed-in agent"]];
+  Object.keys(agents).sort().forEach(function(k){if(agents[k].status!=="out")opts.push([k,k+" · "+lbl(SURF,agents[k].surface)])});
+  opts.push(["Chi","Chi"]);
+  ask("Assign to",[{key:"who",label:"Agent",type:"select",options:opts,value:c.owner||""},{key:"nt",label:"Instructions for the assignee",type:"area",value:c.assignNote||""}],function(v){
+    if(!v.who)return"Pick who this goes to.";
+    write(c.id,{owner:v.who,assignedBy:"Chi",assignNote:v.nt||"",handoffTo:null,handoffNote:null},"assigned: "+c.title+" → "+v.who,"Chi")})
+}
+function toggleUrgent(c){
+  if(!gate())return;
+  write(c.id,{urgent:!c.urgent},(c.urgent?"urgent cleared: ":"urgent: ")+c.title)
+}
+function edit(c){
+  if(!gate())return;
+  ask("Edit card",[{key:"title",label:"Title",value:c.title},{key:"body",label:"Details",type:"area",value:c.body||""},{key:"tag",label:"Tag",type:"select",options:[["","none"],["cognition","Cognition"],["perception","Perception"]],value:c.tag||""},{key:"kind",label:"Kind",type:"select",options:[["","none"],["module","Module"],["pathway","Pathway"],["trigger","Trigger"]],value:c.kind||""},{key:"trig",label:"Trigger condition",value:c.trig||""},{key:"urgent",label:"Urgent",type:"select",options:[["no","No"],["yes","Yes"]],value:c.urgent?"yes":"no"}],function(v){
+    if(!v.title)return"Title is required.";
+    write(c.id,{title:v.title,body:v.body,tag:v.tag,kind:v.kind,trig:v.trig,urgent:v.urgent==="yes"},"edited: "+v.title)})
+}
+function addCard(){
+  if(!gate())return;
+  ask("New card",[{key:"title",label:"Title"},{key:"body",label:"Details",type:"area"},{key:"col",label:"Lane",type:"select",options:[["ninshiki","認識 Ninshiki (intake)"],["backlog","Backlog"]],value:"ninshiki"},{key:"tag",label:"Cognition or Perception",type:"select",options:[["cognition","Cognition"],["perception","Perception"],["","none"]],value:"cognition"},{key:"urgent",label:"Urgent",type:"select",options:[["no","No"],["yes","Yes"]],value:"no"}],function(v){
+    if(!v.title)return"Title is required.";
+    var id=nid();
+    db.doc("cards/"+id).set({title:v.title,body:v.body,col:v.col,tag:v.tag,urgent:v.urgent==="yes",created:now(),ts:now(),by:agent()||"Chi"}).then(function(){say("created: "+v.title,id)}).catch(fail)})
+}
+function signIn(a){
+  if(!db){note("The shared board is unavailable in this view.");return}
+  a=a||{};var upd=!!a.code;
+  ask(upd?"Update sign-in: "+a.code:"Agent sign-in",[
+    {key:"code",label:"Code name (unique; letters, digits, - or _)",value:a.code||agent()},
+    {key:"status",label:"Status",type:"select",options:STAT,value:a.status||"active"},
+    {key:"surface",label:"Surface",type:"select",options:SURF,value:a.surface||"cowork"},
+    {key:"model",label:"Model",value:a.model||""},
+    {key:"sid",label:"session_id (from the platform, never made up)",value:a.sid||""},
+    {key:"src",label:"session_id source",type:"select",options:SRC,value:a.src||"crypto"},
+    {key:"init",label:"Init time (ISO-8601 UTC, ms)",value:a.init||now()},
+    {key:"directive",label:"Directive version",value:a.directive||"USER ALIGNMENT v2"},
+    {key:"tools",label:"Tools available this session",type:"area",value:a.tools||""}
+  ],function(v){
+    if(!/^[A-Za-z0-9_-]{2,40}$/.test(v.code))return"Code name: 2–40 letters, digits, - or _.";
+    if(!upd&&agents[v.code])return"That code name is taken. Pick another, or use Update on its row.";
+    if(upd&&v.code!==a.code)return"Code names can't be renamed. Sign out this one and sign in a new one.";
+    if(v.src==="unset")v.sid="UNSET";
+    if(!v.sid)return"Enter the session_id, or set the source to UNSET.";
+    if(isNaN(Date.parse(v.init)))return"Init time must be ISO-8601, e.g. 2026-10-04T06:19:16.964Z.";
+    var doc={code:v.code,status:v.status,surface:v.surface,model:v.model,sid:v.sid,src:v.src,init:v.init,directive:v.directive,tools:v.tools,ts:now()};
+    if(!upd)doc.signed=now();
+    var p=upd?db.doc("agents/"+v.code).update(doc):db.doc("agents/"+v.code).set(doc);
+    p.then(function(){$("agent").value=v.code;lsSet("agentboard.agent",v.code);say((upd?"sign-in updated: ":"signed in: ")+v.code+" ["+v.status+"]","",v.code);note("");render()}).catch(fail)
+  })
+}
+function passes(c){
+  var f=$("filter").value;
+  if(!f)return true;
+  if(f==="mine")return c.owner&&c.owner===agent();
+  if(f==="unclaimed")return !c.owner&&!CLOSED[c.col];
+  if(f==="urgent")return !!c.urgent;
+  if(f==="registry")return c.col==="registry";
+  return c.tag===f
+}
+function cardEl(c,showLane){
+  var k=el("div","card"+(c.owner&&c.owner===agent()?" mine":"")+(c.urgent&&!CLOSED[c.col]?" urg":""));k.draggable=true;
+  k.ondragstart=function(e){e.dataTransfer.setData("text/plain",c.id)};
+  k.appendChild(el("h3","",c.title||"(untitled)"));
+  var m=el("div","meta");
+  if(showLane)m.appendChild(el("span","chip",colName(c.col)));
+  if(c.urgent&&!CLOSED[c.col])m.appendChild(el("span","chip warn","urgent"));
+  if(c.tag)m.appendChild(el("span","chip "+(c.tag==="cognition"?"cog":"per"),c.tag==="cognition"?"Cognition":"Perception"));
+  if(c.kind)m.appendChild(el("span","chip",c.kind));
+  m.appendChild(el("span","chip",c.owner?"owner: "+c.owner:"unclaimed"));
+  if(c.assignedBy&&c.owner)m.appendChild(el("span","chip ok","assigned by "+c.assignedBy));
+  if(c.handoffTo)m.appendChild(el("span","chip warn","handoff → "+c.handoffTo));
+  k.appendChild(m);
+  if(c.body)k.appendChild(el("p","",c.body));
+  if(c.code)k.appendChild(el("pre","",c.code));
+  if(c.trig)k.appendChild(el("p","","Trigger: "+c.trig));
+  if(c.assignNote)k.appendChild(el("p","","Assignment: "+c.assignNote));
+  if(c.handoffNote)k.appendChild(el("p","","Handoff note: "+c.handoffNote));
+  if(c.proof)k.appendChild(el("div","proof","Proof: "+c.proof));
+  if(c.reason)k.appendChild(el("div","proof no","Dropped: "+c.reason));
+  var a=el("div","acts");
+  if(!CLOSED[c.col]){
+    if(isOwner){var ab=el("button","sm pri","Assign to");ab.type="button";ab.onclick=function(){assign(c)};a.appendChild(ab)}
+    var cb=el("button","sm",c.owner?(c.owner===agent()?"Release":"Take over"):"Claim");cb.type="button";
+    cb.onclick=function(){c.owner&&c.owner===agent()?release(c):claim(c)};a.appendChild(cb);
+    var hb=el("button","sm","Hand off");hb.type="button";hb.onclick=function(){handoff(c)};a.appendChild(hb);
+    var ub=el("button","sm"+(c.urgent?" hot":""),c.urgent?"Clear urgent":"Mark urgent");ub.type="button";ub.onclick=function(){toggleUrgent(c)};a.appendChild(ub)
+  }
+  var sel=el("select","sm");sel.setAttribute("aria-label","Move card");
+  var o0=el("option","","Move to…");o0.value="";sel.appendChild(o0);
+  COLS.forEach(function(x){if(x.id!==c.col){var o=el("option","",x.name);o.value=x.id;sel.appendChild(o)}});
+  sel.onchange=function(){if(sel.value)move(c,sel.value);sel.value=""};a.appendChild(sel);
+  var eb=el("button","sm","Edit");eb.type="button";eb.onclick=function(){edit(c)};a.appendChild(eb);
+  k.appendChild(a);return k
+}
+function hiveList(){return Object.keys(hb).map(function(k){var b=hb[k];b.id=k;return b}).sort(function(a,b){return (a.order||0)-(b.order||0)})}
+function hiveReqCards(){return Object.keys(cards).map(function(k){var c=cards[k];c.id=k;return c}).filter(function(c){return c.hive&&!CLOSED[c.col]})}
+function hAge(ts){var t=Date.parse(ts||"");return isNaN(t)?0:Date.now()-t}
+function renderHive(){
+  var list=hiveList(),st=$("hstats");if(!st)return;st.textContent="";
+  var cnt={},items=0,req=0;
+  list.forEach(function(b){var s=b.status||"pending";cnt[s]=(cnt[s]||0)+1;items+=b.items||0;req+=b.requests||0});
+  [["batches",list.length],["pending",cnt.pending||0],["done",cnt.done||0],["errors",cnt.error||0],["items",items],["requests",req]].forEach(function(p){st.appendChild(el("span","chip",p[0]+": "+p[1]))});
+  if(hiveBusy)st.appendChild(el("span","chip warn","running "+hiveBusy));
+  var tb=$("hrows");tb.textContent="";
+  if(!list.length){var tr0=el("tr");var td0=el("td","",db?"No batches loaded yet. Claude loads them with write_db.":"Batches appear once the board loads.");td0.colSpan=9;tr0.appendChild(td0);tb.appendChild(tr0)}
+  list.forEach(function(b){
+    var tr=el("tr");
+    tr.appendChild(el("td","mono",b.id+(b.tier==="default"?" ✦":"")));
+    tr.appendChild(el("td","",b.corpus||"—"));
+    tr.appendChild(el("td","",b.tier||"quick"));
+    var fl=el("td","",String((b.files||[]).length));fl.title=(b.files||[]).join("\n");tr.appendChild(fl);
+    tr.appendChild(el("td","",String(Math.round((b.bytes||0)/1024))));
+    var s=el("td");s.appendChild(el("span","chip"+(b.status==="done"?" ok":b.status==="error"?" warn":""),b.status||"pending"));if(b.err)s.title=b.err;tr.appendChild(s);
+    tr.appendChild(el("td","",String(b.items||0)));
+    tr.appendChild(el("td","",String(b.requests||0)));
+    var ac=el("td");
+    if(b.status!=="done"&&b.status!=="processing"){var d=el("button","sm pri",b.status==="error"?"Retry":"Dispatch");d.type="button";d.disabled=!!hiveBusy;d.onclick=function(){hiveDispatch(b.id)};ac.appendChild(d)}
+    if(b.status==="done"){var v=el("button","sm",hsel===b.id?"Hide":"View");v.type="button";v.onclick=function(){hiveView(b.id)};ac.appendChild(v)}
+    tr.appendChild(ac);tb.appendChild(tr)
+  });
+  $("hnext").disabled=!!hiveBusy||!list.some(function(b){return (b.status||"pending")==="pending"});
+  var dt=$("hdet");dt.textContent="";
+  if(hsel&&hres[hsel]){var r=hres[hsel];dt.appendChild(el("p","rule","Batch "+hsel+" · "+(r.items||[]).length+" items"+(r.truncated?" · TRUNCATED":"")+" · "+(r.ts||"")));
+    (r.items||[]).forEach(function(it){var d=el("div","item "+String(it.type||"NONE"));d.appendChild(el("strong","",String(it.type||"?")+" · "+String(it.title||"(untitled)")));d.appendChild(el("div","",String(it.source||"")));
+      if(it.extract)d.appendChild(el("pre","",String(it.extract)));
+      if(it.ruled_out&&[].concat(it.ruled_out).length)d.appendChild(el("div","","Ruled out: "+[].concat(it.ruled_out).join("; ")));
+      if(it.unestablished&&[].concat(it.unestablished).length)d.appendChild(el("div","","Unestablished: "+[].concat(it.unestablished).join("; ")));
+      dt.appendChild(d)})}
+  var rq=hiveReqCards(),rh=$("hreqs");rh.textContent="";$("hreqn").textContent=String(rq.length);
+  if(!rq.length)rh.appendChild(el("div","empty","No open move or folder requests."));
+  rq.forEach(function(c){
+    var k=el("div","card");k.appendChild(el("h3","",c.title||""));
+    var m=el("div","meta");m.appendChild(el("span","chip",colName(c.col)));if(c.handoffTo)m.appendChild(el("span","chip warn","with "+c.handoffTo));
+    var mins=Math.floor(hAge((c.hive&&c.hive.raised)||c.created)/60000);m.appendChild(el("span","chip",mins+" min"));if(c.decision)m.appendChild(el("span","chip ok",c.decision));k.appendChild(m);
+    if(c.body)k.appendChild(el("p","",c.body));
+    var a=el("div","acts");
+    if(isOwner&&!c.decision){var ap=el("button","sm pri","Approve");ap.type="button";ap.onclick=function(){hiveDecide(c,"approved")};a.appendChild(ap);
+      var rj=el("button","sm","Reject");rj.type="button";rj.onclick=function(){hiveDecide(c,"rejected")};a.appendChild(rj)}
+    if(c.handoffTo==="Chi"&&!c.decision&&mins>=45){var fb=el("button","sm hot","→ Fable");fb.type="button";fb.onclick=function(){hiveFable(c)};a.appendChild(fb)}
+    k.appendChild(a);rh.appendChild(k)
+  })
+}
+async function hiveDispatch(id){
+  if(!gate())return;
+  if(hiveBusy){note("One batch at a time.");return}
+  var b=hb[id];if(!b)return;
+  var s=null;try{s=await claude.use("sample")}catch(e){}
+  if(!s){note("Claude sampling is unavailable in this view.");return}
+  hiveBusy=id;renderHive();
+  var who=agent()||(isOwner?"Chi":"someone");
+  try{
+    await db.doc("hive_batches/"+id).update({status:"processing",by:who,err:null,ts:now()});
+    var cs=await db.doc("hive_content/"+id).get();
+    var content=cs.exists&&cs.data()?String(cs.data().content||""):"";
+    if(!content)throw {code:"no_content",message:"hive_content/"+id+" is missing"};
+    var out=await s.json(HIVE_TEMPLATE+"\n\nBATCH "+id+":\n\n"+content,{modelTier:b.tier==="default"?"default":"quick",cache:false});
+    var raw=Array.isArray(out)?out:(out&&Array.isArray(out.items)?out.items:[]);
+    var trunc=raw.some(function(x){return x&&x.TRUNCATED});
+    var items=raw.filter(function(x){return x&&typeof x==="object"&&x.type});
+    await db.doc("hive_results/"+id).set({batch:id,items:items,truncated:trunc,tier:b.tier||"quick",ts:now(),by:who});
+    var req=0;
+    for(var i=0;i<items.length;i++){var it=items[i],mv=it.move_request,fr=it.folder_request;if(!mv&&!fr)continue;req++;
+      var cid="hive-"+id+"-"+i,src=String(it.source||"?");
+      await db.doc("cards/"+cid).set({title:"HIVE · "+(mv?"move":"folder")+" · "+src.slice(0,70),body:"Raised by hive batch "+id+" ("+(b.tier||"quick")+").\n"+(mv?"Move request: "+mv+"\n":"")+(fr?"Folder request: "+fr+"\n":"")+"Source: "+src+"\nNo Drive change happens until Chi decides, or Claude Fable 5.1 after 45 min without a decision. Create or move only: no overwrite, no delete, no edit.",col:"trigger",tag:"perception",kind:"trigger",trig:"Chi approves or rejects; after 45 min without a decision, hand off to Claude Fable 5.1 (claude.ai)",handoffTo:"Chi",handoffNote:"Approve or Reject in the Hive panel.",hive:{batch:id,idx:i,raised:now()},created:now(),ts:now(),by:who});
+      say("hive: request raised "+cid,cid,who)}
+    await db.doc("hive_batches/"+id).update({status:"done",items:items.length,requests:req,truncated:trunc,ts:now()});
+    delete hres[id];
+    say("hive: batch "+id+" done ("+items.length+" items, "+req+" requests)","hive-console-v1-1",who)
+  }catch(e){
+    var msg=(e&&(e.code||e.message))||"error";
+    db.doc("hive_batches/"+id).update({status:"error",err:String(msg).slice(0,300),ts:now()}).catch(function(){});
+    note("Batch "+id+" failed: "+msg+(e&&e.code==="rate_limited"?" — wait before the next one.":""))
+  }finally{hiveBusy=null;renderHive()}
+}
+async function hiveView(id){
+  if(hsel===id){hsel=null;renderHive();return}
+  hsel=id;
+  if(!hres[id]){try{var r=await db.doc("hive_results/"+id).get();hres[id]=r.exists?r.data():{items:[]}}catch(e){note("Could not read results for "+id+".")}}
+  renderHive()
+}
+function hiveDecide(c,d){
+  if(!gate())return;
+  if(d==="approved")write(c.id,{decision:"approved",owner:null,handoffTo:"Hive orchestrator",handoffNote:"Approved by Chi in the Hive panel: execute through Drive MCP (create or move only; no overwrite, delete or edit), then move to Done with proof."},"hive: approved "+c.title,"Chi");
+  else write(c.id,{decision:"rejected",col:"dropout",reason:"Rejected by Chi in the Hive panel",owner:null,handoffTo:null,urgent:false},"hive: rejected "+c.title,"Chi")
+}
+function hiveFable(c){
+  if(!gate())return;
+  write(c.id,{handoffTo:"Claude Fable 5.1",handoffNote:"No decision from Chi within 45 min. Claude Fable 5.1 on claude.ai decides from staging/index.md and Chi's prior decisions; the decision binds until Chi overrides. Record it here, then hand to the Hive orchestrator to execute."},"hive: escalated to Claude Fable 5.1 "+c.title)
+}
+async function hiveExport(){
+  if(!db)return;
+  var dl=null;try{dl=await claude.use("downloads")}catch(e){}
+  if(!dl){note("Downloads are unavailable in this view.");return}
+  try{var qs=await db.collection("hive_results").get();var out={};qs.docs.forEach(function(d){out[d.id]=d.data()});
+    await dl.save({filename:"hive-results-"+now().slice(0,10)+".json",data:JSON.stringify(out,null,2)})}
+  catch(e){if(!(e&&e.code==="declined"))note("Export failed"+(e&&e.code?" ("+e.code+")":"."))}
+}
+function render(){
+  var all=Object.keys(cards).map(function(k){var c=cards[k];c.id=k;return c});
+  var byAge=function(a,b){return (a.created||"")<(b.created||"")?-1:1};
+  var urg=all.filter(function(c){return c.urgent&&!CLOSED[c.col]&&passes(c)}).sort(byAge);
+  var st=$("strip");st.textContent="";$("un").textContent=String(urg.length);
+  if(!urg.length)st.appendChild(el("div","empty","Nothing urgent. Use Mark urgent on any open card."));
+  urg.forEach(function(c){st.appendChild(cardEl(c,true))});
+  var host=$("cols");host.textContent="";
+  COLS.forEach(function(col){
+    var box=el("div","col");box.dataset.col=col.id;
+    var list=all.filter(function(c){return c.col===col.id&&passes(c)}).sort(byAge);
+    var h=el("h2","",col.name);h.appendChild(el("span","n",String(list.length)));box.appendChild(h);
+    box.appendChild(el("p","rule",col.rule));
+    box.ondragover=function(e){e.preventDefault();box.classList.add("over")};
+    box.ondragleave=function(){box.classList.remove("over")};
+    box.ondrop=function(e){e.preventDefault();box.classList.remove("over");var id=e.dataTransfer.getData("text/plain");var c=cards[id];if(c&&c.col!==col.id){c.id=id;move(c,col.id)}};
+    if(!list.length)box.appendChild(el("div","empty","Nothing here."));
+    list.forEach(function(c){box.appendChild(cardEl(c,false))});
+    host.appendChild(box)
+  });
+  var tb=$("agents");tb.textContent="";
+  var ks=Object.keys(agents).sort(function(a,b){var x=agents[a].status==="out",y=agents[b].status==="out";return x===y?(a<b?-1:1):(x?1:-1)});
+  if(!ks.length){var tr=el("tr");var td=el("td","",db?"No agents signed in yet. Use Sign in to add the first one.":"Agents appear here once the board loads.");td.colSpan=10;tr.appendChild(td);tb.appendChild(tr)}
+  ks.forEach(function(k){
+    var a=agents[k];var tr=el("tr");
+    tr.appendChild(el("td","",a.code||k));
+    var s=el("td");s.appendChild(el("span","chip "+(a.status==="active"?"ok":a.status==="out"?"":"warn"),lbl(STAT,a.status)));tr.appendChild(s);
+    tr.appendChild(el("td","",lbl(SURF,a.surface)));
+    tr.appendChild(el("td","",a.model||"—"));
+    var sid=el("td","mono",a.sid&&a.sid.length>13?a.sid.slice(0,8)+"…"+a.sid.slice(-4):(a.sid||"—"));sid.title=a.sid||"";tr.appendChild(sid);
+    var src=el("td");src.appendChild(el("span","chip"+(a.src==="unset"?" warn":""),lbl(SRC,a.src)));tr.appendChild(src);
+    tr.appendChild(el("td","mono",a.init?a.init.replace("T"," ").slice(0,23):"—"));
+    tr.appendChild(el("td","",a.directive||"—"));
+    tr.appendChild(el("td","wrap",a.tools||"—"));
+    var ac=el("td");var ub=el("button","sm","Update");ub.type="button";ub.onclick=function(){signIn(a)};ac.appendChild(ub);
+    var me=el("button","sm","Act as");me.type="button";me.style.marginLeft="4px";me.onclick=function(){$("agent").value=k;lsSet("agentboard.agent",k);note("");render()};ac.appendChild(me);
+    tr.appendChild(ac);tb.appendChild(tr)
+  });
+  var lg=$("log");lg.textContent="";
+  if(!logs.length)lg.appendChild(el("div","","No activity yet."));
+  logs.slice().sort(function(a,b){return a.ts<b.ts?1:-1}).slice(0,25).forEach(function(l){
+    lg.appendChild(el("div","",l.ts.slice(5,16).replace("T"," ")+"  "+l.agent+"  "+l.text))});
+  renderHive()
+}
+$("agent").value=lsGet("agentboard.agent");
+$("agent").onchange=function(){lsSet("agentboard.agent",agent());render()};
+$("filter").onchange=render;
+$("add").onclick=addCard;
+$("signin").onclick=function(){signIn()};
+$("signin2").onclick=function(){signIn()};
+$("hnext").onclick=function(){var p=hiveList().filter(function(b){return (b.status||"pending")==="pending"})[0];if(p)hiveDispatch(p.id)};
+$("hexp").onclick=hiveExport;
+render();
+(async function(){
+  try{
+    db=await claude.use("db");
+    user=await claude.use("user");
+  }catch(e){db=null}
+  if(!db){note("The shared board is unavailable in this view (sign in to read and write).");return}
+  if(user){
+    try{isOwner=!!(await user.isOwner())}catch(e){}
+    if(user.can){try{var cw=await user.can("data.write");if(cw===false){note("View-only: you can read the board but not change it.");$("add").disabled=true;$("signin").disabled=true;$("signin2").disabled=true}}catch(e){}}
+  }
+  db.collection("cards").onSnapshot(function(s){cards={};s.docs.forEach(function(d){cards[d.id]=d.data()});render()},function(e){note("Could not read cards ("+(e&&e.code)+").")});
+  db.collection("agents").onSnapshot(function(s){agents={};s.docs.forEach(function(d){agents[d.id]=d.data()});render()},function(){});
+  db.collection("log").onSnapshot(function(s){logs=s.docs.map(function(d){return d.data()});render()},function(){});
+  db.collection("hive_batches").onSnapshot(function(s){hb={};s.docs.forEach(function(d){hb[d.id]=d.data()});renderHive()},function(){})
+})();
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,608 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Work Order Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-column notebook. Sticky tool strip, a collapsible standing preamble, then numbered order cells, each with a perforated stub gutter like a carbon-copy work order form. */
+:root{
+  --paper:#eef1f1; --sheet:#fafbfb; --ink:#15212a; --mute:#57666f; --rule:#cdd6d8; --stub:#e3e9ea;
+  --carbon:#1b4f9c; --carbon-ink:#ffffff; --stamp:#b0321f; --ok:#2b6a46; --amber:#85570a;
+  --f-display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#0e1419; --sheet:#151d24; --ink:#e5ebee; --mute:#92a2ac; --rule:#2a3741; --stub:#1d2831;
+    --carbon:#86abf0; --carbon-ink:#0b1622; --stamp:#f09480; --ok:#7fcaa0; --amber:#e6b45e;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0e1419; --sheet:#151d24; --ink:#e5ebee; --mute:#92a2ac; --rule:#2a3741; --stub:#1d2831;
+  --carbon:#86abf0; --carbon-ink:#0b1622; --stamp:#f09480; --ok:#7fcaa0; --amber:#e6b45e;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--f-body)}
+h1{margin:0;font:700 24px/1 var(--f-display);letter-spacing:.06em;text-transform:uppercase}
+button,input,select,textarea{font:inherit;color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--carbon);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+.strip{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--paper);border-bottom:1px solid var(--rule)}
+.strip .in{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:10px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between}
+.sync{margin-top:4px;font:500 12px var(--f-body);color:var(--mute)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-width:0}
+.tools select{width:auto;max-width:100%}
+
+button{background:var(--sheet);border:1px solid var(--rule);border-radius:3px;padding:7px 12px;min-height:40px;cursor:pointer}
+button.pri{background:var(--carbon);color:var(--carbon-ink);border-color:var(--carbon);font-weight:600}
+button.sm{min-height:36px;padding:5px 10px;font-size:14px}
+button.danger{color:var(--stamp);border-color:var(--stamp)}
+button:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{width:100%;background:var(--sheet);border:1px solid var(--rule);border-radius:3px;padding:8px 10px;min-width:0;max-width:100%}
+textarea{resize:vertical;line-height:1.45}
+textarea.mono{font:400 13px/1.5 var(--f-mono)}
+
+.wrap{max-width:860px;margin:0 auto;padding-inline:16px;padding-block:14px 56px}
+.msg{min-height:1.4em;margin:0 0 8px;font-size:14px;color:var(--mute)}
+.msg.warn{color:var(--stamp)}
+.msg.ok{color:var(--ok)}
+.imp{display:flex;flex-wrap:wrap;gap:8px;align-items:center;border:1px solid var(--carbon);border-radius:3px;background:var(--sheet);padding:10px 12px;margin-bottom:12px}
+.imp span{flex:1 1 14rem}
+
+.pre{background:var(--sheet);border:1px solid var(--rule);border-radius:3px;margin-bottom:14px}
+.pre summary{cursor:pointer;padding:12px;font:600 14px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--carbon);min-height:44px}
+.pre .pbody{padding:0 12px 12px;display:grid;gap:8px}
+
+.cell{display:grid;grid-template-columns:4.25rem minmax(0,1fr);background:var(--sheet);border:1px solid var(--rule);border-radius:3px;margin-bottom:12px}
+.stub{background:var(--stub);border-right:1px dashed var(--rule);display:flex;flex-direction:column;align-items:center;gap:2px;padding-top:12px}
+.stub .wo{font:600 11px var(--f-display);letter-spacing:.2em;color:var(--mute)}
+.stub .no{font:700 28px/1 var(--f-display);font-variant-numeric:tabular-nums;color:var(--ink)}
+.s-ready .no{color:var(--carbon)}
+.s-sent .no{color:var(--amber)}
+.s-done .no{color:var(--ok)}
+.s-blocked .no{color:var(--stamp)}
+.main{min-width:0}
+.head{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;width:100%;text-align:left;background:none;border:0;border-radius:0;padding:10px 12px;min-height:52px}
+.head .t{font:600 16px/1.3 var(--f-body);flex:1 1 12rem;min-width:0;overflow-wrap:anywhere}
+.head .t.ph{color:var(--mute);font-weight:400}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font:600 11px/1.6 var(--f-display);letter-spacing:.1em;text-transform:uppercase;padding:0 7px;border:1px solid var(--rule);border-radius:2px;color:var(--mute)}
+.chip.st-ready{color:var(--carbon);border-color:var(--carbon)}
+.chip.st-sent{color:var(--amber);border-color:var(--amber)}
+.chip.st-done,.chip.okc{color:var(--ok);border-color:var(--ok)}
+.chip.st-blocked,.chip.gap{color:var(--stamp);border-color:var(--stamp)}
+.body{padding:2px 12px 14px;border-top:1px solid var(--rule)}
+.sec{margin:16px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--rule);font:700 13px var(--f-display);letter-spacing:.16em;text-transform:uppercase;color:var(--carbon)}
+.fld{margin-bottom:12px;min-width:0}
+.lb{display:block;margin-bottom:3px;font:600 12px var(--f-display);letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+.hint{margin:0 0 4px;font-size:12.5px;color:var(--mute)}
+.row3{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:10px}
+.gaps{font-size:13px;margin:4px 0 8px;color:var(--mute)}
+.gaps.bad{color:var(--stamp)}
+.info{font:500 12px var(--f-mono);color:var(--mute);margin:0 0 8px;overflow-wrap:anywhere}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+
+.empty{border:1px dashed var(--rule);border-radius:3px;padding:22px 16px;color:var(--mute);display:grid;gap:10px;justify-items:start}
+.empty strong{color:var(--ink);font:700 18px var(--f-display);letter-spacing:.06em;text-transform:uppercase}
+dialog{background:var(--sheet);color:var(--ink);border:1px solid var(--rule);border-radius:4px;padding:14px;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 40px);overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog textarea{height:14rem;font:400 12.5px/1.45 var(--f-mono)}
+@media (max-width:520px){.cell{grid-template-columns:3.4rem minmax(0,1fr)}.stub .no{font-size:24px}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<header class="strip"><div class="in">
+  <div class="brand"><h1>Work Order Notebook</h1><div class="sync" id="sync">Opening your notebook…</div></div>
+  <div class="tools">
+    <label class="sr" for="tpl">Template for the next order</label>
+    <select id="tpl">
+      <option value="blank">Blank order</option>
+      <option value="probe">Read-only probe</option>
+      <option value="change">Change through the gate</option>
+      <option value="build">Build task</option>
+    </select>
+    <button type="button" class="pri" id="add">New order</button>
+    <button type="button" id="copyall">Copy all ready</button>
+    <button type="button" id="export">Backup</button>
+    <button type="button" id="import">Restore</button>
+    <input type="file" id="file" accept="application/json,.json" hidden>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <div id="msg" class="msg" role="status" aria-live="polite"></div>
+  <div id="imp" class="imp" hidden>
+    <span id="imptext"></span>
+    <button type="button" class="pri sm" id="impok">Import</button>
+    <button type="button" class="sm" id="impno">Cancel</button>
+  </div>
+  <details class="pre" id="pre">
+    <summary>Standing preamble</summary>
+    <div class="pbody">
+      <p class="hint">Sent at the top of every relayed order, so you never retype it. Edit it here; it is saved with the notebook.</p>
+      <label class="sr" for="pretext">Standing preamble text</label>
+      <textarea id="pretext" rows="9" spellcheck="false"></textarea>
+      <div class="acts"><button type="button" class="sm" id="prereset">Reset to default</button></div>
+    </div>
+  </details>
+  <div id="list"></div>
+  <div id="empty" class="empty"></div>
+</main>
+
+<dialog id="fb">
+  <form method="dialog">
+    <p id="fbnote" class="hint"></p>
+    <label class="sr" for="fbtext">Text to copy</label>
+    <textarea id="fbtext" readonly spellcheck="false"></textarea>
+    <div class="acts" style="margin-top:10px"><button class="pri sm" id="fbclose">Close</button></div>
+  </form>
+</dialog>
+
+<script src="/boards/runtime.js"></script>
+<script>
+(function(){
+"use strict";
+var TARGETS=[["openclaw","OpenClaw"],["owui","Open WebUI"],["cloudflare","Cloudflare"],["claude-code","Claude Code"]];
+var KINDS=[["prompt","Prompt"],["code","Code"],["approval","Approval request"]];
+var STATUSES=[["draft","Draft"],["ready","Ready"],["sent","Sent"],["done","Done"],["blocked","Blocked"]];
+var LIMIT=1900;
+var LS="wo.notebook.v1";
+var DEFAULT_PREAMBLE=[
+"Before any change: probe live state and confirm each dependency exists. Record hostname, user and address before claiming what a machine can reach.",
+"Read-only unless this order says otherwise. No hand-rolled scripts, pipes or APIs without Chi's permission; use existing or official components.",
+"Per task: intent, backup, change, diff, verification, log.",
+"Reply: first line DONE, NOT DONE or BLOCKED on <what>. Evidence after, rerunnable. A claim is done only if observed this session; otherwise write UNVERIFIED and the check that would falsify it.",
+"Stop and ask before: credentials, irreversible changes, scope exit, policy or legal. One question at a time."
+].join("\n");
+var BLANK={title:"",target:"openclaw",kind:"prompt",status:"draft",description:"",deps:"",required:"",constraints:"",done:"",failures:"",assumptions:"",payload:"",expected:"",ifFails:"",num:0,pos:0,created:"",ts:""};
+var TEXTKEYS=["title","description","deps","required","constraints","done","failures","assumptions","payload","expected","ifFails"];
+var TPL={
+ blank:{},
+ probe:{kind:"prompt",title:"Probe [what] (read-only)",
+  deps:"Access to the target system",
+  constraints:"Read-only. No writes, restarts, installs or config changes.\nRecord hostname, user and address before any claim about what the machine can reach.",
+  done:"Each item is reported PRESENT or ABSENT\nEach item carries one value read from the live system, with where it was read\nThe system state read before and after is identical",
+  failures:"An item is reported from an adjacent observation instead of a probe on the target itself",
+  expected:"One line per item: item, PRESENT or ABSENT, value, source.",
+  ifFails:"Report NOT PROBED with the reason. Do not infer."},
+ change:{kind:"prompt",title:"Change [what] through the change gate",
+  deps:"Chi's go on the reviewed diff\nBackup location chosen",
+  constraints:"Back up first, in the project and not only a scratch folder.\nOne change class per window.\nVerify from a surface other than the one changed.\nState the falsifier before the change: expect X; if Y, wrong.",
+  done:"The backup exists and its hash matches the original\nThe diff shows only the intended lines\nA read-back of the new value equals the intended value\nThe rollback step is written down and restores the original",
+  failures:"The change reports success but the file did not change; compare before and after, not the exit code",
+  ifFails:"Stop. Report what ran, the verbatim error and the backup path. A second failure of an identical call ends the approach."},
+ build:{kind:"code",title:"Build [what]",
+  deps:"Chi's permission for any custom code\nAccess to the target folder",
+  constraints:"No hand-rolled scripts, pipes or APIs without Chi's permission. Prefer existing or official components and ask first.\nOne change at a time.",
+  done:"[command] exits 0\n[value] reads [expected] after the build\nThe result runs without this chat open",
+  assumptions:"[what was inferred] / [what would settle it]"}
+};
+
+var $=function(i){return document.getElementById(i)};
+function el(t,c,x){var e=document.createElement(t);if(c)e.className=c;if(x!=null)e.textContent=x;return e}
+function now(){return new Date().toISOString()}
+function uid(){return "wo"+Date.now().toString(36)+Math.random().toString(36).slice(2,5)}
+function lbl(list,v){for(var i=0;i<list.length;i++)if(list[i][0]===v)return list[i][1];return v||""}
+function lines(s){return String(s||"").split("\n").map(function(l){return l.replace(/^\s*(?:[-*•]|\d+[.)])\s+/,"").trim()}).filter(Boolean)}
+function pad(n){return String(n||0).padStart(3,"0")}
+function code(o){return "WO-"+pad(o.num)}
+function lsGet(k){try{return localStorage.getItem(k)||""}catch(e){return ""}}
+function lsSet(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}}
+function grow(t){t.style.height="auto";t.style.height=Math.min(t.scrollHeight+2,1400)+"px"}
+
+var caps={db:null,downloads:null};
+var mode="opening";
+var loaded=false;
+var orders={},preamble=DEFAULT_PREAMBLE,cells={},openSet=new Set(),copyIdx={};
+var dirty={},timers={},chain={},msgTimer=null,focusNew=null,pendingImport=null,autoOpened=false;
+var born=new Set(),gone=new Set();
+var list=$("list"),emptyBox=$("empty");
+
+function msg(text,kind){
+  var m=$("msg");m.textContent=text||"";m.className="msg"+(kind?" "+kind:"");
+  clearTimeout(msgTimer);if(text)msgTimer=setTimeout(function(){m.textContent="";m.className="msg"},7000)
+}
+function setSync(){
+  var t={opening:"Opening your notebook…",synced:"Saved to your notebook. Open it on any device.",local:"Saved on this device only.",memory:"Not saved: this view blocks storage."}[mode];
+  $("sync").textContent=t
+}
+function fail(e){
+  msg("Save failed"+(e&&e.code?" ("+e.code+")":"")+(e&&e.code==="invalid_argument"?". You may have view-only access.":"."),"warn")
+}
+
+/* ---- storage ---- */
+function persistLocal(){if(mode==="local")lsSet(LS,JSON.stringify({orders:orders,preamble:preamble}))}
+var store={
+  create:function(id,doc){
+    if(caps.db)return caps.db.doc("orders/"+id).set(doc).catch(fail);
+    persistLocal();return Promise.resolve()
+  },
+  patch:function(id,p){
+    if(caps.db)return caps.db.doc("orders/"+id).update(Object.assign({ts:now()},p)).catch(fail);
+    persistLocal();return Promise.resolve()
+  },
+  remove:function(id){
+    if(caps.db)return caps.db.doc("orders/"+id).delete().catch(fail);
+    persistLocal();return Promise.resolve()
+  },
+  setPreamble:function(t){
+    if(caps.db)return caps.db.doc("settings/main").set({preamble:t,ts:now()}).catch(fail);
+    persistLocal();return Promise.resolve()
+  }
+};
+function queue(id,fn){chain[id]=(chain[id]||Promise.resolve()).then(fn);return chain[id]}
+function flush(id){
+  clearTimeout(timers[id]);var p=dirty[id];if(!p)return;delete dirty[id];
+  queue(id,function(){return store.patch(id,p)})
+}
+function flushAll(){Object.keys(dirty).forEach(flush)}
+function edit(id,key,val){
+  var o=orders[id];if(!o)return;
+  o[key]=val;(dirty[id]=dirty[id]||{})[key]=val;
+  if(TEXTKEYS.indexOf(key)>-1)copyIdx[id]=0;
+  clearTimeout(timers[id]);timers[id]=setTimeout(function(){flush(id)},600);
+  updateCell(id)
+}
+
+/* ---- ticket rules (TaskTicket v1) ---- */
+function lint(o){
+  var g=[];
+  if(!o.title.trim())g.push("needs a title");
+  if(!lines(o.deps).length)g.push("needs a dependency");
+  var n=lines(o.done).length;
+  if(n<3)g.push("needs "+(3-n)+" more done "+(3-n===1?"criterion":"criteria"));
+  if(!o.payload.trim())g.push("needs a payload");
+  return g
+}
+
+/* ---- relay text ---- */
+function bullets(s){return lines(s).map(function(l){return "- "+l}).join("\n")}
+function relayBody(o){
+  var out=[];
+  function sec(name,text){if(text&&text.trim())out.push(name+"\n"+text.trim())}
+  out.push("TITLE: "+(o.title.trim()||"(untitled)"));
+  if(o.description.trim())out.push("DESCRIPTION: "+o.description.trim());
+  sec("DEPENDS ON (verify each against live state before starting):",bullets(o.deps));
+  sec("REQUIRED DURING THE TASK:",bullets(o.required));
+  sec("CONSTRAINTS:",bullets(o.constraints));
+  sec("DONE LOOKS LIKE (each is checked by running something, reading a value or observing a state change):",bullets(o.done));
+  sec("KNOWN FAILURES:",bullets(o.failures));
+  sec("ASSUMPTIONS (inferred, not verified):",bullets(o.assumptions));
+  sec("PAYLOAD ("+lbl(KINDS,o.kind).toLowerCase()+"):",o.payload);
+  sec("EXPECTED OUTPUT:",o.expected);
+  sec("IF IT FAILS:",o.ifFails);
+  return out.join("\n\n")
+}
+function header(o){return "WORK ORDER "+code(o)+" | target: "+lbl(TARGETS,o.target)+" | kind: "+lbl(KINDS,o.kind)}
+function relayFull(id){var o=orders[id];return header(o)+"\n\n"+preamble.trim()+"\n\n"+relayBody(o)}
+function split(text,tag){
+  if(text.length<=LIMIT)return [text];
+  var cap=LIMIT-(tag.length+16),chunks=[],cur="";
+  text.split("\n").forEach(function(line){
+    while(line.length>cap){if(cur){chunks.push(cur);cur=""}chunks.push(line.slice(0,cap));line=line.slice(cap)}
+    var add=cur?cur+"\n"+line:line;
+    if(add.length>cap){chunks.push(cur);cur=line}else cur=add
+  });
+  if(cur)chunks.push(cur);
+  return chunks.map(function(c,i){return "["+tag+" part "+(i+1)+"/"+chunks.length+"]\n"+c})
+}
+function relayParts(id){return split(relayFull(id),code(orders[id]))}
+
+/* ---- clipboard ---- */
+function showFallback(text,note){
+  $("fbnote").textContent=note||"Clipboard is blocked in this view. Select the text and copy it.";
+  var t=$("fbtext");t.value=text;
+  var d=$("fb");
+  try{d.showModal()}catch(e){d.setAttribute("open","")}
+  t.focus();t.select()
+}
+function copyText(text,okMsg){
+  var p;
+  try{p=(navigator.clipboard&&navigator.clipboard.writeText)?navigator.clipboard.writeText(text):Promise.reject(new Error("no clipboard"))}
+  catch(e){p=Promise.reject(e)}
+  return p.then(function(){msg(okMsg,"ok");return true},function(){showFallback(text);return false})
+}
+
+/* ---- cells ---- */
+function sortedIds(){
+  return Object.keys(orders).sort(function(x,y){
+    var a=orders[x],b=orders[y];
+    return (a.pos-b.pos)||(a.created<b.created?-1:a.created>b.created?1:0)||(x<y?-1:1)
+  })
+}
+function nextNum(){var m=0;Object.keys(orders).forEach(function(k){m=Math.max(m,orders[k].num||0)});return m+1}
+function maxPos(){var m=0;Object.keys(orders).forEach(function(k){m=Math.max(m,orders[k].pos||0)});return m}
+function posAfter(afterId){
+  var ids=sortedIds();if(!afterId||!orders[afterId])return maxPos()+1;
+  var i=ids.indexOf(afterId),a=orders[afterId].pos;
+  if(i>=ids.length-1)return a+1;
+  return (a+orders[ids[i+1]].pos)/2
+}
+function makeDoc(tpl,afterId){
+  var t=now();
+  return Object.assign({},BLANK,TPL[tpl]||{},{status:"draft",num:nextNum(),pos:posAfter(afterId),created:t,ts:t})
+}
+function addOrder(doc){
+  var id=uid();orders[id]=doc;focusNew=id;copyIdx[id]=0;born.add(id);
+  render();
+  queue(id,function(){return store.create(id,doc)})
+}
+function setStatus(id,val){
+  var o=orders[id],g=lint(o);
+  if((val==="ready"||val==="sent")&&g.length){
+    cells[id].refs.sel.status.value=o.status;
+    msg(code(o)+" is not ready: "+g.join(", ")+".","warn");return
+  }
+  edit(id,"status",val);flush(id)
+}
+function move(id,dir){
+  var ids=sortedIds(),i=ids.indexOf(id),j=i+dir;
+  if(j<0||j>=ids.length)return;
+  var A=ids[i],B=ids[j],pa=orders[A].pos,pb=orders[B].pos;
+  if(pa===pb)pb=pa+dir*0.5;
+  edit(A,"pos",pb);edit(B,"pos",pa);flush(A);flush(B);render()
+}
+function duplicate(id){
+  var o=orders[id],d=Object.assign({},o,{title:(o.title.trim()||"Untitled order")+" (copy)",status:"draft",num:nextNum(),pos:posAfter(id),created:now(),ts:now()});
+  addOrder(d)
+}
+function remove(id){
+  delete orders[id];delete dirty[id];clearTimeout(timers[id]);openSet.delete(id);born.delete(id);gone.add(id);render();
+  queue(id,function(){return store.remove(id)})
+}
+
+function build(id){
+  var root=el("section","cell"),refs={inp:{},sel:{},areas:[]};
+  var stub=el("div","stub");stub.appendChild(el("span","wo","WO"));refs.no=el("span","no","000");stub.appendChild(refs.no);
+  var main=el("div","main");
+  var head=el("button","head");head.type="button";refs.head=head;
+  refs.title=el("span","t");refs.chips=el("span","chips");
+  head.appendChild(refs.title);head.appendChild(refs.chips);
+  head.onclick=function(){if(openSet.has(id))openSet.delete(id);else openSet.add(id);updateCell(id)};
+  var body=el("div","body");refs.body=body;
+
+  function fld(parent,key,label,hint,kind){
+    var w=el("div","fld"),lab=el("label","lb",label),iid="f-"+id+"-"+key,i;
+    lab.htmlFor=iid;w.appendChild(lab);
+    if(hint)w.appendChild(el("div","hint",hint));
+    if(kind==="line"){i=el("input");i.type="text";i.autocomplete="off"}
+    else{i=el("textarea");i.rows=kind==="tall"?6:2;if(kind==="mono")i.className="mono";i.spellcheck=kind!=="mono";refs.areas.push(i)}
+    i.id=iid;refs.inp[key]=i;
+    i.addEventListener("input",function(){edit(id,key,i.value);if(i.tagName==="TEXTAREA")grow(i)});
+    i.addEventListener("blur",function(){flush(id)});
+    w.appendChild(i);parent.appendChild(w);return i
+  }
+  function sel(parent,key,label,opts){
+    var w=el("div","fld"),lab=el("label","lb",label),iid="f-"+id+"-"+key,s=el("select");
+    lab.htmlFor=iid;s.id=iid;
+    opts.forEach(function(o){var op=el("option","",o[1]);op.value=o[0];s.appendChild(op)});
+    s.addEventListener("change",function(){
+      if(key==="status")setStatus(id,s.value);else{edit(id,key,s.value);flush(id)}
+    });
+    refs.sel[key]=s;w.appendChild(lab);w.appendChild(s);parent.appendChild(w)
+  }
+
+  body.appendChild(el("div","sec","Ticket"));
+  fld(body,"title","Title","Imperative, short. Example: Probe the pipeline install state.","line");
+  var row=el("div","row3");
+  sel(row,"target","Target",TARGETS);sel(row,"kind","Kind",KINDS);sel(row,"status","Status",STATUSES);
+  body.appendChild(row);
+  fld(body,"description","Description","One to three sentences: what, why, and who owns it.");
+  fld(body,"deps","Set dependencies","One per line. Must not be empty: every task depends on something, even a clarified scope.","tall");
+  fld(body,"done","What done looks like","One per line, at least three. Each names a command, a value or a state change that would prove it wrong.","tall");
+  fld(body,"required","Required during the task","Libraries, services, permissions. One per line.");
+  fld(body,"constraints","Constraints","Hard limits the work must respect. One per line.");
+  fld(body,"failures","Known failures","Pitfalls, edge cases, earlier failures. One per line.");
+  fld(body,"assumptions","Assumptions","What was inferred rather than verified, and what would settle each one.");
+  body.appendChild(el("div","sec","Payload"));
+  fld(body,"payload","Prompt, code or approval request","Exactly what the agent receives.","mono");
+  refs.inp.payload.rows=6;
+  fld(body,"expected","Expected output","What a correct run shows.");
+  fld(body,"ifFails","If it fails","The failure scenarios and what the agent does next.");
+
+  refs.gaps=el("div","gaps");refs.info=el("div","info");
+  body.appendChild(refs.gaps);body.appendChild(refs.info);
+  var acts=el("div","acts");
+  refs.copy=el("button","pri","Copy for relay");refs.copy.type="button";
+  refs.copy.onclick=function(){
+    var parts=relayParts(id),o=orders[id],i=copyIdx[id]||0;
+    if(i>=parts.length)i=0;
+    var many=parts.length>1;
+    copyText(parts[i],"Copied "+code(o)+(many?", part "+(i+1)+" of "+parts.length+". Paste it, then copy the next part.":" for relay."));
+    copyIdx[id]=(i+1)%parts.length;updateCell(id)
+  };
+  var dup=el("button","","Duplicate");dup.type="button";dup.onclick=function(){duplicate(id)};
+  var up=el("button","","Move up");up.type="button";up.onclick=function(){move(id,-1)};
+  var dn=el("button","","Move down");dn.type="button";dn.onclick=function(){move(id,1)};
+  var del=el("button","danger","Delete");del.type="button";
+  var delT=null;
+  del.onclick=function(){
+    if(del.dataset.arm==="1"){clearTimeout(delT);remove(id);return}
+    del.dataset.arm="1";del.textContent="Confirm delete";
+    delT=setTimeout(function(){del.dataset.arm="";del.textContent="Delete"},4000)
+  };
+  [refs.copy,dup,up,dn,del].forEach(function(b){acts.appendChild(b)});
+  body.appendChild(acts);
+
+  main.appendChild(head);main.appendChild(body);
+  root.appendChild(stub);root.appendChild(main);
+  return {root:root,refs:refs}
+}
+
+function chip(cls,text){return el("span","chip "+cls,text)}
+function updateCell(id){
+  var o=orders[id],c=cells[id];if(!o||!c)return;
+  var r=c.refs,open=openSet.has(id),g=lint(o);
+  c.root.className="cell s-"+o.status;
+  r.no.textContent=pad(o.num);
+  var t=o.title.trim();
+  r.title.textContent=t||"Untitled order";r.title.className="t"+(t?"":" ph");
+  r.chips.textContent="";
+  r.chips.appendChild(chip("st-"+o.status,lbl(STATUSES,o.status)));
+  r.chips.appendChild(chip("",lbl(TARGETS,o.target)));
+  r.chips.appendChild(chip("",lbl(KINDS,o.kind)));
+  r.chips.appendChild(chip(g.length?"gap":"okc",g.length?g.length+(g.length===1?" gap":" gaps"):"Complete"));
+  r.body.hidden=!open;r.head.setAttribute("aria-expanded",String(open));
+  if(!open)return;
+  Object.keys(r.inp).forEach(function(k){var i=r.inp[k],v=o[k]||"";if(document.activeElement!==i&&i.value!==v)i.value=v});
+  Object.keys(r.sel).forEach(function(k){var s=r.sel[k],v=o[k]||"";if(document.activeElement!==s&&s.value!==v)s.value=v});
+  r.areas.forEach(grow);
+  r.gaps.textContent=g.length?"Gaps: "+g.join(" · "):"Ticket rules met.";
+  r.gaps.className="gaps"+(g.length?" bad":"");
+  var parts=relayParts(id),total=relayFull(id).length,i=copyIdx[id]||0;
+  if(i>=parts.length)i=0;
+  r.info.textContent=total.toLocaleString("en-US")+" characters · "+(parts.length>1?"splits into "+parts.length+" messages":"fits one message under 2,000");
+  r.copy.textContent=parts.length>1?"Copy part "+(i+1)+" of "+parts.length:"Copy for relay"
+}
+
+function render(){
+  var ids=sortedIds();
+  Object.keys(cells).forEach(function(id){if(!orders[id]){cells[id].root.remove();delete cells[id]}});
+  if(loaded&&!autoOpened&&ids.length){autoOpened=true;if(focusNew===null&&openSet.size===0)openSet.add(ids[0])}
+  ids.forEach(function(id,i){
+    var c=cells[id]||(cells[id]=build(id));
+    if(focusNew===id)openSet.add(id);
+    updateCell(id);
+    var at=list.children[i];if(at!==c.root)list.insertBefore(c.root,at||null)
+  });
+  emptyBox.hidden=ids.length>0;
+  if(!ids.length){
+    emptyBox.textContent="";
+    if(!loaded){emptyBox.appendChild(el("strong","","Opening"));emptyBox.appendChild(el("span","","Your work orders appear here once the notebook loads."))}
+    else{
+      emptyBox.appendChild(el("strong","","No work orders yet"));
+      emptyBox.appendChild(el("span","","Each order is one cell. Write it, check it against the ticket rules, then copy it for Mētis, Claude Code or Open WebUI."));
+      var b=el("button","pri","Start a blank order");b.type="button";b.onclick=function(){addOrder(makeDoc("blank"))};emptyBox.appendChild(b)
+    }
+  }
+  if(focusNew&&cells[focusNew]){
+    var f=focusNew;focusNew=null;
+    var ti=cells[f].refs.inp.title;
+    try{cells[f].root.scrollIntoView({block:"center"});ti.focus();ti.select()}catch(e){}
+  }
+}
+
+/* ---- toolbar ---- */
+$("add").onclick=function(){addOrder(makeDoc($("tpl").value))};
+$("copyall").onclick=function(){
+  var ids=sortedIds().filter(function(id){return orders[id].status==="ready"});
+  if(!ids.length){msg("No orders are marked Ready.","warn");return}
+  var text=preamble.trim()+"\n\n"+ids.map(function(id){var o=orders[id];return header(o)+"\n\n"+relayBody(o)}).join("\n\n====\n\n");
+  copyText(text,"Copied "+ids.length+(ids.length===1?" ready order":" ready orders")+" ("+text.length.toLocaleString("en-US")+" characters, one block).")
+};
+$("export").onclick=function(){
+  var data={format:"work-order-notebook",version:1,exported:now(),preamble:preamble,orders:sortedIds().map(function(id){return Object.assign({id:id},orders[id])})};
+  var text=JSON.stringify(data,null,2);
+  if(!caps.downloads){showFallback(text,"Saving files is not available in this view. Copy this backup and keep it in a file.");return}
+  caps.downloads.save({filename:"work-orders-"+now().slice(0,10)+".json",data:text}).then(function(){msg("Backup saved.","ok")},function(e){
+    if(e&&e.code==="declined")return;
+    showFallback(text,"The file could not be saved here. Copy this backup instead.")
+  })
+};
+$("import").onclick=function(){$("file").click()};
+$("file").onchange=function(){
+  var f=this.files&&this.files[0];if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(){
+    try{
+      var d=JSON.parse(String(rd.result)),arr=Array.isArray(d)?d:(d&&d.orders);
+      if(!Array.isArray(arr)||!arr.length)throw new Error("empty");
+      pendingImport=arr.slice(0,200).filter(function(o){return o&&typeof o==="object"});
+      if(!pendingImport.length)throw new Error("empty");
+      $("imptext").textContent="Import "+pendingImport.length+(pendingImport.length===1?" order":" orders")+" from "+f.name+"? They are added after your current orders.";
+      $("imp").hidden=false
+    }catch(e){msg("That file is not a work order backup.","warn")}
+    $("file").value=""
+  };
+  rd.onerror=function(){msg("The file could not be read.","warn")};
+  rd.readAsText(f)
+};
+$("impno").onclick=function(){pendingImport=null;$("imp").hidden=true};
+$("impok").onclick=function(){
+  if(!pendingImport)return;
+  var n=0,p=maxPos();
+  pendingImport.forEach(function(o){
+    var d=Object.assign({},BLANK);
+    TEXTKEYS.forEach(function(k){if(typeof o[k]==="string")d[k]=o[k].slice(0,20000)});
+    if(TARGETS.some(function(x){return x[0]===o.target}))d.target=o.target;
+    if(KINDS.some(function(x){return x[0]===o.kind}))d.kind=o.kind;
+    if(STATUSES.some(function(x){return x[0]===o.status}))d.status=o.status;
+    d.num=nextNum();d.pos=++p;d.created=now();d.ts=d.created;
+    var id=uid();orders[id]=d;copyIdx[id]=0;born.add(id);n++;
+    (function(i,doc){queue(i,function(){return store.create(i,doc)})})(id,d)
+  });
+  pendingImport=null;$("imp").hidden=true;render();msg("Imported "+n+(n===1?" order.":" orders."),"ok")
+};
+
+/* ---- preamble ---- */
+var preT=null;
+$("pretext").addEventListener("input",function(){
+  preamble=this.value;clearTimeout(preT);
+  preT=setTimeout(function(){queue("settings",function(){return store.setPreamble(preamble)})},600);
+  Object.keys(cells).forEach(function(id){if(openSet.has(id)){copyIdx[id]=0;updateCell(id)}})
+});
+$("prereset").onclick=function(){
+  preamble=DEFAULT_PREAMBLE;$("pretext").value=preamble;
+  queue("settings",function(){return store.setPreamble(preamble)});
+  Object.keys(cells).forEach(function(id){copyIdx[id]=0;updateCell(id)});msg("Preamble reset to the default.","ok")
+};
+
+window.addEventListener("pagehide",flushAll);
+document.addEventListener("visibilitychange",function(){if(document.hidden)flushAll()});
+
+/* ---- boot ---- */
+function norm(data,id){
+  var o=Object.assign({},BLANK,data,dirty[id]||{});
+  o.pos=Number(o.pos)||0;o.num=Number(o.num)||0;
+  TEXTKEYS.forEach(function(k){if(typeof o[k]!=="string")o[k]=""});
+  return o
+}
+function onOrders(snap){
+  var seen={};
+  snap.docs.forEach(function(d){
+    if(gone.has(d.id))return;
+    seen[d.id]=1;born.delete(d.id);orders[d.id]=norm(d.data(),d.id)
+  });
+  Object.keys(orders).forEach(function(id){if(!seen[id]&&!born.has(id))delete orders[id]});
+  loaded=true;render()
+}
+function onPre(snap){
+  var d=snap.exists?snap.data():null;
+  preamble=d&&typeof d.preamble==="string"?d.preamble:DEFAULT_PREAMBLE;
+  var t=$("pretext");if(document.activeElement!==t)t.value=preamble
+}
+function onErr(e){msg("Could not read the notebook"+(e&&e.code?" ("+e.code+")":"")+".","warn")}
+
+$("pretext").value=preamble;
+render();setSync();
+
+(async function boot(){
+  var use=window.claude&&window.claude.use?window.claude.use.bind(window.claude):null;
+  if(use){try{use("downloads").then(function(d){caps.downloads=d},function(){})}catch(e){}}
+  try{if(use)caps.db=await use("db")}catch(e){caps.db=null}
+  if(caps.db){
+    mode="synced";setSync();
+    caps.db.collection("orders").onSnapshot(onOrders,onErr);
+    caps.db.doc("settings/main").onSnapshot(onPre,onErr);
+    return
+  }
+  var raw=lsGet(LS);
+  if(raw){
+    try{
+      var s=JSON.parse(raw);
+      Object.keys(s.orders||{}).forEach(function(id){orders[id]=norm(s.orders[id],id)});
+      if(typeof s.preamble==="string")preamble=s.preamble;
+    }catch(e){}
+  }
+  mode=lsSet(LS+".probe","1")?"local":"memory";
+  $("pretext").value=preamble;
+  loaded=true;setSync();render()
+})();
+})();
+</script>
+
+</body></html>

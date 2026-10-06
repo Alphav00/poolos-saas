@@ -1,0 +1,14 @@
+{
+  "name": "the-diving-board",
+  "private": true,
+  "description": "All-in-one pool platform: liner and cover measuring, manufacturer ordering, service and water chemistry.",
+  "packageManager": "pnpm@10",
+  "scripts": {
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

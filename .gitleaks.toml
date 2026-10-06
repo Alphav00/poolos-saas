@@ -1,0 +1,10 @@
+# Default gitleaks rules, plus one documented exception.
+[extend]
+useDefault = true
+
+[allowlist]
+description = """Cloudflare Access application audience (AUD) tag. It is an identifier, \
+not a credential: Access puts it in the aud claim of every token it sends to \
+browsers, and the Worker uses it to check that a token was issued for PoolOS."""
+regexTarget = "line"
+regexes = ['''ACCESS_AUD"?:\s*"[0-9a-f]{64}"''']

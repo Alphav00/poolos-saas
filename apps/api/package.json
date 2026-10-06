@@ -1,0 +1,23 @@
+{
+	"name": "@poolos/api",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"deploy": "wrangler deploy",
+		"dev": "wrangler dev",
+		"start": "wrangler dev",
+		"test": "vitest run",
+		"typecheck": "tsc --noEmit",
+		"cf-typegen": "wrangler types",
+		"pretest": "pnpm --filter @poolos/web build"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-plugin": "^1.0.0",
+		"typescript": "^6.0.3",
+		"vitest": "~4.1.0",
+		"wrangler": "^4"
+	},
+	"dependencies": {
+		"jose": "^6.2.12"
+	}
+}
