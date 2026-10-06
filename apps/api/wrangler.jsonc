@@ -6,10 +6,27 @@
 	"observability": {
 		"enabled": true,
 	},
-	// Create with `wrangler d1 create poolos` and paste the id here.
+	// Only reachable at the custom domain, which sits behind Cloudflare Access.
+	// workers.dev and preview URLs are off so nothing can bypass Access.
+	"workers_dev": false,
+	"preview_urls": false,
+	"routes": [{ "pattern": "poolos.pathofphi.com", "custom_domain": true }],
+	// The built web app and the board pages. The Worker runs first on every
+	// request so nothing is served before the Access token is checked.
+	"assets": {
+		"directory": "../web/dist",
+		"binding": "ASSETS",
+		"run_worker_first": true,
+	},
+	"vars": {
+		"ACCESS_TEAM_DOMAIN": "phi-agents.cloudflareaccess.com",
+		// Audience tag of the PoolOS Access application.
+		"ACCESS_AUD": "4db28440a6320c1dc9f22f201073ece46307c61d2e3c116e2980f88c1f8c034f",
+		// Comma-separated. Owners can assign cards and approve requests on boards.
+		"OWNER_EMAILS": "alphav00@gmail.com",
+	},
 	"d1_databases": [
-		{ "binding": "DB", "database_name": "poolos", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" },
+		{ "binding": "DB", "database_name": "poolos", "database_id": "ff199d7f-f102-4fb0-97f1-0c7237b7a0e5", "migrations_dir": "migrations" },
 	],
-	// Create with `wrangler r2 bucket create poolos-files`.
 	"r2_buckets": [{ "binding": "FILES", "bucket_name": "poolos-files" }],
 }
