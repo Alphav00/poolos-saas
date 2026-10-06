@@ -1,0 +1,7 @@
+# Strings that must never appear in tests or fixtures (DESIGN.md section 3,
+# constraint 1). One per line, matched case-insensitively as whole words.
+# Lines starting with # are comments. Add real customer names, street
+# addresses and company names here.
+CCS
+CCS Pools
+Jacobs

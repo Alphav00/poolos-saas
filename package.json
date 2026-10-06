@@ -1,0 +1,23 @@
+{
+  "name": "poolos-saas",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "test": "pnpm -r test && pnpm fixture-lint:selftest",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "fixture-lint": "node scripts/fixture-lint.mjs",
+    "fixture-lint:selftest": "node scripts/fixture-lint.selftest.mjs",
+    "check": "pnpm lint && pnpm typecheck && pnpm fixture-lint && pnpm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "eslint-plugin-svelte": "^3.23.0",
+    "globals": "^17.13.0",
+    "svelte": "^5.57.2",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.1"
+  },
+  "type": "module"
+}

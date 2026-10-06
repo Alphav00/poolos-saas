@@ -1,0 +1,15 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "poolos-api",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+	"observability": {
+		"enabled": true,
+	},
+	// Create with `wrangler d1 create poolos` and paste the id here.
+	"d1_databases": [
+		{ "binding": "DB", "database_name": "poolos", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" },
+	],
+	// Create with `wrangler r2 bucket create poolos-files`.
+	"r2_buckets": [{ "binding": "FILES", "bucket_name": "poolos-files" }],
+}
