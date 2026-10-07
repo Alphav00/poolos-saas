@@ -24,8 +24,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      - name: Build the web app
-        run: pnpm --filter @poolos/web build
+      - name: Build the web app and Measure
+        run: pnpm build
       - name: Apply database migrations
         working-directory: apps/api
         run: pnpm exec wrangler d1 migrations apply poolos --remote

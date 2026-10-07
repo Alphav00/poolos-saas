@@ -117,6 +117,12 @@
   <div class="tags">{#each ROUTE.load as l (l)}<span class="tag">{l}</span>{/each}</div>
 </a>
 
+<a class="card tap tool" href="/measure">
+  <span class="tool-icon" aria-hidden="true">📏</span>
+  <div style="flex:1"><div class="nm">Measure a liner or cover</div><div class="xs">A/B walk · closure checks · order forms</div></div>
+  <span class="chip">Open</span>
+</a>
+
 <section class="card">
   <div class="row"><h2 class="h">Working today</h2><span class="xs">{working.length} on <span class="sample" style="margin:0 0 0 4px">SAMPLE</span></span></div>
   <ul class="crew">
@@ -140,6 +146,8 @@
   .msg { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 22px; font-weight: 900; font-size: 13px; color: #fff; text-decoration: none; background: linear-gradient(180deg, #0a8fd0, #066fa6); box-shadow: 0 3px 0 #05587f; text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
   .refresh { min-width: 44px; min-height: 44px; justify-content: center; font-size: 18px; }
   .tap { display: block; color: inherit; text-decoration: none; }
+  .tool { display: flex; align-items: center; gap: 12px; }
+  .tool-icon { font-size: 28px; }
   .now { display: flex; align-items: center; gap: 10px; }
   .icon { font-size: 36px; line-height: 1; }
   .temp { font-size: 32px; font-weight: 900; line-height: 1; }

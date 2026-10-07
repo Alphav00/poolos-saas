@@ -1,0 +1,2862 @@
+{
+ "freeform": {
+  "cover_spec": {
+   "anchor_type": "concrete",
+   "color": "green",
+   "overlap_planter_in": null,
+   "overlap_standard_in": "12",
+   "spacing": "5x5",
+   "type": "mesh_super"
+  },
+  "hardware": {
+   "beauty_rings": 0,
+   "beauty_rings_entire_pool": false,
+   "lawn_stakes": 0,
+   "paver_tubes_ft": "0",
+   "perimeter_padding_entire_pool": false,
+   "perimeter_padding_from_pt": null,
+   "perimeter_padding_to_pt": null,
+   "wood_deck_anchors": 0,
+   "y_straps": 0
+  },
+  "liner_spec": {
+   "bead_type": "standard_bead",
+   "coping_type": "concrete",
+   "measured_at_bead_receiver": true,
+   "pattern_code": null,
+   "pattern_name": "",
+   "step_construction": "none",
+   "thickness_mil": 27,
+   "tile_border": false,
+   "tile_border_pattern": null,
+   "warranty_years": null,
+   "waste_factor_pct": "10"
+  },
+  "measurement": {
+   "ab_distance_ft": "50.0",
+   "ab_note": "Freeform with rock waterfall on far side",
+   "ab_offset_from_pool_ft": "4",
+   "ab_orientation": "A_left_B_right_facing_pool",
+   "anchors": null,
+   "break_off_points": [],
+   "cross_dimensions": [
+    {
+     "distance_ft": "28",
+     "from_point": 10,
+     "to_point": 40
+    },
+    {
+     "distance_ft": "35",
+     "from_point": 20,
+     "to_point": 50
+    }
+   ],
+   "deck": {
+    "deck_type": "concrete",
+    "diving_board": false,
+    "diving_board_distance_ft": null,
+    "min_width_ft": "2.5",
+    "narrow_sections": [
+     "Pt 18-22: rock waterfall"
+    ],
+    "wood_deck_anchors_needed": false,
+    "wood_deck_length_ft": null
+   },
+   "deep_depth_ft": "8.5",
+   "liner": null,
+   "obstacles": [
+    {
+     "back_point": 22,
+     "description": "Rock waterfall feature",
+     "front_point": 18,
+     "kind": "rock"
+    },
+    {
+     "back_point": 6,
+     "description": "Ladder handrail",
+     "front_point": 5,
+     "kind": "handrail"
+    }
+   ],
+   "perimeter_points": [
+    {
+     "a_distance_ft": "51.264",
+     "b_distance_ft": "18.111",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 1,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "51.655",
+     "b_distance_ft": "19.847",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 2,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "51.624",
+     "b_distance_ft": "21.587",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 3,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "51.202",
+     "b_distance_ft": "23.306",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 4,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "50.441",
+     "b_distance_ft": "24.99",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 5,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "49.409",
+     "b_distance_ft": "26.631",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 6,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "48.182",
+     "b_distance_ft": "28.217",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 7,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "46.838",
+     "b_distance_ft": "29.729",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 8,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "45.449",
+     "b_distance_ft": "31.146",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 9,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.08",
+     "b_distance_ft": "32.446",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 10,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "42.78",
+     "b_distance_ft": "33.617",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 11,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "41.583",
+     "b_distance_ft": "34.656",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 12,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.506",
+     "b_distance_ft": "35.573",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 13,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.549",
+     "b_distance_ft": "36.395",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 14,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "38.694",
+     "b_distance_ft": "37.16",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 15,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.911",
+     "b_distance_ft": "37.911",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 16,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.16",
+     "b_distance_ft": "38.694",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 17,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.395",
+     "b_distance_ft": "39.549",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 18,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "35.573",
+     "b_distance_ft": "40.506",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 19,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.656",
+     "b_distance_ft": "41.583",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 20,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "33.617",
+     "b_distance_ft": "42.78",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 21,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.446",
+     "b_distance_ft": "44.08",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 22,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "31.146",
+     "b_distance_ft": "45.449",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 23,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "29.729",
+     "b_distance_ft": "46.838",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 24,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.217",
+     "b_distance_ft": "48.182",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 25,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.631",
+     "b_distance_ft": "49.409",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 26,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.99",
+     "b_distance_ft": "50.441",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 27,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "23.306",
+     "b_distance_ft": "51.202",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 28,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "21.587",
+     "b_distance_ft": "51.624",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 29,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "19.847",
+     "b_distance_ft": "51.655",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 30,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.111",
+     "b_distance_ft": "51.264",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 31,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.438",
+     "b_distance_ft": "50.444",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 32,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.93",
+     "b_distance_ft": "49.213",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 33,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "13.741",
+     "b_distance_ft": "47.616",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 34,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "13.053",
+     "b_distance_ft": "45.718",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 35,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "13.009",
+     "b_distance_ft": "43.604",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 36,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "13.625",
+     "b_distance_ft": "41.364",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 37,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.775",
+     "b_distance_ft": "39.093",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 38,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.263",
+     "b_distance_ft": "36.879",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 39,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "17.9",
+     "b_distance_ft": "34.795",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 40,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "19.542",
+     "b_distance_ft": "32.892",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 41,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "21.097",
+     "b_distance_ft": "31.197",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 42,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.521",
+     "b_distance_ft": "29.708",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 43,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "23.809",
+     "b_distance_ft": "28.397",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 44,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.986",
+     "b_distance_ft": "27.215",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 45,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.101",
+     "b_distance_ft": "26.101",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 46,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "27.215",
+     "b_distance_ft": "24.986",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 47,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.397",
+     "b_distance_ft": "23.809",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 48,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "29.708",
+     "b_distance_ft": "22.521",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 49,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "31.197",
+     "b_distance_ft": "21.097",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 50,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.892",
+     "b_distance_ft": "19.542",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 51,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.795",
+     "b_distance_ft": "17.9",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 52,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.879",
+     "b_distance_ft": "16.263",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 53,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.093",
+     "b_distance_ft": "14.775",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 54,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "41.364",
+     "b_distance_ft": "13.625",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 55,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "43.604",
+     "b_distance_ft": "13.009",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 56,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "45.718",
+     "b_distance_ft": "13.053",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 57,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "47.616",
+     "b_distance_ft": "13.741",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 58,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "49.213",
+     "b_distance_ft": "14.93",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 59,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "50.444",
+     "b_distance_ft": "16.438",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 60,
+     "obstacle_kind": null
+    }
+   ],
+   "pool_length": null,
+   "pool_width": null,
+   "shallow_depth_ft": "3.5",
+   "shape_type": "freeform",
+   "spa": null,
+   "step": {
+    "location": "center",
+    "notes": null,
+    "offset_ft": null,
+    "size_length_ft": "5",
+    "size_width_ft": "10"
+   },
+   "swap_ab": false
+  },
+  "meta": {
+   "customer_address": "123 Test Lane, Testville NJ",
+   "customer_email": "freeform.test@example.com",
+   "customer_name": "Freeform Test",
+   "customer_phone": "555-0123",
+   "date": "2026-08-08T00:00:00",
+   "dealer_location": "Hamilton, NJ",
+   "dealer_name": "Merlin Test Dealer",
+   "photos_attached": false
+  },
+  "notes": null,
+  "product_type": "cover"
+ },
+ "kidney": {
+  "cover_spec": {
+   "anchor_type": "concrete",
+   "color": "green",
+   "overlap_planter_in": null,
+   "overlap_standard_in": "12",
+   "spacing": "5x5",
+   "type": "mesh_super"
+  },
+  "hardware": {
+   "beauty_rings": 0,
+   "beauty_rings_entire_pool": false,
+   "lawn_stakes": 0,
+   "paver_tubes_ft": "0",
+   "perimeter_padding_entire_pool": false,
+   "perimeter_padding_from_pt": null,
+   "perimeter_padding_to_pt": null,
+   "wood_deck_anchors": 0,
+   "y_straps": 0
+  },
+  "liner_spec": {
+   "bead_type": "standard_bead",
+   "coping_type": "concrete",
+   "measured_at_bead_receiver": true,
+   "pattern_code": null,
+   "pattern_name": "",
+   "step_construction": "none",
+   "thickness_mil": 27,
+   "tile_border": false,
+   "tile_border_pattern": null,
+   "warranty_years": null,
+   "waste_factor_pct": "10"
+  },
+  "measurement": {
+   "ab_distance_ft": "40.0",
+   "ab_note": "Standard A-B on long side, 4ft from edge",
+   "ab_offset_from_pool_ft": "4",
+   "ab_orientation": "A_left_B_right_facing_pool",
+   "anchors": null,
+   "break_off_points": [],
+   "cross_dimensions": [
+    {
+     "distance_ft": "22",
+     "from_point": 15,
+     "to_point": 45
+    },
+    {
+     "distance_ft": "28",
+     "from_point": 8,
+     "to_point": 38
+    }
+   ],
+   "deck": {
+    "deck_type": "concrete",
+    "diving_board": false,
+    "diving_board_distance_ft": null,
+    "min_width_ft": "3",
+    "narrow_sections": [],
+    "wood_deck_anchors_needed": false,
+    "wood_deck_length_ft": null
+   },
+   "deep_depth_ft": "7.5",
+   "liner": null,
+   "obstacles": [
+    {
+     "back_point": 13,
+     "description": "Ladder handrail",
+     "front_point": 12,
+     "kind": "handrail"
+    }
+   ],
+   "perimeter_points": [
+    {
+     "a_distance_ft": "42.953",
+     "b_distance_ft": "18.028",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 1,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "43.662",
+     "b_distance_ft": "19.959",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 2,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.157",
+     "b_distance_ft": "21.854",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 3,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.425",
+     "b_distance_ft": "23.671",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 4,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.453",
+     "b_distance_ft": "25.379",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 5,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.232",
+     "b_distance_ft": "26.958",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 6,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "43.756",
+     "b_distance_ft": "28.399",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 7,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "43.025",
+     "b_distance_ft": "29.703",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 8,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "42.049",
+     "b_distance_ft": "30.881",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 9,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.842",
+     "b_distance_ft": "31.951",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 10,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.429",
+     "b_distance_ft": "32.939",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 11,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.844",
+     "b_distance_ft": "33.872",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 12,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.124",
+     "b_distance_ft": "34.778",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 13,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.315",
+     "b_distance_ft": "35.679",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 14,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.465",
+     "b_distance_ft": "36.59",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 15,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "30.623",
+     "b_distance_ft": "37.516",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 16,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.833",
+     "b_distance_ft": "38.452",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 17,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "27.136",
+     "b_distance_ft": "39.38",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 18,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "25.562",
+     "b_distance_ft": "40.278",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 19,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.131",
+     "b_distance_ft": "41.114",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 20,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.847",
+     "b_distance_ft": "41.853",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 21,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "21.702",
+     "b_distance_ft": "42.461",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 22,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.676",
+     "b_distance_ft": "42.904",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 23,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "19.74",
+     "b_distance_ft": "43.15",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 24,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.867",
+     "b_distance_ft": "43.174",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 25,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.028",
+     "b_distance_ft": "42.953",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 26,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "17.207",
+     "b_distance_ft": "42.475",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 27,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.402",
+     "b_distance_ft": "41.729",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 28,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "15.632",
+     "b_distance_ft": "40.714",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 29,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.939",
+     "b_distance_ft": "39.435",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 30,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.391",
+     "b_distance_ft": "37.905",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 31,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.08",
+     "b_distance_ft": "36.142",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 32,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.099",
+     "b_distance_ft": "34.171",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 33,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.525",
+     "b_distance_ft": "32.022",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 34,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "15.387",
+     "b_distance_ft": "29.731",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 35,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.662",
+     "b_distance_ft": "27.337",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 36,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.285",
+     "b_distance_ft": "24.883",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 37,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.173",
+     "b_distance_ft": "22.414",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 38,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.241",
+     "b_distance_ft": "19.98",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 39,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.41",
+     "b_distance_ft": "17.636",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 40,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.614",
+     "b_distance_ft": "15.447",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 41,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.799",
+     "b_distance_ft": "13.498",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 42,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "30.92",
+     "b_distance_ft": "11.9",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 43,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.944",
+     "b_distance_ft": "10.791",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 44,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.847",
+     "b_distance_ft": "10.309",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 45,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.61",
+     "b_distance_ft": "10.516",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 46,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "38.22",
+     "b_distance_ft": "11.349",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 47,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.668",
+     "b_distance_ft": "12.662",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 48,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.946",
+     "b_distance_ft": "14.294",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 49,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "42.044",
+     "b_distance_ft": "16.115",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 50,
+     "obstacle_kind": null
+    }
+   ],
+   "pool_length": null,
+   "pool_width": null,
+   "shallow_depth_ft": "3.5",
+   "shape_type": "kidney",
+   "spa": null,
+   "step": {
+    "location": "right",
+    "notes": null,
+    "offset_ft": "2",
+    "size_length_ft": "4",
+    "size_width_ft": "8"
+   },
+   "swap_ab": false
+  },
+  "meta": {
+   "customer_address": "123 Test Lane, Testville NJ",
+   "customer_email": "kidney.test@example.com",
+   "customer_name": "Kidney Test",
+   "customer_phone": "555-0123",
+   "date": "2026-08-08T00:00:00",
+   "dealer_location": "Hamilton, NJ",
+   "dealer_name": "Merlin Test Dealer",
+   "photos_attached": false
+  },
+  "notes": null,
+  "product_type": "cover"
+ },
+ "kidney-liner": {
+  "cover_spec": {
+   "anchor_type": "concrete",
+   "color": "green",
+   "overlap_planter_in": null,
+   "overlap_standard_in": "12",
+   "spacing": "5x5",
+   "type": "mesh_super"
+  },
+  "hardware": {
+   "beauty_rings": 0,
+   "beauty_rings_entire_pool": false,
+   "lawn_stakes": 0,
+   "paver_tubes_ft": "0",
+   "perimeter_padding_entire_pool": false,
+   "perimeter_padding_from_pt": null,
+   "perimeter_padding_to_pt": null,
+   "wood_deck_anchors": 0,
+   "y_straps": 0
+  },
+  "liner_spec": {
+   "bead_type": "standard_bead",
+   "coping_type": "concrete",
+   "measured_at_bead_receiver": true,
+   "pattern_code": "BLUE-GRANITE",
+   "pattern_name": "Blue Granite",
+   "step_construction": "vinyl_over_standard",
+   "thickness_mil": 27,
+   "tile_border": false,
+   "tile_border_pattern": null,
+   "warranty_years": 20,
+   "waste_factor_pct": "10"
+  },
+  "measurement": {
+   "ab_distance_ft": "40.0",
+   "ab_note": "Standard A-B on long side, 4ft from edge",
+   "ab_offset_from_pool_ft": "4",
+   "ab_orientation": "A_left_B_right_facing_pool",
+   "anchors": null,
+   "break_off_points": [],
+   "cross_dimensions": [
+    {
+     "distance_ft": "22",
+     "from_point": 15,
+     "to_point": 45
+    },
+    {
+     "distance_ft": "28",
+     "from_point": 8,
+     "to_point": 38
+    }
+   ],
+   "deck": {
+    "deck_type": "concrete",
+    "diving_board": false,
+    "diving_board_distance_ft": null,
+    "min_width_ft": "3",
+    "narrow_sections": [],
+    "wood_deck_anchors_needed": false,
+    "wood_deck_length_ft": null
+   },
+   "deep_depth_ft": "8.5",
+   "liner": {
+    "cove_type": "foam",
+    "drainage_system": "none",
+    "fittings": [
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "0.75",
+      "kind": "skimmer",
+      "label": "Skimmer 1",
+      "near_point": 8,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "1.25",
+      "kind": "return",
+      "label": "Return 1",
+      "near_point": 15,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "1.25",
+      "kind": "return",
+      "label": "Return 2",
+      "near_point": 35,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "1.5",
+      "kind": "light",
+      "label": "Pool light",
+      "near_point": 42,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": null,
+      "kind": "main_drain",
+      "label": "Main drain",
+      "near_point": 25,
+      "notes": null,
+      "on_floor": true
+     }
+    ],
+    "floor_repair": "minor_patching",
+    "floor_type": "vermiculite",
+    "hopper": {
+     "bottom_length_ft": "8",
+     "bottom_width_ft": "8",
+     "left_slope_width_ft": "7.75",
+     "right_slope_width_ft": "7.76"
+    },
+    "hydrostatic_relief_valve": false,
+    "profile_segments": [
+     {
+      "depth_end_ft": "3.5",
+      "depth_start_ft": "3.5",
+      "horizontal_run_ft": "14",
+      "kind": "shallow_floor",
+      "label": "Shallow floor",
+      "order": 1
+     },
+     {
+      "depth_end_ft": "8.5",
+      "depth_start_ft": "3.5",
+      "horizontal_run_ft": "16",
+      "kind": "hopper_slope",
+      "label": "Slope to hopper",
+      "order": 2
+     },
+     {
+      "depth_end_ft": "8.5",
+      "depth_start_ft": "8.5",
+      "horizontal_run_ft": "8",
+      "kind": "deep_floor",
+      "label": "Hopper bottom",
+      "order": 3
+     }
+    ],
+    "recent_rainfall_days": 0,
+    "shape": "kidney",
+    "steps": [
+     {
+      "construction": "vinyl_over_standard",
+      "corner_type": "radius",
+      "foam_thickness_in": "0.125",
+      "from_point": null,
+      "location": "center",
+      "notes": "Vinyl-over step, radius back corners",
+      "risers": [
+       {
+        "index": 1,
+        "riser_height_ft": "1.25",
+        "tread_depth_ft": "1"
+       },
+       {
+        "index": 2,
+        "riser_height_ft": "1.25",
+        "tread_depth_ft": "1"
+       },
+       {
+        "index": 3,
+        "riser_height_ft": "1.00",
+        "tread_depth_ft": "1"
+       }
+      ],
+      "to_point": null,
+      "width_ft": "10"
+     }
+    ],
+    "wall_heights": [
+     {
+      "at_point": 1,
+      "height_ft": "3.5",
+      "label": "shallow_end",
+      "notes": null
+     },
+     {
+      "at_point": 13,
+      "height_ft": "3.5",
+      "label": "north_wall",
+      "notes": null
+     },
+     {
+      "at_point": 26,
+      "height_ft": "3.75",
+      "label": "deep_end",
+      "notes": null
+     },
+     {
+      "at_point": 39,
+      "height_ft": "3.5",
+      "label": "south_wall",
+      "notes": null
+     }
+    ],
+    "wall_repair_notes": null,
+    "water_table_notes": "No French drain; monitor during install."
+   },
+   "obstacles": [
+    {
+     "back_point": 13,
+     "description": "Ladder handrail",
+     "front_point": 12,
+     "kind": "handrail"
+    }
+   ],
+   "perimeter_points": [
+    {
+     "a_distance_ft": "42.953",
+     "b_distance_ft": "18.028",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 1,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "43.662",
+     "b_distance_ft": "19.959",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 2,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.157",
+     "b_distance_ft": "21.854",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 3,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.425",
+     "b_distance_ft": "23.671",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 4,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.453",
+     "b_distance_ft": "25.379",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 5,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "44.232",
+     "b_distance_ft": "26.958",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 6,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "43.756",
+     "b_distance_ft": "28.399",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 7,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "43.025",
+     "b_distance_ft": "29.703",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 8,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "42.049",
+     "b_distance_ft": "30.881",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 9,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.842",
+     "b_distance_ft": "31.951",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 10,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.429",
+     "b_distance_ft": "32.939",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 11,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.844",
+     "b_distance_ft": "33.872",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 12,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.124",
+     "b_distance_ft": "34.778",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 13,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.315",
+     "b_distance_ft": "35.679",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 14,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.465",
+     "b_distance_ft": "36.59",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 15,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "30.623",
+     "b_distance_ft": "37.516",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 16,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.833",
+     "b_distance_ft": "38.452",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 17,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "27.136",
+     "b_distance_ft": "39.38",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 18,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "25.562",
+     "b_distance_ft": "40.278",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 19,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.131",
+     "b_distance_ft": "41.114",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 20,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.847",
+     "b_distance_ft": "41.853",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 21,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "21.702",
+     "b_distance_ft": "42.461",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 22,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.676",
+     "b_distance_ft": "42.904",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 23,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "19.74",
+     "b_distance_ft": "43.15",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 24,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.867",
+     "b_distance_ft": "43.174",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 25,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.028",
+     "b_distance_ft": "42.953",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 26,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "17.207",
+     "b_distance_ft": "42.475",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 27,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.402",
+     "b_distance_ft": "41.729",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 28,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "15.632",
+     "b_distance_ft": "40.714",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 29,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.939",
+     "b_distance_ft": "39.435",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 30,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.391",
+     "b_distance_ft": "37.905",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 31,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.08",
+     "b_distance_ft": "36.142",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 32,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.099",
+     "b_distance_ft": "34.171",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 33,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.525",
+     "b_distance_ft": "32.022",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 34,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "15.387",
+     "b_distance_ft": "29.731",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 35,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.662",
+     "b_distance_ft": "27.337",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 36,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.285",
+     "b_distance_ft": "24.883",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 37,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.173",
+     "b_distance_ft": "22.414",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 38,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.241",
+     "b_distance_ft": "19.98",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 39,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.41",
+     "b_distance_ft": "17.636",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 40,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.614",
+     "b_distance_ft": "15.447",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 41,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.799",
+     "b_distance_ft": "13.498",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 42,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "30.92",
+     "b_distance_ft": "11.9",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 43,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.944",
+     "b_distance_ft": "10.791",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 44,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.847",
+     "b_distance_ft": "10.309",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 45,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.61",
+     "b_distance_ft": "10.516",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 46,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "38.22",
+     "b_distance_ft": "11.349",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 47,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.668",
+     "b_distance_ft": "12.662",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 48,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.946",
+     "b_distance_ft": "14.294",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 49,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "42.044",
+     "b_distance_ft": "16.115",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 50,
+     "obstacle_kind": null
+    }
+   ],
+   "pool_length": null,
+   "pool_width": null,
+   "shallow_depth_ft": "3.5",
+   "shape_type": "kidney",
+   "spa": null,
+   "step": {
+    "location": "right",
+    "notes": null,
+    "offset_ft": "2",
+    "size_length_ft": "4",
+    "size_width_ft": "8"
+   },
+   "swap_ab": false
+  },
+  "meta": {
+   "customer_address": "123 Test Lane, Testville NJ",
+   "customer_email": "kidney.liner.test@example.com",
+   "customer_name": "Kidney Liner Test",
+   "customer_phone": "555-0123",
+   "date": "2026-08-08T00:00:00",
+   "dealer_location": "Hamilton, NJ",
+   "dealer_name": "Merlin Test Dealer",
+   "photos_attached": false
+  },
+  "notes": null,
+  "product_type": "both"
+ },
+ "rectangular": {
+  "cover_spec": {
+   "anchor_type": "concrete",
+   "color": "green",
+   "overlap_planter_in": null,
+   "overlap_standard_in": "12",
+   "spacing": "5x5",
+   "type": "mesh_super"
+  },
+  "hardware": {
+   "beauty_rings": 0,
+   "beauty_rings_entire_pool": false,
+   "lawn_stakes": 0,
+   "paver_tubes_ft": "0",
+   "perimeter_padding_entire_pool": false,
+   "perimeter_padding_from_pt": null,
+   "perimeter_padding_to_pt": null,
+   "wood_deck_anchors": 0,
+   "y_straps": 0
+  },
+  "liner_spec": {
+   "bead_type": "standard_bead",
+   "coping_type": "concrete",
+   "measured_at_bead_receiver": true,
+   "pattern_code": null,
+   "pattern_name": "",
+   "step_construction": "none",
+   "thickness_mil": 27,
+   "tile_border": false,
+   "tile_border_pattern": null,
+   "warranty_years": null,
+   "waste_factor_pct": "10"
+  },
+  "measurement": {
+   "ab_distance_ft": "24.0",
+   "ab_note": "Standard A-B on long side, 4ft from edge",
+   "ab_offset_from_pool_ft": "4",
+   "ab_orientation": "A_left_B_right_facing_pool",
+   "anchors": null,
+   "break_off_points": [],
+   "cross_dimensions": [
+    {
+     "distance_ft": "32",
+     "from_point": 1,
+     "to_point": 17
+    },
+    {
+     "distance_ft": "18",
+     "from_point": 9,
+     "to_point": 25
+    }
+   ],
+   "deck": {
+    "deck_type": "concrete",
+    "diving_board": false,
+    "diving_board_distance_ft": null,
+    "min_width_ft": "3",
+    "narrow_sections": [],
+    "wood_deck_anchors_needed": false,
+    "wood_deck_length_ft": null
+   },
+   "deep_depth_ft": "8",
+   "liner": null,
+   "obstacles": [],
+   "perimeter_points": [
+    {
+     "a_distance_ft": "5.657",
+     "b_distance_ft": "20.396",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 1,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "7.211",
+     "b_distance_ft": "18.439",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 2,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "8.944",
+     "b_distance_ft": "16.492",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 3,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "10.77",
+     "b_distance_ft": "14.56",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 4,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "12.649",
+     "b_distance_ft": "12.649",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 5,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.56",
+     "b_distance_ft": "10.77",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 6,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.492",
+     "b_distance_ft": "8.944",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 7,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.439",
+     "b_distance_ft": "7.211",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 8,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.396",
+     "b_distance_ft": "5.657",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 9,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.361",
+     "b_distance_ft": "4.472",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 10,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.331",
+     "b_distance_ft": "4.0",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 11,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.306",
+     "b_distance_ft": "4.472",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 12,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.284",
+     "b_distance_ft": "5.657",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 13,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "30.265",
+     "b_distance_ft": "7.211",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 14,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.249",
+     "b_distance_ft": "8.944",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 15,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.234",
+     "b_distance_ft": "10.77",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 16,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.222",
+     "b_distance_ft": "12.649",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 17,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.497",
+     "b_distance_ft": "13.416",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 18,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.878",
+     "b_distance_ft": "14.422",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 19,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.363",
+     "b_distance_ft": "15.62",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 20,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.947",
+     "b_distance_ft": "16.971",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 21,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "38.626",
+     "b_distance_ft": "18.439",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 22,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.395",
+     "b_distance_ft": "20.0",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 23,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.249",
+     "b_distance_ft": "21.633",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 24,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "41.183",
+     "b_distance_ft": "23.324",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 25,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "42.19",
+     "b_distance_ft": "25.06",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 26,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.497",
+     "b_distance_ft": "24.166",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 27,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "38.833",
+     "b_distance_ft": "23.409",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 28,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.202",
+     "b_distance_ft": "22.804",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 29,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "35.609",
+     "b_distance_ft": "22.361",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 30,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.059",
+     "b_distance_ft": "22.091",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 31,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.558",
+     "b_distance_ft": "22.0",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 32,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "31.113",
+     "b_distance_ft": "22.091",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 33,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "29.732",
+     "b_distance_ft": "22.361",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 34,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.425",
+     "b_distance_ft": "22.804",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 35,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "27.203",
+     "b_distance_ft": "23.409",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 36,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.077",
+     "b_distance_ft": "24.166",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 37,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "25.06",
+     "b_distance_ft": "25.06",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 38,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.166",
+     "b_distance_ft": "26.077",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 39,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "23.409",
+     "b_distance_ft": "27.203",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 40,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.804",
+     "b_distance_ft": "28.425",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 41,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.361",
+     "b_distance_ft": "29.732",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 42,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.396",
+     "b_distance_ft": "28.284",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 43,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.439",
+     "b_distance_ft": "26.907",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 44,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.492",
+     "b_distance_ft": "25.612",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 45,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.56",
+     "b_distance_ft": "24.413",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 46,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "12.649",
+     "b_distance_ft": "23.324",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 47,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "10.77",
+     "b_distance_ft": "22.361",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 48,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "8.944",
+     "b_distance_ft": "21.541",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 49,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "7.211",
+     "b_distance_ft": "20.881",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 50,
+     "obstacle_kind": null
+    }
+   ],
+   "pool_length": null,
+   "pool_width": null,
+   "shallow_depth_ft": "3.5",
+   "shape_type": "rectangular",
+   "spa": null,
+   "step": null,
+   "swap_ab": false
+  },
+  "meta": {
+   "customer_address": "123 Test Lane, Testville NJ",
+   "customer_email": "rectangular.test@example.com",
+   "customer_name": "Rectangular Test",
+   "customer_phone": "555-0123",
+   "date": "2026-08-08T00:00:00",
+   "dealer_location": "Hamilton, NJ",
+   "dealer_name": "Merlin Test Dealer",
+   "photos_attached": false
+  },
+  "notes": null,
+  "product_type": "cover"
+ },
+ "rectangular-liner": {
+  "cover_spec": {
+   "anchor_type": "concrete",
+   "color": "green",
+   "overlap_planter_in": null,
+   "overlap_standard_in": "12",
+   "spacing": "5x5",
+   "type": "mesh_super"
+  },
+  "hardware": {
+   "beauty_rings": 0,
+   "beauty_rings_entire_pool": false,
+   "lawn_stakes": 0,
+   "paver_tubes_ft": "0",
+   "perimeter_padding_entire_pool": false,
+   "perimeter_padding_from_pt": null,
+   "perimeter_padding_to_pt": null,
+   "wood_deck_anchors": 0,
+   "y_straps": 0
+  },
+  "liner_spec": {
+   "bead_type": "standard_bead",
+   "coping_type": "concrete",
+   "measured_at_bead_receiver": true,
+   "pattern_code": "SANDSTONE-MO",
+   "pattern_name": "Sandstone Mosaic",
+   "step_construction": "vinyl_over_standard",
+   "thickness_mil": 27,
+   "tile_border": false,
+   "tile_border_pattern": null,
+   "warranty_years": 20,
+   "waste_factor_pct": "10"
+  },
+  "measurement": {
+   "ab_distance_ft": "24.0",
+   "ab_note": "Standard A-B on long side, 4ft from edge",
+   "ab_offset_from_pool_ft": "4",
+   "ab_orientation": "A_left_B_right_facing_pool",
+   "anchors": null,
+   "break_off_points": [],
+   "cross_dimensions": [
+    {
+     "distance_ft": "32",
+     "from_point": 1,
+     "to_point": 17
+    },
+    {
+     "distance_ft": "18",
+     "from_point": 9,
+     "to_point": 25
+    }
+   ],
+   "deck": {
+    "deck_type": "concrete",
+    "diving_board": false,
+    "diving_board_distance_ft": null,
+    "min_width_ft": "3",
+    "narrow_sections": [],
+    "wood_deck_anchors_needed": false,
+    "wood_deck_length_ft": null
+   },
+   "deep_depth_ft": "8",
+   "liner": {
+    "cove_type": "foam",
+    "drainage_system": "french_drain",
+    "fittings": [
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "0.75",
+      "kind": "skimmer",
+      "label": "Skimmer 1",
+      "near_point": 8,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "1.25",
+      "kind": "return",
+      "label": "Return 1",
+      "near_point": 15,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "1.25",
+      "kind": "return",
+      "label": "Return 2",
+      "near_point": 35,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": "1.5",
+      "kind": "light",
+      "label": "Pool light",
+      "near_point": 42,
+      "notes": null,
+      "on_floor": false
+     },
+     {
+      "a_distance_ft": null,
+      "b_distance_ft": null,
+      "depth_below_bead_ft": null,
+      "kind": "main_drain",
+      "label": "Main drain",
+      "near_point": 25,
+      "notes": null,
+      "on_floor": true
+     }
+    ],
+    "floor_repair": "standard_wash",
+    "floor_type": "vermiculite",
+    "hopper": {
+     "bottom_length_ft": "8",
+     "bottom_width_ft": "8",
+     "left_slope_width_ft": "5",
+     "right_slope_width_ft": "5"
+    },
+    "hydrostatic_relief_valve": true,
+    "profile_segments": [
+     {
+      "depth_end_ft": "3.5",
+      "depth_start_ft": "3.5",
+      "horizontal_run_ft": "12",
+      "kind": "shallow_floor",
+      "label": "Shallow floor",
+      "order": 1
+     },
+     {
+      "depth_end_ft": "8",
+      "depth_start_ft": "3.5",
+      "horizontal_run_ft": "12",
+      "kind": "slope",
+      "label": "Slope to hopper",
+      "order": 2
+     },
+     {
+      "depth_end_ft": "8",
+      "depth_start_ft": "8",
+      "horizontal_run_ft": "8",
+      "kind": "deep_floor",
+      "label": "Hopper bottom",
+      "order": 3
+     }
+    ],
+    "recent_rainfall_days": 0,
+    "shape": "rectangle",
+    "steps": [
+     {
+      "construction": "vinyl_over_standard",
+      "corner_type": "radius",
+      "foam_thickness_in": "0.125",
+      "from_point": null,
+      "location": "center",
+      "notes": "Vinyl-over step, radius back corners",
+      "risers": [
+       {
+        "index": 1,
+        "riser_height_ft": "1.25",
+        "tread_depth_ft": "1"
+       },
+       {
+        "index": 2,
+        "riser_height_ft": "1.25",
+        "tread_depth_ft": "1"
+       },
+       {
+        "index": 3,
+        "riser_height_ft": "1.00",
+        "tread_depth_ft": "1"
+       }
+      ],
+      "to_point": null,
+      "width_ft": "8"
+     }
+    ],
+    "wall_heights": [
+     {
+      "at_point": 1,
+      "height_ft": "3.5",
+      "label": "shallow_end",
+      "notes": null
+     },
+     {
+      "at_point": 12,
+      "height_ft": "3.5",
+      "label": "north_wall",
+      "notes": null
+     },
+     {
+      "at_point": 25,
+      "height_ft": "3.5",
+      "label": "deep_end",
+      "notes": null
+     },
+     {
+      "at_point": 38,
+      "height_ft": "3.5",
+      "label": "south_wall",
+      "notes": null
+     }
+    ],
+    "wall_repair_notes": null,
+    "water_table_notes": null
+   },
+   "obstacles": [],
+   "perimeter_points": [
+    {
+     "a_distance_ft": "5.657",
+     "b_distance_ft": "20.396",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 1,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "7.211",
+     "b_distance_ft": "18.439",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 2,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "8.944",
+     "b_distance_ft": "16.492",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 3,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "10.77",
+     "b_distance_ft": "14.56",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 4,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "12.649",
+     "b_distance_ft": "12.649",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 5,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.56",
+     "b_distance_ft": "10.77",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 6,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.492",
+     "b_distance_ft": "8.944",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 7,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.439",
+     "b_distance_ft": "7.211",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 8,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.396",
+     "b_distance_ft": "5.657",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 9,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.361",
+     "b_distance_ft": "4.472",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 10,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.331",
+     "b_distance_ft": "4.0",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 11,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.306",
+     "b_distance_ft": "4.472",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 12,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.284",
+     "b_distance_ft": "5.657",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 13,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "30.265",
+     "b_distance_ft": "7.211",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 14,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.249",
+     "b_distance_ft": "8.944",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 15,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.234",
+     "b_distance_ft": "10.77",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 16,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.222",
+     "b_distance_ft": "12.649",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 17,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.497",
+     "b_distance_ft": "13.416",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 18,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "36.878",
+     "b_distance_ft": "14.422",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 19,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.363",
+     "b_distance_ft": "15.62",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 20,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.947",
+     "b_distance_ft": "16.971",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 21,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "38.626",
+     "b_distance_ft": "18.439",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 22,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "39.395",
+     "b_distance_ft": "20.0",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 23,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.249",
+     "b_distance_ft": "21.633",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 24,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "41.183",
+     "b_distance_ft": "23.324",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 25,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "42.19",
+     "b_distance_ft": "25.06",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 26,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "40.497",
+     "b_distance_ft": "24.166",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 27,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "38.833",
+     "b_distance_ft": "23.409",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 28,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "37.202",
+     "b_distance_ft": "22.804",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 29,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "35.609",
+     "b_distance_ft": "22.361",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 30,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "34.059",
+     "b_distance_ft": "22.091",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 31,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "32.558",
+     "b_distance_ft": "22.0",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 32,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "31.113",
+     "b_distance_ft": "22.091",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 33,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "29.732",
+     "b_distance_ft": "22.361",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 34,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "28.425",
+     "b_distance_ft": "22.804",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 35,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "27.203",
+     "b_distance_ft": "23.409",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 36,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "26.077",
+     "b_distance_ft": "24.166",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 37,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "25.06",
+     "b_distance_ft": "25.06",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 38,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "24.166",
+     "b_distance_ft": "26.077",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 39,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "23.409",
+     "b_distance_ft": "27.203",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 40,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.804",
+     "b_distance_ft": "28.425",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 41,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "22.361",
+     "b_distance_ft": "29.732",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 42,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "20.396",
+     "b_distance_ft": "28.284",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 43,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "18.439",
+     "b_distance_ft": "26.907",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 44,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "16.492",
+     "b_distance_ft": "25.612",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 45,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "14.56",
+     "b_distance_ft": "24.413",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 46,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "12.649",
+     "b_distance_ft": "23.324",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 47,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "10.77",
+     "b_distance_ft": "22.361",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 48,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "8.944",
+     "b_distance_ft": "21.541",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 49,
+     "obstacle_kind": null
+    },
+    {
+     "a_distance_ft": "7.211",
+     "b_distance_ft": "20.881",
+     "is_obstacle": false,
+     "notes": null,
+     "number": 50,
+     "obstacle_kind": null
+    }
+   ],
+   "pool_length": null,
+   "pool_width": null,
+   "shallow_depth_ft": "3.5",
+   "shape_type": "rectangular",
+   "spa": null,
+   "step": null,
+   "swap_ab": false
+  },
+  "meta": {
+   "customer_address": "123 Test Lane, Testville NJ",
+   "customer_email": "rectangular.liner.test@example.com",
+   "customer_name": "Rectangular Liner Test",
+   "customer_phone": "555-0123",
+   "date": "2026-08-08T00:00:00",
+   "dealer_location": "Hamilton, NJ",
+   "dealer_name": "Merlin Test Dealer",
+   "photos_attached": false
+  },
+  "notes": null,
+  "product_type": "liner"
+ }
+}

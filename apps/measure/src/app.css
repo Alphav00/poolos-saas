@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* PoolOS look (v2): light gradient, white rounded cards, glossy blue buttons,
+   Nunito. Locked to the phone screen like an installed app: the page never
+   pans sideways or bounces; #app is the only thing that scrolls. */
+@layer base {
+  html {
+    /* Slightly larger root font on mobile for sunlight readability */
+    font-size: 17px;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    background: linear-gradient(180deg, #f7fafc 0%, #eaf0f5 100%);
+    font-weight: 600;
+  }
+  #app {
+    position: fixed;
+    inset: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+  }
+  h1, h2, h3 { font-weight: 900; }
+  /* Force numeric keypad for distance inputs; 16px+ so iOS never zooms in */
+  input[type="number"], input[inputmode="decimal"] {
+    font-size: 1.125rem;
+  }
+  input, select, textarea { font-size: max(16px, 1em); }
+  /* Larger hit targets on buttons */
+  button, .btn {
+    min-height: 2.75rem;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-3 rounded-2xl font-black text-white
+           transition-transform active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed;
+    background: linear-gradient(180deg, #0a8fd0, #066fa6);
+    box-shadow: 0 3px 0 #05587f;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center px-4 py-3 rounded-2xl font-extrabold
+           bg-white transition-transform active:translate-y-px;
+    color: #0a6f9e;
+    box-shadow: 0 3px 0 #cfdbe4;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center px-4 py-3 rounded-2xl font-black text-white
+           transition-transform active:translate-y-px;
+    background: linear-gradient(180deg, #e5484d, #b42b30);
+    box-shadow: 0 3px 0 #8f1f23;
+  }
+  .field {
+    @apply w-full h-field px-4 rounded-2xl bg-white text-ink-50 text-lg font-bold
+           focus:outline-none focus:ring-4 focus:ring-pool-500/25;
+    border: 2px solid #e3eaf0;
+  }
+  .field:focus { border-color: #0a8fd0; }
+  .field::placeholder { color: #8a9aa8; font-weight: 600; }
+  .label {
+    @apply block text-xs font-extrabold uppercase tracking-wider mb-1;
+    color: #546676;
+  }
+  .card {
+    @apply bg-white rounded-3xl p-4 shadow-card;
+  }
+}

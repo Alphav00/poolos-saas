@@ -1,0 +1,26 @@
+{
+  "name": "@poolos/measure",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node tests/distance.test.js && node tests/saveQueue.test.js && node tests/wizard.test.js && node tests/crossDimValidation.test.js && node tests/linerValidation.test.js",
+    "test:parity": "API_BASE=${API_BASE:-http://127.0.0.1:8787} node tests/reconstruct_parity.test.js && API_BASE=${API_BASE:-http://127.0.0.1:8787} node tests/liner_parity.test.js"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^3.1.0",
+    "autoprefixer": "^10.4.18",
+    "postcss": "^8.4.35",
+    "svelte": "^4.2.12",
+    "tailwindcss": "^3.4.1",
+    "vite": "^5.1.0",
+    "playwright-core": "^1.56.0"
+  },
+  "dependencies": {
+    "svelte-routing": "^2.12.0",
+    "three": "^0.161.0"
+  }
+}

@@ -1,0 +1,138 @@
+/**
+ * Save queue: debounced, retryable, testable.
+ *
+ * Used by the job store to auto-save edits. No Svelte dependencies, so this
+ * can be unit-tested in plain Node.
+ *
+ * Events emitted:
+ *   - 'dirty'      data changed, save scheduled
+ *   - 'saving'     a save is in flight
+ *   - 'saved'      save succeeded
+ *   - 'error'      save failed; includes { error, retryInMs, fatal }
+ *     - fatal=true means retries exhausted; user must intervene
+ *
+ * Behavior:
+ *   - schedule() debounces by `debounceMs`; rapid edits coalesce to one save
+ *   - On error, retries with exponential backoff (1s, 2s, 4s, 8s, ... capped at 30s)
+ *   - Up to `maxRetries` retries before giving up
+ *   - If edits come in during retry, the retry is canceled and a fresh save
+ *     is run with the latest snapshot
+ *   - run() is safe to call from anywhere; concurrent calls are coalesced
+ */
+export class SaveQueue {
+  constructor({
+    save,
+    debounceMs = 500,
+    maxRetries = 5,
+    retryBaseMs = 1000,
+    retryCapMs = 30000,
+    now = () => Date.now(),
+  }) {
+    if (typeof save !== 'function') {
+      throw new TypeError('SaveQueue requires a save() function');
+    }
+    this.save = save;
+    this.debounceMs = debounceMs;
+    this.maxRetries = maxRetries;
+    this.retryBaseMs = retryBaseMs;
+    this.retryCapMs = retryCapMs;
+    this._now = now;
+
+    this._timer = null;
+    this._inFlight = false;
+    this._needResave = false;
+    this._retries = 0;
+    this._listeners = new Map();
+    this._lastError = null;
+  }
+
+  on(event, fn) {
+    if (!this._listeners.has(event)) this._listeners.set(event, new Set());
+    this._listeners.get(event).add(fn);
+    return () => {
+      const s = this._listeners.get(event);
+      if (s) s.delete(fn);
+    };
+  }
+
+  _emit(event, data) {
+    for (const fn of this._listeners.get(event) || []) {
+      try { fn(data); } catch { /* listener bugs should not break the queue */ }
+    }
+  }
+
+  /** Mark data as dirty; debounce a save. */
+  schedule() {
+    this._emit('dirty', { at: this._now() });
+    if (this._timer) clearTimeout(this._timer);
+    this._timer = setTimeout(() => this.run(), this.debounceMs);
+  }
+
+  /** Force an immediate save (e.g. on user "Save now" click or before unload). */
+  flush() {
+    if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+    return this.run();
+  }
+
+  /** Cancel any pending save (e.g. on unmount or after fatal error). */
+  cancel() {
+    if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+  }
+
+  get status() {
+    return {
+      inFlight: this._inFlight,
+      retries: this._retries,
+      lastError: this._lastError,
+    };
+  }
+
+  async run() {
+    if (this._inFlight) {
+      this._needResave = true;
+      return { status: 'coalesced' };
+    }
+    this._inFlight = true;
+    this._emit('saving', { at: this._now() });
+
+    try {
+      await this.save();
+      this._retries = 0;
+      this._lastError = null;
+      this._emit('saved', { at: this._now() });
+      return { status: 'ok' };
+    } catch (err) {
+      this._lastError = err;
+      this._retries += 1;
+      if (this._retries > this.maxRetries) {
+        this._emit('error', {
+          error: err,
+          fatal: true,
+          retries: this._retries,
+        });
+        return { status: 'fatal', error: err };
+      }
+      const delay = Math.min(
+        this.retryBaseMs * Math.pow(2, this._retries - 1),
+        this.retryCapMs,
+      );
+      this._emit('error', {
+        error: err,
+        retryInMs: delay,
+        retries: this._retries,
+        fatal: false,
+      });
+      // Schedule a retry; if the user edits again, the queue will cancel
+      // this timer and run a fresh save.
+      this._timer = setTimeout(() => this.run(), delay);
+      return { status: 'retry', error: err, retryInMs: delay };
+    } finally {
+      this._inFlight = false;
+      if (this._needResave) {
+        this._needResave = false;
+        // Fire-and-forget: the latest snapshot is what gets saved.
+        this.run();
+      }
+    }
+  }
+}
