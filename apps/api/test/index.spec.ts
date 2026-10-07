@@ -40,6 +40,7 @@ describe('sign-in', () => {
 
 	it('serves nothing, not even the pages, without an Access token', async () => {
 		expect((await call('/api/me', { as: null })).status).toBe(401);
+		expect((await call('/api/weather?lat=1&lon=1', { as: null })).status).toBe(401);
 		expect((await call('/', { as: null })).status).toBe(401);
 		expect((await call('/boards/agent-board.html', { as: null })).status).toBe(401);
 	});

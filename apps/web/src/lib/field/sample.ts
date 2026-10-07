@@ -2,7 +2,7 @@
 // rates and bands here are illustrative; real ones come from the forecasting
 // engine (DESIGN.md, chem_path) once it is connected. The two dose amounts and
 // the LSI are the design doc's golden test case, not advice for a real pool.
-import type { Pool, Stop } from './types'
+import type { CrewMember, Pool, Stop } from './types'
 
 const base = {
   tags: [] as string[],
@@ -73,15 +73,23 @@ export const ROUTE = {
 }
 
 export const STOPS: Stop[] = [
-  { poolId: 'birch-lane', eta: '', done: true, flags: [{ text: 'FC 3.1' }, { text: 'pH 7.5' }, { text: 'on target' }] },
-  { poolId: 'cedar-ridge', eta: '', done: true, flags: [{ text: 'FC 2.6' }, { text: 'pH 7.9', level: 'warn' }] },
-  { poolId: 'oak-hollow', eta: '', done: true, flags: [{ text: 'FC 4.0' }, { text: 'pH 7.4' }] },
-  { poolId: 'pine-court', eta: '', done: true, flags: [{ text: 'FC 0.9', level: 'bad' }, { text: 'pH 7.6' }, { text: 'readings off by 0.4' }] },
-  { poolId: 'maple-court', eta: 'next · 9 min', done: false, flags: [{ text: 'FC 2.2', level: 'warn' }, { text: 'pH 7.7' }, { text: 'decay ↑ 45%', level: 'warn' }] },
-  { poolId: 'willow-bend', eta: '', done: false, action: 'shock', flags: [{ text: 'FC 0.4', level: 'bad' }, { text: 'CYA 85', level: 'warn' }, { text: 'screened' }] },
-  { poolId: 'spruce-way', eta: '10:40', done: false, flags: [{ text: 'FC 3.4' }, { text: 'pH 7.5' }] },
-  { poolId: 'aspen-drive', eta: '11:05', done: false, flags: [{ text: 'FC 1.8', level: 'warn' }, { text: 'salt 2,850' }] },
-  { poolId: 'elm-terrace', eta: '11:30', done: false, flags: [{ text: 'FC 3.0' }, { text: 'LSI −0.4', level: 'warn' }] },
+  { poolId: 'birch-lane', x: 14, y: 78, eta: '', done: true, flags: [{ text: 'FC 3.1' }, { text: 'pH 7.5' }, { text: 'on target' }] },
+  { poolId: 'cedar-ridge', x: 24, y: 62, eta: '', done: true, flags: [{ text: 'FC 2.6' }, { text: 'pH 7.9', level: 'warn' }] },
+  { poolId: 'oak-hollow', x: 18, y: 44, eta: '', done: true, flags: [{ text: 'FC 4.0' }, { text: 'pH 7.4' }] },
+  { poolId: 'pine-court', x: 34, y: 34, eta: '', done: true, flags: [{ text: 'FC 0.9', level: 'bad' }, { text: 'pH 7.6' }, { text: 'readings off by 0.4' }] },
+  { poolId: 'maple-court', x: 48, y: 46, eta: 'next · 9 min', done: false, flags: [{ text: 'FC 2.2', level: 'warn' }, { text: 'pH 7.7' }, { text: 'decay ↑ 45%', level: 'warn' }] },
+  { poolId: 'willow-bend', x: 60, y: 30, eta: '', done: false, action: 'shock', flags: [{ text: 'FC 0.4', level: 'bad' }, { text: 'CYA 85', level: 'warn' }, { text: 'screened' }] },
+  { poolId: 'spruce-way', x: 72, y: 40, eta: '10:40', done: false, flags: [{ text: 'FC 3.4' }, { text: 'pH 7.5' }] },
+  { poolId: 'aspen-drive', x: 80, y: 62, eta: '11:05', done: false, flags: [{ text: 'FC 1.8', level: 'warn' }, { text: 'salt 2,850' }] },
+  { poolId: 'elm-terrace', x: 66, y: 76, eta: '11:30', done: false, flags: [{ text: 'FC 3.0' }, { text: 'LSI −0.4', level: 'warn' }] },
 ]
 
 export const poolById = (id: string) => POOLS.find((p) => p.id === id)
+
+export const CREW: CrewMember[] = [
+  { name: 'Alex', initials: 'AL', role: 'Route B', status: '4 of 9 stops', state: 'working' },
+  { name: 'Jordan', initials: 'JO', role: 'Route A', status: '6 of 10 stops', state: 'working' },
+  { name: 'Riley', initials: 'RI', role: 'Repairs', status: 'Filter swap · Oak Hollow', state: 'working' },
+  { name: 'Casey', initials: 'CA', role: 'Route C', status: 'Lunch until 12:30', state: 'break' },
+  { name: 'Morgan', initials: 'MO', role: 'Office', status: 'Off today', state: 'off' },
+]
