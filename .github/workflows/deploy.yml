@@ -33,9 +33,12 @@ jobs:
         working-directory: apps/api
         run: pnpm exec wrangler deploy
       - name: Check it is up and behind Access
+        # A new custom domain can take a few seconds to resolve, so retry.
         run: |
-          code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos.pathofphi.com/api/health)
-          echo "health: $code"
-          code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos.pathofphi.com/)
-          echo "home without sign-in: $code (expect 302 to the Access login)"
-          test "$code" = "302"
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos.pathofphi.com/ || true)
+            echo "attempt $i: home without sign-in: $code (expect 302 to the Access login)"
+            [ "$code" = "302" ] && exit 0
+            sleep 5
+          done
+          exit 1
