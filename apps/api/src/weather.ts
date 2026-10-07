@@ -20,11 +20,15 @@ export interface Weather {
 
 const fail = (status: number, code: string, message: string) => Response.json({ error: { code, message } }, { status });
 
+const DECIMAL = /^-?\d{1,3}(\.\d{1,8})?$/;
+
 export function spot(url: URL): { lat: number; lon: number } | null {
-	const lat = Number(url.searchParams.get('lat'));
-	const lon = Number(url.searchParams.get('lon'));
-	if (!url.searchParams.get('lat') || !url.searchParams.get('lon')) return null;
-	if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+	const rawLat = url.searchParams.get('lat') ?? '';
+	const rawLon = url.searchParams.get('lon') ?? '';
+	if (!DECIMAL.test(rawLat) || !DECIMAL.test(rawLon)) return null;
+	const lat = Number(rawLat);
+	const lon = Number(rawLon);
+	if (Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
 	return { lat: Math.round(lat * 100) / 100, lon: Math.round(lon * 100) / 100 };
 }
 
@@ -49,7 +53,11 @@ interface Upstream {
 	hourly: { time: string[]; precipitation_probability: number[] };
 }
 
+/** Throws when Open-Meteo's answer is not the shape asked for. */
 export function shape(u: Upstream): Weather {
+	if (!u?.current || !u.daily || !u.hourly || !Array.isArray(u.hourly.time) || typeof u.current.temperature_2m !== 'number') {
+		throw new Error('unexpected weather response');
+	}
 	return {
 		tempF: Math.round(u.current.temperature_2m),
 		code: u.current.weather_code,
@@ -65,23 +73,34 @@ export function shape(u: Upstream): Weather {
 	};
 }
 
-export async function handleWeather(request: Request, fetcher: typeof fetch = fetch, cache?: Cache): Promise<Response> {
+const forBrowser = (body: Weather) =>
+	Response.json(body, { headers: { 'Cache-Control': `private, max-age=${CACHE_SECONDS}` } });
+
+export async function handleWeather(
+	request: Request,
+	fetcher: typeof fetch = fetch,
+	cache?: Cache,
+	waitUntil: (p: Promise<unknown>) => void = () => {},
+): Promise<Response> {
 	if (request.method !== 'GET') return fail(405, 'method_not_allowed', 'Use GET');
 	const at = spot(new URL(request.url));
 	if (!at) return fail(400, 'bad_request', 'lat and lon are required');
 	const key = new Request(upstreamUrl(at.lat, at.lon));
 	const hit = await cache?.match(key);
-	if (hit) return hit;
-	let upstream: Response;
+	if (hit) return forBrowser((await hit.json()) as Weather);
+	let weather: Weather;
 	try {
-		upstream = await fetcher(key.url, { headers: { Accept: 'application/json' } });
+		const upstream = await fetcher(key.url, { headers: { Accept: 'application/json' } });
+		if (!upstream.ok) throw new Error(`upstream ${upstream.status}`);
+		weather = shape((await upstream.json()) as Upstream);
 	} catch {
 		return fail(502, 'weather_unavailable', 'Weather is unavailable right now');
 	}
-	if (!upstream.ok) return fail(502, 'weather_unavailable', 'Weather is unavailable right now');
-	const res = Response.json(shape((await upstream.json()) as Upstream), {
-		headers: { 'Cache-Control': `private, max-age=${CACHE_SECONDS}` },
-	});
-	if (cache) await cache.put(key, res.clone());
-	return res;
+	// The edge cache refuses `private` responses, so it keeps its own public copy;
+	// the browser gets the private one.
+	if (cache) {
+		const stored = Response.json(weather, { headers: { 'Cache-Control': `public, s-maxage=${CACHE_SECONDS}` } });
+		waitUntil(cache.put(key, stored).catch(() => {}));
+	}
+	return forBrowser(weather);
 }

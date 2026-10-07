@@ -30,11 +30,34 @@ describe('weather', () => {
 		expect(spot(new URL('https://x/?lat=40'))).toBeNull();
 		expect(spot(new URL('https://x/?lat=91&lon=0'))).toBeNull();
 		expect(spot(new URL('https://x/?lat=abc&lon=0'))).toBeNull();
+		expect(spot(new URL('https://x/?lat=%20&lon=0'))).toBeNull();
+		expect(spot(new URL('https://x/?lat=0x10&lon=0'))).toBeNull();
 	});
 
 	it('says weather is unavailable when Open-Meteo fails', async () => {
 		const down = (async () => new Response('nope', { status: 503 })) as unknown as typeof fetch;
 		const res = await handleWeather(new Request('https://x/api/weather?lat=1&lon=1'), down);
 		expect(res.status).toBe(502);
+		const junk = (async () => new Response('<html>busy</html>', { status: 200 })) as unknown as typeof fetch;
+		expect((await handleWeather(new Request('https://x/api/weather?lat=1&lon=1'), junk)).status).toBe(502);
+		const partial = (async () => Response.json({ current: {} })) as unknown as typeof fetch;
+		expect((await handleWeather(new Request('https://x/api/weather?lat=1&lon=1'), partial)).status).toBe(502);
+	});
+
+	it('answers repeat asks for the same spot from the edge cache', async () => {
+		let calls = 0;
+		const counted = (async () => {
+			calls++;
+			return Response.json(upstream);
+		}) as unknown as typeof fetch;
+		const cache = await caches.open('weather-test');
+		const pending: Promise<unknown>[] = [];
+		const ask = () => handleWeather(new Request('https://x/api/weather?lat=10.001&lon=20.004'), counted, cache, (p) => pending.push(p));
+		const first = await ask();
+		await Promise.all(pending);
+		const second = await ask();
+		expect(calls).toBe(1);
+		expect(await second.json()).toEqual(await first.json());
+		expect(second.headers.get('Cache-Control')).toContain('private');
 	});
 });

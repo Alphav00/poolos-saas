@@ -80,11 +80,25 @@ describe('board access', () => {
 
 	it('keeps field readings as team data without a board page', async () => {
 		const doc = '/api/boards/field/readings/maple-court:2026-10-07';
-		const put = await call(doc, { method: 'PUT', body: { data: { values: { fc: 0.5, ph: 7.8 }, method: 'drop' } } });
+		const put = await call(doc, { method: 'PUT', body: { data: { pool: 'maple-court', date: '2026-10-07', values: { fc: 0.5, ph: 7.8 }, method: 'drop' } } });
 		expect(put.status).toBe(200);
 		const got = (await (await call(doc, { as: 'other@example.test' })).json()) as { data: { values: unknown } };
 		expect(got.data.values).toEqual({ fc: 0.5, ph: 7.8 });
 		expect((await call('/boards/field')).status).not.toBe(200);
+	});
+
+	it('refuses field readings that are not readings', async () => {
+		const ok = { values: { ph: 7.5 }, method: 'strip' };
+		const put = (path: string, data: unknown) => call(`/api/boards/field/${path}`, { method: 'PUT', body: { data } });
+		expect((await put('readings/oak:2026-10-07', { ...ok, values: { ph: 'x' } })).status).toBe(400);
+		expect((await put('readings/oak:2026-10-07', { ...ok, values: { chlorine: 1 } })).status).toBe(400);
+		expect((await put('readings/oak:2026-10-07', { ...ok, method: 'guess' })).status).toBe(400);
+		expect((await put('readings/oak:2026-10-07', { ...ok, notes: 'x'.repeat(1000) })).status).toBe(400);
+		expect((await put('readings/oak', ok)).status).toBe(400);
+		expect((await put('stash/anything', ok)).status).toBe(400);
+		expect((await put('readings/oak:2026-10-07', ok)).status).toBe(200);
+		const patch = await call('/api/boards/field/readings/oak:2026-10-07', { method: 'PATCH', body: { data: { values: { fc: -1 } } } });
+		expect(patch.status).toBe(400);
 	});
 
 	it('refuses owner-only boards to the team, page and data alike', async () => {
