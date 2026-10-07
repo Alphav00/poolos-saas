@@ -77,6 +77,15 @@ describe('board access', () => {
 		expect(await list('tech@example.test')).toEqual(['shallow-end']);
 	});
 
+	it('keeps field readings as team data without a board page', async () => {
+		const doc = '/api/boards/field/readings/maple-court:2026-10-07';
+		const put = await call(doc, { method: 'PUT', body: { data: { values: { fc: 0.5, ph: 7.8 }, method: 'drop' } } });
+		expect(put.status).toBe(200);
+		const got = (await (await call(doc, { as: 'other@example.test' })).json()) as { data: { values: unknown } };
+		expect(got.data.values).toEqual({ fc: 0.5, ph: 7.8 });
+		expect((await call('/boards/field')).status).not.toBe(200);
+	});
+
 	it('refuses owner-only boards to the team, page and data alike', async () => {
 		for (const path of ['/boards/agent-board', '/boards/agent-board.html', '/boards/work-orders', '/api/boards/agent-board/cards', '/api/boards/work-orders/orders/x']) {
 			expect((await call(path)).status, path).toBe(403);

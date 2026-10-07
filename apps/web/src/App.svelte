@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Field from './lib/field/Field.svelte'
+
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
   type Me = { email: string; isOwner: boolean }
 
@@ -36,7 +38,16 @@
   }
 
   load()
+
+  let hash = $state(location.hash)
+  const route = $derived(hash.replace(/^#\/?/, '').split('/').filter(Boolean))
 </script>
+
+<svelte:window onhashchange={() => (hash = location.hash)} />
+
+{#if route[0] === 'field'}
+  <Field path={route} />
+{:else}
 
 <main class="mx-auto min-h-dvh max-w-xl bg-white p-4 text-slate-900">
   <header class="mb-6 flex items-baseline justify-between gap-4">
@@ -47,6 +58,14 @@
   {#if error}
     <p class="rounded-lg border-2 border-red-700 p-4 text-lg text-red-800" role="alert">{error}</p>
   {/if}
+
+  <h2 class="mb-3 text-xl font-semibold">Field</h2>
+  <a
+    href="#/field"
+    class="mb-6 flex min-h-14 items-center justify-between gap-3 rounded-xl border-2 border-slate-900 px-4 text-xl font-semibold active:bg-slate-100"
+  >
+    <span>Today's route</span><span class="text-sm font-normal text-slate-600">sample data</span>
+  </a>
 
   <h2 class="mb-3 text-xl font-semibold">Boards</h2>
   <ul class="space-y-3">
@@ -70,3 +89,4 @@
     {/each}
   </ul>
 </main>
+{/if}
