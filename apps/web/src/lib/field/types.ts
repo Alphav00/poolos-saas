@@ -43,6 +43,9 @@ export interface Pool {
 
 export interface Stop {
   poolId: string
+  /** Position on the sample route map, 0–100 across and down. */
+  x: number
+  y: number
   eta: string
   done: boolean
   flags: { text: string; level?: 'warn' | 'bad' }[]
@@ -54,4 +57,12 @@ export type Method = 'strip' | 'drop' | 'meter'
 export interface Reading {
   method: Method
   values: Partial<Record<Param, number>>
+}
+
+export interface CrewMember {
+  name: string
+  initials: string
+  role: string
+  status: string
+  state: 'working' | 'break' | 'off'
 }

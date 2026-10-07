@@ -84,8 +84,10 @@
   .wheel {
     display: block;
     width: 100%;
-    max-width: 340px;
-    margin: 10px auto 0;
+    /* As big as fits: the sheet's other rows need about 300px of the screen. */
+    max-width: min(340px, calc(100dvh - 300px));
+    min-width: 200px;
+    margin: 6px auto 0;
     font-family: Nunito, 'Segoe UI', Arial, sans-serif;
     font-weight: 900;
     touch-action: manipulation;

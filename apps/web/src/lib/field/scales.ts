@@ -14,18 +14,34 @@ export interface Scale {
   unit: string
   /** The numbers on the wheel, at the resolution field test kits read to. */
   values: number[]
+  /** What a typed reading may be; anything outside is a typo. */
+  min: number
+  max: number
 }
 
 // Wheel numbers only: what a tech can read off a kit. Edit to match the kits a company uses.
 export const SCALES: Scale[] = [
-  { key: 'fc', label: 'FC', unit: 'ppm', values: steps(0, 8, 0.5) },
-  { key: 'ph', label: 'pH', unit: '', values: steps(6.8, 8.2, 0.1) },
-  { key: 'ta', label: 'TA', unit: 'ppm', values: steps(40, 200, 10) },
-  { key: 'cya', label: 'CYA', unit: 'ppm', values: steps(0, 100, 10) },
-  { key: 'ch', label: 'CH', unit: 'ppm', values: steps(100, 800, 50) },
-  { key: 'salt', label: 'Salt', unit: 'ppm', values: steps(2400, 4000, 100) },
-  { key: 'temp', label: 'Temp', unit: '°F', values: steps(60, 96, 2) },
+  { key: 'fc', label: 'FC', unit: 'ppm', values: steps(0, 8, 0.5), min: 0, max: 50 },
+  { key: 'ph', label: 'pH', unit: '', values: steps(6.8, 8.2, 0.1), min: 6, max: 9 },
+  { key: 'ta', label: 'TA', unit: 'ppm', values: steps(40, 200, 10), min: 0, max: 400 },
+  { key: 'cya', label: 'CYA', unit: 'ppm', values: steps(0, 100, 10), min: 0, max: 300 },
+  { key: 'ch', label: 'CH', unit: 'ppm', values: steps(100, 800, 50), min: 0, max: 2000 },
+  { key: 'salt', label: 'Salt', unit: 'ppm', values: steps(2400, 4000, 100), min: 0, max: 10000 },
+  { key: 'temp', label: 'Temp', unit: '°F', values: steps(60, 96, 2), min: 32, max: 110 },
 ]
+
+/**
+ * A typed reading: '' clears it, a comma counts as a decimal point (phones in
+ * many countries type one), and anything outside the scale's limits is refused.
+ */
+export function parseTyped(scale: Scale, text: string): { value: number | undefined } | { error: string } {
+  const t = text.trim().replace(',', '.')
+  if (t === '') return { value: undefined }
+  if (!/^\d+(\.\d+)?$/.test(t)) return { error: `Type a number for ${scale.label}.` }
+  const v = Number(t)
+  if (v < scale.min || v > scale.max) return { error: `${scale.label} must be between ${scale.min} and ${scale.max}.` }
+  return { value: v }
+}
 
 export const scaleFor = (key: Param) => SCALES.find((s) => s.key === key)!
 
@@ -34,7 +50,7 @@ export function fmt(key: Param, v: number | undefined | null): string {
   if (key === 'temp') return `${v}°`
   if (key === 'salt') return v.toLocaleString('en-US')
   if (key === 'ph') return v.toFixed(1)
-  return String(v)
+  return String(Math.round(v * 100) / 100)
 }
 
 export function fmtDelta(key: Param, d: number): string {

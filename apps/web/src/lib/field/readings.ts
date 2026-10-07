@@ -1,4 +1,39 @@
-import type { Reading } from './types'
+import { SCALES } from './scales'
+import type { Method, Param, Reading } from './types'
+
+const METHODS: Method[] = ['strip', 'drop', 'meter']
+
+/** Keeps only what the screens can show: a known method and finite numbers for known readings. */
+export function cleanReading(raw: unknown): Reading | null {
+  if (!raw || typeof raw !== 'object') return null
+  const r = raw as { method?: unknown; values?: unknown }
+  const values: Reading['values'] = {}
+  if (r.values && typeof r.values === 'object') {
+    for (const s of SCALES) {
+      const v = (r.values as Record<string, unknown>)[s.key]
+      if (typeof v === 'number' && Number.isFinite(v)) values[s.key as Param] = v
+    }
+  }
+  return { method: METHODS.includes(r.method as Method) ? (r.method as Method) : 'drop', values }
+}
+
+/** Unsaved readings survive back/forward and switching pools, until saved. */
+const draftKey = (poolId: string, date: string) => `poolos.draft.${poolId}:${date}`
+export function loadDraft(poolId: string, date: string): Reading | null {
+  try {
+    return cleanReading(JSON.parse(sessionStorage.getItem(draftKey(poolId, date)) ?? 'null'))
+  } catch {
+    return null
+  }
+}
+export function saveDraft(poolId: string, date: string, r: Reading | null) {
+  try {
+    if (r) sessionStorage.setItem(draftKey(poolId, date), JSON.stringify(r))
+    else sessionStorage.removeItem(draftKey(poolId, date))
+  } catch {
+    /* storage off: drafts just don't survive */
+  }
+}
 
 // Today's readings are stored through the Worker (D1), one document per pool per day.
 const doc = (poolId: string, date: string) => `/api/boards/field/readings/${encodeURIComponent(`${poolId}:${date}`)}`
@@ -11,8 +46,8 @@ export const today = () => {
 export async function loadReading(poolId: string, date: string): Promise<Reading | null> {
   const res = await fetch(doc(poolId, date), { credentials: 'same-origin' })
   if (!res.ok) throw new Error(res.status === 401 ? 'Sign in again.' : 'Could not load readings.')
-  const body = (await res.json()) as { exists: boolean; data: Reading | null }
-  return body.exists ? body.data : null
+  const body = (await res.json()) as { exists: boolean; data: unknown }
+  return body.exists ? cleanReading(body.data) : null
 }
 
 export async function saveReading(poolId: string, date: string, reading: Reading): Promise<void> {

@@ -5,9 +5,10 @@
  */
 import { viewerFrom } from './auth';
 import { boardFor, handleBoards } from './boards';
+import { handleWeather } from './weather';
 
 export default {
-	async fetch(request, env): Promise<Response> {
+	async fetch(request, env, ctx): Promise<Response> {
 		const url = new URL(request.url);
 		if (url.pathname === '/api/health') return Response.json({ ok: true });
 
@@ -23,6 +24,7 @@ export default {
 			const parts = url.pathname.slice('/api/boards'.length).split('/').filter(Boolean).map(decodeURIComponent);
 			return handleBoards(request, env, viewer, parts);
 		}
+		if (url.pathname === '/api/weather') return handleWeather(request, fetch, caches.default, (p) => ctx.waitUntil(p));
 		if (url.pathname.startsWith('/api/')) return Response.json({ error: { code: 'not_found', message: 'No such route' } }, { status: 404 });
 
 		// Owner-only board pages are refused here, before the page is served.

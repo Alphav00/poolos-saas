@@ -1,4 +1,8 @@
 <script lang="ts">
+  import Home from './lib/app/Home.svelte'
+  import More from './lib/app/More.svelte'
+  import TabBar from './lib/app/TabBar.svelte'
+  import './lib/app/app.css'
   import Field from './lib/field/Field.svelte'
 
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
@@ -7,7 +11,6 @@
   let me = $state<Me | null>(null)
   let boards = $state<Board[]>([])
   let error = $state('')
-  let importNote = $state<Record<string, string>>({})
 
   async function load() {
     try {
@@ -19,74 +22,42 @@
       error = e instanceof Error ? e.message : 'Could not load PoolOS.'
     }
   }
-
-  async function importFile(board: Board, input: HTMLInputElement) {
-    const file = input.files?.[0]
-    if (!file) return
-    importNote[board.slug] = 'Importing…'
-    try {
-      const body = await file.text()
-      const res = await fetch(`/api/boards/${board.slug}/_import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body })
-      const out = await res.json()
-      if (!res.ok) throw new Error(out.error?.message ?? 'Import failed')
-      importNote[board.slug] = `Imported ${out.imported} documents.`
-    } catch (e) {
-      importNote[board.slug] = e instanceof Error ? e.message : 'Import failed'
-    } finally {
-      input.value = ''
-    }
-  }
-
   load()
+
+  const KNOWN = ['field', 'more']
+  // Unknown links land on Today rather than a screen with no tab lit.
+  if (location.hash.length > 2 && !KNOWN.includes(location.hash.replace(/^#\/?/, '').split('/')[0]!)) history.replaceState(null, '', '#/')
 
   let hash = $state(location.hash)
   const route = $derived(hash.replace(/^#\/?/, '').split('/').filter(Boolean))
+  const tab = $derived(route[0] === 'field' ? 'route' : route[0] === 'more' ? 'more' : 'today')
+  const entering = $derived(route[0] === 'field' && route[2] === 'readings')
+
+  let screen = $state<HTMLElement>()
+  // Each new screen starts at the top, like an app, not mid-scroll from the last one.
+  $effect(() => {
+    void hash
+    screen?.scrollTo(0, 0)
+  })
 </script>
 
-<svelte:window onhashchange={() => (hash = location.hash)} />
+<svelte:window
+  onhashchange={() => {
+    if (location.hash.length > 2 && !KNOWN.includes(location.hash.replace(/^#\/?/, '').split('/')[0]!)) history.replaceState(null, '', '#/')
+    hash = location.hash
+  }}
+/>
 
-{#if route[0] === 'field'}
-  <Field path={route} />
-{:else}
-
-<main class="mx-auto min-h-dvh max-w-xl bg-white p-4 text-slate-900">
-  <header class="mb-6 flex items-baseline justify-between gap-4">
-    <h1 class="text-3xl font-bold">PoolOS</h1>
-    {#if me}<p class="truncate text-base text-slate-600">{me.email}</p>{/if}
-  </header>
-
-  {#if error}
-    <p class="rounded-lg border-2 border-red-700 p-4 text-lg text-red-800" role="alert">{error}</p>
-  {/if}
-
-  <h2 class="mb-3 text-xl font-semibold">Field</h2>
-  <a
-    href="#/field"
-    class="mb-6 flex min-h-14 items-center justify-between gap-3 rounded-xl border-2 border-slate-900 px-4 text-xl font-semibold active:bg-slate-100"
-  >
-    <span>Today's route</span><span class="text-sm font-normal text-slate-600">sample data</span>
-  </a>
-
-  <h2 class="mb-3 text-xl font-semibold">Boards</h2>
-  <ul class="space-y-3">
-    {#each boards as board (board.slug)}
-      <li>
-        <a
-          href={board.url}
-          class="flex min-h-14 items-center justify-between gap-3 rounded-xl border-2 border-slate-900 px-4 text-xl font-semibold active:bg-slate-100"
-        >
-          <span>{board.title}</span>
-          {#if board.access === 'owner'}<span class="text-sm font-normal text-slate-600">owners only</span>{/if}
-        </a>
-        {#if me?.isOwner}
-          <label class="mt-1 flex min-h-12 cursor-pointer items-center gap-2 text-base text-slate-700">
-            <span class="underline">Import data from an export file</span>
-            <input type="file" accept="application/json,.json" class="sr-only" onchange={(e) => importFile(board, e.currentTarget)} />
-          </label>
-          {#if importNote[board.slug]}<p class="text-base text-slate-700" role="status">{importNote[board.slug]}</p>{/if}
-        {/if}
-      </li>
-    {/each}
-  </ul>
+<main class={['field', entering && 'no-tabs']} bind:this={screen}>
+  <div class="wrap">
+    {#if error}<p class="alert" role="alert"><b>{error}</b>{#if error === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
+    {#if route[0] === 'field'}
+      <Field path={route} />
+    {:else if route[0] === 'more'}
+      <More email={me?.email ?? ''} isOwner={me?.isOwner ?? false} {boards} />
+    {:else}
+      <Home email={me?.email ?? ''} />
+    {/if}
+  </div>
+  {#if !entering}<TabBar current={tab} />{/if}
 </main>
-{/if}

@@ -1,4 +1,5 @@
 import type { Viewer } from './auth';
+import { checkFieldDoc } from './field';
 
 /**
  * Boards served by this app, each a page under /boards/<slug>.
@@ -19,6 +20,11 @@ export function boardFor(slug: string, viewer: Viewer) {
 }
 
 const IMPORT_CHUNK = 40;
+
+/** Boards whose documents have a fixed shape. */
+const CHECKS: Record<string, (collection: string, id: string, data: Record<string, unknown>) => string | null> = {
+	field: checkFieldDoc,
+};
 
 /** Owner-only: load a board export ({collections: {name: {id: data}}}) into D1. */
 async function importBoard(request: Request, env: Env, viewer: Viewer, board: string): Promise<Response> {
@@ -165,6 +171,10 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 			op = 'set';
 			next = body;
 		}
+	}
+	if (op !== 'delete') {
+		const refused = CHECKS[board]?.(collection, id, next);
+		if (refused) return fail(400, 'bad_request', refused);
 	}
 	const data = JSON.stringify(next);
 	if (data.length > MAX_DOC_BYTES) return fail(413, 'too_large', 'Document is larger than 512 KB');

@@ -1,5 +1,4 @@
 <script lang="ts">
-  import './field.css'
   import PoolView from './PoolView.svelte'
   import ReadingsEntry from './ReadingsEntry.svelte'
   import RouteView from './RouteView.svelte'
@@ -10,16 +9,12 @@
   const pool = $derived(path[1] ? poolById(path[1]) : undefined)
 </script>
 
-<main class="field">
-  <div class="wrap">
-    {#if !path[1]}
-      <RouteView />
-    {:else if !pool}
-      <p class="card">No such pool. <a class="back" href="#/field">Back to the route</a></p>
-    {:else if path[2] === 'readings'}
-      {#key pool.id}<ReadingsEntry {pool} />{/key}
-    {:else}
-      {#key pool.id}<PoolView {pool} />{/key}
-    {/if}
-  </div>
-</main>
+{#if !path[1]}
+  <RouteView />
+{:else if !pool}
+  <p class="card">No such pool. <a class="back" href="#/field">Back to the route</a></p>
+{:else if path[2] === 'readings'}
+  {#key pool.id}<ReadingsEntry {pool} />{/key}
+{:else}
+  {#key pool.id}<PoolView {pool} />{/key}
+{/if}
