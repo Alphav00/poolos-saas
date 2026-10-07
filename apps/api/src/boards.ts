@@ -3,11 +3,13 @@ import type { Viewer } from './auth';
 /**
  * Boards served by this app, each a page under /boards/<slug>.
  * access 'owner': only OWNER_EMAILS can open it. 'team': everyone Access lets in.
+ * page false: a data store for the app itself (no board page, not listed).
  */
-export const BOARDS: readonly { slug: string; title: string; access: 'owner' | 'team' }[] = [
+export const BOARDS: readonly { slug: string; title: string; access: 'owner' | 'team'; page?: false }[] = [
 	{ slug: 'agent-board', title: 'Agent Board', access: 'owner' },
 	{ slug: 'shallow-end', title: 'The Shallow End', access: 'team' },
 	{ slug: 'work-orders', title: 'Work Order Notebook', access: 'owner' },
+	{ slug: 'field', title: 'Field readings', access: 'team', page: false },
 ];
 
 export function boardFor(slug: string, viewer: Viewer) {
@@ -99,7 +101,7 @@ async function readBody(request: Request): Promise<Record<string, unknown> | Res
 export async function handleBoards(request: Request, env: Env, viewer: Viewer, parts: string[]): Promise<Response> {
 	if (parts.length === 0) {
 		return json({
-			boards: BOARDS.filter((b) => boardFor(b.slug, viewer).allowed).map((b) => ({
+			boards: BOARDS.filter((b) => b.page !== false && boardFor(b.slug, viewer).allowed).map((b) => ({
 				slug: b.slug, title: b.title, access: b.access, url: `/boards/${b.slug}`,
 			})),
 		});
