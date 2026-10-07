@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { current }: { current: 'today' | 'route' | 'more' | 'none' } = $props()
+  let { current }: { current: 'today' | 'route' | 'more' } = $props()
   const tabs = [
     { key: 'today', href: '#/', icon: '🏠', label: 'Today' },
     { key: 'route', href: '#/field', icon: '🗺️', label: 'Route' },

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { compare } from './compare'
-import { fmtDelta, SCALES, steps } from './scales'
+import { cleanReading } from './readings'
+import { fmtDelta, parseTyped, scaleFor, SCALES, steps } from './scales'
+import { describe as weatherWords, hourLabel, rainFrom, type Weather } from './weather'
 import { nearest, wedges } from './wheel'
 
 describe('wheel geometry', () => {
@@ -15,6 +17,7 @@ describe('wheel geometry', () => {
   it('finds the nearest wheel number to a forecast', () => {
     expect(nearest([7.4, 7.5, 7.6], 7.56)).toBe(2)
     expect(nearest([0, 0.5, 1], 0.2)).toBe(0)
+    expect(nearest([3100, 3200], 3150)).toBe(1)
   })
 })
 
@@ -40,5 +43,44 @@ describe('forecast vs measured', () => {
     expect(compare(7.8, { value: 7.7, band: 0.2 })).toEqual({ delta: 0.1, status: 'ok' })
     expect(compare(undefined, { value: 7.7, band: 0.2 }).status).toBe('none')
     expect(compare(7.7, undefined).status).toBe('none')
+  })
+})
+
+describe('typed readings', () => {
+  const ph = scaleFor('ph')
+  const fc = scaleFor('fc')
+  it('reads a comma as a decimal point', () => {
+    expect(parseTyped(fc, '2,5')).toEqual({ value: 2.5 })
+    expect(parseTyped(ph, ' 7.4 ')).toEqual({ value: 7.4 })
+  })
+  it('clears on empty and refuses junk or impossible numbers', () => {
+    expect(parseTyped(fc, '')).toEqual({ value: undefined })
+    expect(parseTyped(fc, '-3')).toHaveProperty('error')
+    expect(parseTyped(fc, '1e9')).toHaveProperty('error')
+    expect(parseTyped(fc, 'abc')).toHaveProperty('error')
+    expect(parseTyped(ph, '70')).toHaveProperty('error')
+  })
+})
+
+describe('stored readings', () => {
+  it('keeps only known readings with real numbers', () => {
+    expect(cleanReading({ method: 'strip', values: { ph: 7.5, fc: 'x', junk: 3, ta: Infinity } })).toEqual({ method: 'strip', values: { ph: 7.5 } })
+    expect(cleanReading({ values: null, method: 'guess' })).toEqual({ method: 'drop', values: {} })
+    expect(cleanReading('nope')).toBeNull()
+  })
+})
+
+describe('weather words', () => {
+  const w = { hourlyRain: [{ hour: 9, chance: 20 }, { hour: 15, chance: 60 }, { hour: 18, chance: 80 }] } as Weather
+  it('finds the first rainy hour from now', () => {
+    expect(rainFrom(w, 8)).toBe(15)
+    expect(rainFrom(w, 16)).toBe(18)
+    expect(rainFrom(w, 19)).toBeNull()
+  })
+  it('names hours and weather codes', () => {
+    expect([hourLabel(0), hourLabel(12), hourLabel(15)]).toEqual(['12 am', '12 pm', '3 pm'])
+    expect(weatherWords(0).text).toBe('Clear')
+    expect(weatherWords(63).text).toBe('Rain')
+    expect(weatherWords(95).text).toBe('Thunderstorms')
   })
 })

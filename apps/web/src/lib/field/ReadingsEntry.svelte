@@ -2,11 +2,15 @@
   import { tick } from 'svelte'
   import { compare } from './compare'
   import PickWheel from './PickWheel.svelte'
-  import { loadReading, saveReading, today } from './readings'
-  import { fmt, SCALES } from './scales'
+  import { loadDraft, loadReading, saveDraft, saveReading, today } from './readings'
+  import { fmt, parseTyped, SCALES } from './scales'
   import type { Method, Param, Pool, Reading } from './types'
 
   let { pool }: { pool: Pool } = $props()
+
+  /** Same readings, same text: fixed key order so "changed?" is a plain comparison. */
+  const canon = (r: Reading) =>
+    JSON.stringify({ method: r.method, values: Object.fromEntries(SCALES.filter((s) => r.values[s.key] !== undefined).map((s) => [s.key, r.values[s.key]])) })
 
   const METHODS: { key: Method; label: string }[] = [
     { key: 'strip', label: 'Strip' },
@@ -14,120 +18,179 @@
     { key: 'meter', label: 'Meter' },
   ]
 
-  let reading = $state<Reading>({ method: 'drop', values: {} })
-  let open = $state<Param | null>(null)
-  let status = $state('Loading…')
-  let saving = $state(false)
-  let sheet = $state<HTMLElement>()
-
+  // The parent re-creates this screen per pool ({#key}), so reading the prop once is fine.
+  // svelte-ignore state_referenced_locally
+  const poolId = pool.id
   const date = today()
+
+  let reading = $state<Reading>({ method: 'drop', values: {} })
+  let saved = $state('') // what the server holds, to know if anything changed
+  let phase = $state<'loading' | 'ready' | 'failed' | 'saving'>('loading')
+  let status = $state('Loading…')
+  let open = $state<Param | null>(null)
+  let typedError = $state('')
+  let sheet = $state<HTMLElement>()
+  let opener: HTMLElement | null = null
+
   const entered = $derived(SCALES.filter((s) => reading.values[s.key] !== undefined).length)
-  const openScale = $derived(open ? SCALES.find((s) => s.key === open)! : null)
+  const dirty = $derived(canon(reading) !== saved)
+  const openAt = $derived(SCALES.findIndex((s) => s.key === open))
+  const openScale = $derived(openAt >= 0 ? SCALES[openAt]! : null)
+  const nextScale = $derived(openAt >= 0 ? SCALES[openAt + 1] : undefined)
   const openAgreement = $derived(open ? compare(reading.values[open], pool.forecast[open]) : null)
 
+  async function load() {
+    phase = 'loading'
+    status = 'Loading…'
+    try {
+      const server = (await loadReading(poolId, date)) ?? { method: 'drop', values: {} }
+      saved = canon(server)
+      // Unsaved work wins: a draft from earlier, then anything tapped while loading.
+      const draft = loadDraft(poolId, date)
+      reading = {
+        method: draft?.method ?? server.method,
+        values: { ...server.values, ...draft?.values, ...$state.snapshot(reading.values) },
+      }
+      phase = 'ready'
+      status = ''
+    } catch (e) {
+      phase = 'failed'
+      status = e instanceof Error ? e.message : 'Could not load readings.'
+    }
+  }
+  load()
+
+  // Keep a draft of unsaved changes so Back, a pool switch or a reload loses nothing.
   $effect(() => {
-    loadReading(pool.id, date)
-      .then((r) => {
-        if (r) reading = { method: r.method, values: r.values }
-        status = ''
-      })
-      .catch((e: Error) => (status = e.message))
+    const snap = $state.snapshot(reading)
+    if (phase === 'ready') saveDraft(poolId, date, canon(snap) === saved ? null : snap)
   })
 
-  async function show(key: Param) {
+  async function show(key: Param, from?: HTMLElement) {
+    if (!open) {
+      opener = from ?? null
+      // A history entry for the sheet, so the phone's Back closes it instead of leaving.
+      history.pushState({ sheet: true }, '', location.href)
+    }
     open = key
+    typedError = ''
     await tick()
-    ;(sheet?.querySelector('[role="radio"][tabindex="0"]') as SVGElement | null)?.focus()
+    const target = (sheet?.querySelector('[role="radio"][tabindex="0"]') as HTMLElement | SVGElement | null) ?? sheet
+    target?.focus()
+  }
+
+  function close() {
+    if (!open) return
+    if ((history.state as { sheet?: boolean } | null)?.sheet) history.back()
+    else closed()
+  }
+  async function closed() {
+    open = null
+    typedError = ''
+    await tick() // the screen behind is inert until the sheet is gone
+    opener?.focus()
   }
 
   function next() {
-    const i = SCALES.findIndex((s) => s.key === open)
-    const after = SCALES[i + 1]
-    if (after) show(after.key)
-    else open = null
+    if (nextScale) show(nextScale.key)
+    else close()
   }
 
   function typed(e: Event & { currentTarget: HTMLInputElement }) {
-    const v = e.currentTarget.valueAsNumber
-    if (open && Number.isFinite(v)) reading.values[open] = v
+    if (!openScale) return
+    const r = parseTyped(openScale, e.currentTarget.value)
+    if ('error' in r) {
+      typedError = r.error
+      return
+    }
+    typedError = ''
+    if (r.value === undefined) delete reading.values[openScale.key]
+    else reading.values[openScale.key] = r.value
   }
 
   async function save() {
-    saving = true
+    if (phase !== 'ready' || !dirty) return
+    phase = 'saving'
     status = 'Saving…'
+    const snap = $state.snapshot(reading)
     try {
-      await saveReading(pool.id, date, $state.snapshot(reading))
-      status = 'Saved.'
-      location.hash = `#/field/${pool.id}`
+      await saveReading(poolId, date, snap)
+      saved = canon(snap)
+      saveDraft(poolId, date, null)
+      location.hash = `#/field/${poolId}`
     } catch (e) {
       status = e instanceof Error ? e.message : 'Could not save readings.'
-    } finally {
-      saving = false
+      phase = 'ready'
     }
   }
 </script>
 
-<div class="bar">
-  <a class="back" href={`#/field/${pool.id}`}>‹ {pool.name}</a>
-  <span class="chip">{entered} / {SCALES.length}</span>
-</div>
-<span class="sample">SAMPLE DATA</span>
-<h1 class="h" style="margin:0 6px">Today's readings · {date}</h1>
+<svelte:window
+  onpopstate={() => open && closed()}
+  onkeydown={(e) => e.key === 'Escape' && open && close()}
+/>
 
-<div class="eg">
-  {#each SCALES as s (s.key)}
-    {@const v = reading.values[s.key]}
-    {@const f = pool.forecast[s.key]}
-    <button
-      class={['e', v === undefined && 'empty', compare(v, f).status === 'off' && 'off']}
-      onclick={() => show(s.key)}
-    >
-      <div class="n">{s.label}</div>
-      <div class="v">{fmt(s.key, v)}</div>
-      <div class="p">{f ? `fcst ${fmt(s.key, f.value)}` : 'no forecast'}</div>
-    </button>
-  {/each}
-</div>
+<div inert={!!open}>
+  <div class="bar">
+    <a class="back" href={`#/field/${poolId}`}>‹ {pool.name}</a>
+    <span class="chip">{entered} / {SCALES.length}</span>
+  </div>
+  <h1 class="h" style="margin:0 6px">Today's readings · {date} <span class="sample">SAMPLE DATA</span></h1>
 
-<button class="btn" disabled={saving || entered === 0} onclick={save}>Save readings</button>
-{#if status}<p class="status" role="status">{status}</p>{/if}
+  <div class="eg">
+    {#each SCALES as s (s.key)}
+      {@const v = reading.values[s.key]}
+      {@const f = pool.forecast[s.key]}
+      <button
+        class={['e', v === undefined && 'empty', compare(v, f).status === 'off' && 'off']}
+        disabled={phase !== 'ready'}
+        onclick={(e) => show(s.key, e.currentTarget)}
+      >
+        <div class="n">{s.label}</div>
+        <div class="v">{fmt(s.key, v)}</div>
+        <div class="p">{f ? `fcst ${fmt(s.key, f.value)}` : 'no forecast'}</div>
+      </button>
+    {/each}
+  </div>
+
+  {#if phase === 'failed'}
+    <div class="alert" role="alert"><b>{status}</b><p>Readings can't be entered until today's saved readings load, so nothing gets overwritten.</p></div>
+    <button class="btn ghost" onclick={load}>Try again</button>
+  {:else}
+    <button class="btn" disabled={phase !== 'ready' || !dirty} onclick={save}>{phase === 'saving' ? 'Saving…' : dirty ? 'Save readings' : 'Saved'}</button>
+    {#if status}<p class="status" role="status">{status}{#if status === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
+    {#if dirty && phase === 'ready'}<p class="xs" style="text-align:center;margin-top:6px">Not saved yet · kept on this phone until you save</p>{/if}
+  {/if}
+</div>
 
 {#if open && openScale}
-  <div class="dim" aria-hidden="true" onclick={() => (open = null)}></div>
-  <div
-    class="sheet"
-    bind:this={sheet}
-    role="dialog"
-    aria-modal="true"
-    aria-label={`${openScale.label} reading`}
-    tabindex="-1"
-    onkeydown={(e) => e.key === 'Escape' && (open = null)}
-  >
+  <div class="dim" aria-hidden="true" onclick={close}></div>
+  <div class="sheet" bind:this={sheet} role="dialog" aria-modal="true" aria-label={`${openScale.label} reading`} tabindex="-1">
     <div class="row">
       <div>
         <div class="h" style="text-transform:none">{openScale.label}</div>
-        <div class="xs">tap the number{pool.forecast[open] ? ` · forecast ${fmt(open, pool.forecast[open]!.value)} is ringed` : ''}</div>
+        <div class="xs">tap the number{pool.forecast[open] ? ` · ring marks forecast ${fmt(open, pool.forecast[open]!.value)}` : ''}</div>
       </div>
-      <button class="chip" onclick={() => (open = null)}>Done</button>
+      <button class="chip" onclick={close}>Done</button>
     </div>
     <PickWheel scale={openScale} bind:value={reading.values[open]} forecast={pool.forecast[open]} ideal={pool.ideal[open]} />
     {#if openAgreement?.status === 'off'}
-      <div class="alert" role="alert">
-        <b>Outside the forecast by more than ±{fmt(open, pool.forecast[open]!.band)}</b>
-        <p>Retest before dosing. If it repeats, the reading stands and the forecast learns from it.</p>
-      </div>
+      <p class="offline" role="alert">Off forecast by more than ±{fmt(open, pool.forecast[open]!.band)} · retest before dosing</p>
     {/if}
-    <label class="type">Or type it <input type="number" inputmode="decimal" step="any" value={reading.values[open] ?? ''} onchange={typed} /> {openScale.unit}</label>
+    <label class="type">
+      Or type it
+      <input type="text" inputmode="decimal" autocomplete="off" value={reading.values[open] ?? ''} onchange={typed} aria-invalid={!!typedError} />
+      {openScale.unit}
+    </label>
+    {#if typedError}<p class="offline" role="alert">{typedError}</p>{/if}
     <div class="seg" role="group" aria-label="Test method">
       {#each METHODS as m (m.key)}
         <button aria-pressed={reading.method === m.key} onclick={() => (reading.method = m.key)}>{m.label}</button>
       {/each}
     </div>
-    <div class="row" style="gap:10px">
-      <button class="btn ghost" style="flex:1" onclick={() => open && delete reading.values[open]}>Retest</button>
-      <button class="btn" style="flex:2" onclick={next}>
-        {SCALES.findIndex((s) => s.key === open) < SCALES.length - 1 ? `Next · ${SCALES[SCALES.findIndex((s) => s.key === open) + 1]!.label} ▸` : 'Done'}
-      </button>
+    <div class="actions">
+      <button class="btn ghost" onclick={() => open && delete reading.values[open]}>Retest</button>
+      <button class="btn" onclick={next}>{nextScale ? `Next · ${nextScale.label} ▸` : 'Done'}</button>
     </div>
   </div>
 {/if}

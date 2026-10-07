@@ -24,9 +24,14 @@
   }
   load()
 
+  const KNOWN = ['field', 'more']
+  // Unknown links land on Today rather than a screen with no tab lit.
+  if (location.hash.length > 2 && !KNOWN.includes(location.hash.replace(/^#\/?/, '').split('/')[0]!)) history.replaceState(null, '', '#/')
+
   let hash = $state(location.hash)
   const route = $derived(hash.replace(/^#\/?/, '').split('/').filter(Boolean))
-  const tab = $derived(route[0] === 'field' ? 'route' : route[0] === 'more' ? 'more' : route.length === 0 ? 'today' : 'none')
+  const tab = $derived(route[0] === 'field' ? 'route' : route[0] === 'more' ? 'more' : 'today')
+  const entering = $derived(route[0] === 'field' && route[2] === 'readings')
 
   let screen = $state<HTMLElement>()
   // Each new screen starts at the top, like an app, not mid-scroll from the last one.
@@ -36,11 +41,16 @@
   })
 </script>
 
-<svelte:window onhashchange={() => (hash = location.hash)} />
+<svelte:window
+  onhashchange={() => {
+    if (location.hash.length > 2 && !KNOWN.includes(location.hash.replace(/^#\/?/, '').split('/')[0]!)) history.replaceState(null, '', '#/')
+    hash = location.hash
+  }}
+/>
 
-<main class="field" bind:this={screen}>
+<main class={['field', entering && 'no-tabs']} bind:this={screen}>
   <div class="wrap">
-    {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
+    {#if error}<p class="alert" role="alert"><b>{error}</b>{#if error === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
     {#if route[0] === 'field'}
       <Field path={route} />
     {:else if route[0] === 'more'}
@@ -49,5 +59,5 @@
       <Home email={me?.email ?? ''} />
     {/if}
   </div>
-  {#if route[2] !== 'readings'}<TabBar current={tab} />{/if}
+  {#if !entering}<TabBar current={tab} />{/if}
 </main>

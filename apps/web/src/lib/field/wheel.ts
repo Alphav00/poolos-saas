@@ -22,11 +22,11 @@ export function wedges(n: number, r: number, labelR: number): Wedge[] {
   })
 }
 
-/** Index of the value closest to `v`. */
+/** Index of the value closest to `v`; a tie goes to the higher value. */
 export function nearest(values: number[], v: number): number {
   let best = 0
   values.forEach((x, i) => {
-    if (Math.abs(x - v) < Math.abs(values[best]! - v)) best = i
+    if (Math.abs(x - v) <= Math.abs(values[best]! - v)) best = i
   })
   return best
 }

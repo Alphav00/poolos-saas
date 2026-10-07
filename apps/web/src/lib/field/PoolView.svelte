@@ -40,7 +40,7 @@
 </section>
 
 <section class="card">
-  <div class="row"><h2 class="h">Today · forecast vs measured</h2><span class="xs">{methodLabel}</span></div>
+  <div class="row"><h2 class="h">Today vs forecast</h2><span class="xs">{methodLabel}</span></div>
   {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
   <div class="rg">
     {#each rows as r (r.scale.key)}
