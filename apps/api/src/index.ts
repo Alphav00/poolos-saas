@@ -5,6 +5,7 @@
  */
 import { viewerFrom } from './auth';
 import { boardFor, handleBoards } from './boards';
+import { handleMeasure } from './measure';
 import { handleWeather } from './weather';
 
 export default {
@@ -24,6 +25,10 @@ export default {
 			const parts = url.pathname.slice('/api/boards'.length).split('/').filter(Boolean).map(decodeURIComponent);
 			return handleBoards(request, env, viewer, parts);
 		}
+		if (url.pathname === '/api/measure' || url.pathname.startsWith('/api/measure/')) {
+			const parts = url.pathname.slice('/api/measure'.length).split('/').filter(Boolean).map(decodeURIComponent);
+			return handleMeasure(request, env, viewer, parts);
+		}
 		if (url.pathname === '/api/weather') return handleWeather(request, fetch, caches.default, (p) => ctx.waitUntil(p));
 		if (url.pathname.startsWith('/api/')) return Response.json({ error: { code: 'not_found', message: 'No such route' } }, { status: 404 });
 
@@ -31,6 +36,12 @@ export default {
 		const page = url.pathname.match(/^\/boards\/([a-z0-9-]+)(?:\.html)?\/?$/);
 		if (page && page[1] && boardFor(page[1], viewer).board && !boardFor(page[1], viewer).allowed) {
 			return new Response('This board is for owners only.', { status: 403, headers: { 'Content-Type': 'text/plain' } });
+		}
+
+		// Measure is its own single-page app under /measure: client-side routes
+		// (no file extension) get its index.html.
+		if (/^\/measure(\/|$)/.test(url.pathname) && !/\.[a-z0-9]+$/i.test(url.pathname)) {
+			return env.ASSETS.fetch(new Request(new URL('/measure/', url), request));
 		}
 
 		return env.ASSETS.fetch(request);

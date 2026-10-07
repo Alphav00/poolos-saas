@@ -24,6 +24,15 @@
 <div class="bar"><span class="t">More</span><span class="xs">{email}</span></div>
 
 <section class="card" style="margin-top:0">
+  <h2 class="h">Tools</h2>
+  <a class="stop" href="/measure">
+    <span class="num">📏</span>
+    <div><div class="nm">Measure</div><div class="xs">Liners and covers: A/B walk, closure checks, order forms</div></div>
+    <span></span>
+  </a>
+</section>
+
+<section class="card">
   <h2 class="h">Boards</h2>
   {#each boards as board (board.slug)}
     <a class="stop" href={board.url}>

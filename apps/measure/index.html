@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f7fafc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+    <title>Measure · PoolOS</title>
+    <style>
+      /* Pre-JS loading state. Removed once the SPA mounts. */
+      #boot {
+        position: fixed; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        background: linear-gradient(180deg, #f7fafc 0%, #eaf0f5 100%); color: #1d2a36;
+        font-family: Nunito, "Segoe UI", Arial, sans-serif; font-weight: 800;
+        flex-direction: column; gap: 1rem;
+      }
+      #boot .spinner {
+        width: 36px; height: 36px;
+        border: 4px solid rgba(10, 143, 208, 0.2);
+        border-top-color: rgb(10, 143, 208);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      #boot .label { font-size: 0.875rem; color: #546676; }
+    </style>
+  </head>
+  <body class="text-ink-50 antialiased">
+    <div id="app"></div>
+    <div id="boot">
+      <div class="spinner"></div>
+      <div class="label">Loading Liner Measure Pro…</div>
+    </div>
+    <script type="module">
+      // Hide the boot screen once the SPA has mounted.
+      // This script lives in index.html (not main.js) so it can run in parallel
+      // with module loading. main.js will dispatch a custom event when ready.
+      window.addEventListener('app:mounted', () => {
+        const boot = document.getElementById('boot');
+        if (boot) boot.remove();
+      });
+      // Show any module-load errors (script errors) right in the boot screen
+      // so the user sees them instead of a stuck spinner.
+      window.addEventListener('error', (e) => {
+        if (e.target && e.target.tagName === 'SCRIPT') {
+          const boot = document.getElementById('boot');
+          if (boot) {
+            boot.innerHTML = `
+              <div style="color: #b42b30; max-width: 40em; text-align: left; padding: 1em; line-height: 1.5; font-family: monospace; font-size: 0.875rem; white-space: pre-wrap; word-break: break-all">
+                <strong>Script failed to load or threw on import.</strong>
+                <p style="margin: 0.5em 0 0; color: #546676; font-size: 0.75rem">
+                  This is usually a syntax error or a bad import in a .svelte file.
+                  Open dev tools → Sources → reload → look for the red entry.
+                </p>
+                <pre style="margin: 0.5em 0 0; color: #6a7c8c; font-size: 0.75rem">${e.target.src || e.message || '<unknown>'}</pre>
+              </div>
+            `;
+          }
+        }
+        // Also catch window 'error' events (non-script)
+        const boot2 = document.getElementById('boot');
+        if (boot2 && e.message) {
+          boot2.innerHTML = `
+            <div style="color: #b42b30; max-width: 40em; text-align: left; padding: 1em; line-height: 1.5; font-family: monospace; font-size: 0.875rem; white-space: pre-wrap">
+              <strong>Module error.</strong>
+              <pre style="margin: 0.5em 0 0; font-size: 0.75rem">${e.message}\n${e.filename || ''}:${e.lineno || ''}</pre>
+            </div>
+          `;
+        }
+      }, true);
+      // If the boot screen is still visible 3s after page load, show a hint
+      setTimeout(() => {
+        const boot = document.getElementById('boot');
+        if (boot) {
+          boot.innerHTML = `
+            <div style="color: #b42b30; max-width: 32em; text-align: left; padding: 1em; line-height: 1.5; font-family: monospace; font-size: 0.875rem; white-space: pre-wrap">
+              <strong>Still loading after 3s. The SPA has not mounted.</strong>
+              <p style="margin: 0.5em 0 0; color: #546676">
+                Likely cause: an import threw, or a child component failed to mount.
+                Open browser dev tools → Console → reload page → copy the first red error here.
+              </p>
+            </div>
+          `;
+        }
+      }, 3000);
+    </script>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

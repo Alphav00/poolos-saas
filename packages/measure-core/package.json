@@ -1,0 +1,22 @@
+{
+  "name": "@poolos/measure-core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Liner and cover measuring: A/B reconstruction, liner closure math, order forms. TypeScript port of Liner Measure Pro's backend.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "pdf-lib": "^1.17.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "~6.0.2",
+    "vitest": "~4.1.0"
+  }
+}

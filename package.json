@@ -8,7 +8,8 @@
     "lint": "eslint .",
     "fixture-lint": "node scripts/fixture-lint.mjs",
     "fixture-lint:selftest": "node scripts/fixture-lint.selftest.mjs",
-    "check": "pnpm lint && pnpm typecheck && pnpm fixture-lint && pnpm test"
+    "check": "pnpm lint && pnpm typecheck && pnpm fixture-lint && pnpm test",
+    "build": "pnpm --filter @poolos/web build && pnpm --filter @poolos/measure build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -1,0 +1,142 @@
+[
+ {
+  "value": "rectangle",
+  "label": "Rectangle",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "rectangle_grecian_shallow",
+  "label": "Rectangle Grecian Shallow",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "rectangle_grecian_deep",
+  "label": "Rectangle Grecian Deep",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "grecian",
+  "label": "Grecian",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "offset_grecian_left",
+  "label": "Offset Grecian Left",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "offset_grecian_right",
+  "label": "Offset Grecian Right",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "summerville_grecian_left",
+  "label": "Summerville Grecian Left",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "summerville_grecian_right",
+  "label": "Summerville Grecian Right",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "roman_end",
+  "label": "Roman End",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "double_roman",
+  "label": "Double Roman",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "patrician_shallow",
+  "label": "Patrician Shallow",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "patrician_deep",
+  "label": "Patrician Deep",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "true_l_left",
+  "label": "True L Left",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "true_l_right",
+  "label": "True L Right",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "lazy_l_left",
+  "label": "Lazy L Left",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "lazy_l_right",
+  "label": "Lazy L Right",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "oval",
+  "label": "Oval",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "oval_jewel",
+  "label": "Oval Jewel",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "round",
+  "label": "Round",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "octagon",
+  "label": "Octagon",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "kite",
+  "label": "Kite",
+  "requires_ab_plot": false
+ },
+ {
+  "value": "kidney",
+  "label": "Kidney",
+  "requires_ab_plot": true
+ },
+ {
+  "value": "figure_8",
+  "label": "Figure 8",
+  "requires_ab_plot": true
+ },
+ {
+  "value": "mountain_lake_left",
+  "label": "Mountain Lake Left",
+  "requires_ab_plot": true
+ },
+ {
+  "value": "mountain_lake_right",
+  "label": "Mountain Lake Right",
+  "requires_ab_plot": true
+ },
+ {
+  "value": "odessy_left",
+  "label": "Odessy Left",
+  "requires_ab_plot": true
+ },
+ {
+  "value": "odessy_right",
+  "label": "Odessy Right",
+  "requires_ab_plot": true
+ },
+ {
+  "value": "freeform",
+  "label": "Freeform",
+  "requires_ab_plot": true
+ }
+]
