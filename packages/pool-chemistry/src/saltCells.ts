@@ -192,7 +192,7 @@ export const SALT_CELLS: readonly SaltCellRange[] = [
     minPpm: 2500,
     maxPpm: 3500,
     quote: 'It is important that a salt residual of 2500 to 3500 ppm (2,5 – 3,5 g/l) be maintained at all times for peak efficiency.',
-    document: 'Pool Pilot Professional Installation / Operation Manual (2009), AquaCal AutoPilot; distributor-hosted copy',
+    document: 'Pool Pilot Professional Installation / Operation Manual, AquaCal AutoPilot (no revision or year printed; PDF created 2009-03-23); distributor-hosted copy',
     url: 'https://assets.poolweb.com/products/AquaCal/Pool-Pilot-Pro_Manual.pdf?sku=PRO4US',
     checked: '2026-10-08',
   },
