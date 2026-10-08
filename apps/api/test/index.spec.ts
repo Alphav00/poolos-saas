@@ -73,6 +73,28 @@ describe('board access', () => {
 		expect(patch.status).toBe(400);
 	});
 
+	it('keeps the chemistry setup as settings/products and settings/targets, checked', async () => {
+		const put = (id: string, data: unknown) => call(`/api/boards/field/settings/${id}`, { method: 'PUT', body: { data } });
+		const acid = { id: 'acid', kind: 'acid', name: 'Muriatic acid 31.45%', hclPercent: 31.45, densityGPerMl: 1.16 };
+		expect((await put('products', { products: [acid] })).status).toBe(200);
+		// a label fact missing, a stray field, an unknown kind, a bad id
+		expect((await put('products', { products: [{ ...acid, densityGPerMl: undefined }] })).status).toBe(400);
+		expect((await put('products', { products: [{ ...acid, price: 9 }] })).status).toBe(400);
+		expect((await put('products', { products: [{ ...acid, kind: 'magic' }] })).status).toBe(400);
+		expect((await put('products', { products: [{ ...acid, id: 'Acid!' }] })).status).toBe(400);
+		expect((await put('products', { products: [{ id: 'cc', kind: 'calcium-chloride', name: 'CaCl2', assayPercent: 77 }] })).status).toBe(400);
+		expect((await put('products', { products: [{ id: 'cc', kind: 'calcium-chloride', name: 'CaCl2', assayPercent: 77, form: 'dihydrate' }] })).status).toBe(200);
+
+		const targets = { source: 'Sample Pool Co. house policy', ranges: { ph: [7.4, 7.6], fc: [2, 4] } };
+		expect((await put('targets', targets)).status).toBe(200);
+		expect((await put('targets', { ...targets, source: '' })).status).toBe(400);
+		expect((await put('targets', { ...targets, ranges: { ph: [7.8, 7.2] } })).status).toBe(400);
+		expect((await put('targets', { ...targets, ranges: { temp: [70, 90] } })).status).toBe(400);
+		expect((await put('other', { x: 1 })).status).toBe(400);
+		const got = (await (await call('/api/boards/field/settings/targets', { as: 'other@example.test' })).json()) as { data: { source: string } };
+		expect(got.data.source).toBe('Sample Pool Co. house policy');
+	});
+
 	it('refuses owner-only boards to the team, page and data alike', async () => {
 		for (const path of ['/boards/agent-board', '/boards/agent-board.html', '/boards/work-orders', '/api/boards/agent-board/cards', '/api/boards/work-orders/orders/x']) {
 			expect((await call(path)).status, path).toBe(403);

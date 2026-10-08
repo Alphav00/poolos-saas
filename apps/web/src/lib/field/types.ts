@@ -21,12 +21,6 @@ export interface DecayRow {
   alert?: boolean
 }
 
-export interface Dose {
-  amount: string
-  product: string
-  basis: string
-}
-
 export interface Pool {
   id: string
   name: string
@@ -35,8 +29,12 @@ export interface Pool {
   ideal: Partial<Record<Param, [number, number]>>
   visits: Visit[]
   decay: DecayRow[]
-  doses: Dose[]
-  lsi?: string
+  /** Volume, US gallons. Doses need it; without it the screen says so. */
+  gallons?: number
+  /** Last TDS reading, ppm. Stands in for salt on pools with no chlorine generator. */
+  tds?: number
+  /** The chlorine generator cell, when the pool has one. Salt targets are looked up by it. */
+  cell?: { make: string; model: string }
   equipment: string[]
   note?: string
 }

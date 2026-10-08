@@ -472,6 +472,16 @@ Every agent on the board adds one suggestion. Rules:
 
 *(No suggestions yet.)*
 
+### 14.1 Corrections (dated lines; earlier text stays)
+
+- 2026-10-08 · §5.3, §13 #6 · `DECIDED` Chi: "create pool_chemistry from phreeqc". The engine is USGS PHREEQC in WebAssembly (`packages/pool-chemistry`). The 2026-10-08 lines added inline in §5.3, §6, §10 M1 and §13 were written before this subsection existed; from here on corrections are added here only.
+- 2026-10-08 · §3 #9, §6 rules, §10 M1 · `DECIDED` Chi: "Use the PHREEQC titration". The acid amount is PHREEQC's titration of the measured pH, total alkalinity, cyanuric acid, borates and temperature to the target pH. It replaces the acid-demand count. §3 #9 still holds as written: the amount is never computed from pH alone; without a total alkalinity and a cyanuric acid reading the engine returns a question, not an amount. M1 sub-test "acid with no demand count returns no amount" becomes "acid with no TA or CYA reading returns a question".
+- 2026-10-08 · §6 golden tests · Chi: "proceed automated using my decision Matrix". The §6 `PROPOSED` lines of 2026-10-08 are taken as the gate: native-vs-WebAssembly parity, Wojtowicz's HOCl table within 2.5%, Wojtowicz's revised SI equation within 0.1. The LSI −0.22 case is retired (different formula). The 61.4 fl oz case stays `UNVERIFIED` until `inputs/design.md` is copied in; the engine gives 61.44 for 3 ppm in 20,000 gal of 12.5%.
+- 2026-10-08 · §6 rules · Salt target by cell make and model: the table lives in `packages/pool-chemistry/src/saltCells.ts`, each row with the manufacturer document URL and a verbatim quote. Unknown make or model returns a question.
+- 2026-10-08 · §3 #7, #11 · Targets and limits in slice 1 are the tenant's own policy, entered by the owner with a source line, and shown as such ("set by <company>"). PoolOS ships no target numbers of its own until a limits table with source, edition and jurisdiction exists (§7 `rule`).
+- 2026-10-08 · §10 M2 status · The core loop runs on the engine: saved readings → `/api/chem/analyze` (saturation index, carbonate vs cyanurate alkalinity, HOCl) and `/api/chem/dose` for every reading outside the company's target range, to the middle of the range, by the company's own product with its label strength. Products and targets are kept at `settings/products` and `settings/targets` in the field store (More → Chemistry setup). Sub-test "every write goes through the Worker" holds for readings and settings. Sub-test "the 10 criteria in design.md" stays `UNVERIFIED` (file not in the repo). Gate 1 itself is still `OPEN`; the slice runs on the sample tenant.
+- 2026-10-08 · decisions are also logged in `docs/DECISIONS.md` (options, choice, why, evidence, falsifier), the format Chi uses elsewhere.
+
 ---
 
 ## 15. Sources

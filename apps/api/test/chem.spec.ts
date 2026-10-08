@@ -54,3 +54,15 @@ describe('chem: PHREEQC in the Worker', () => {
 		expect((await api('/nope')).status).toBe(404);
 	});
 });
+
+describe('chem: salt by the cell', () => {
+	it('asks for an unknown make or model instead of giving a number', async () => {
+		const res = await api('/salt-cell?make=Sample&model=Model%20X');
+		expect(res.status).toBe(422);
+		const r = (await res.json()) as { ok: false; questions: { field: string; ask: string }[] };
+		expect(r.questions[0]!.field).toBe('make');
+		expect((await api('/salt-cell')).status).toBe(422);
+		const dose = await api('/dose', { method: 'POST', body: { kind: 'salt', water: WATER, gallons: 18000, product: { assayPercent: 99 }, cell: { make: 'Sample', model: 'Model X' } } });
+		expect(dose.status).toBe(422);
+	});
+});

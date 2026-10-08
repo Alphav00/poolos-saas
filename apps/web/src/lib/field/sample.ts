@@ -1,7 +1,8 @@
 // SAMPLE DATA. Made-up pools for showing the field screens. Forecasts, decay
 // rates and bands here are illustrative; real ones come from the forecasting
-// engine (DESIGN.md, chem_path) once it is connected. The two dose amounts and
-// the LSI are the design doc's golden test case, not advice for a real pool.
+// engine (DESIGN.md, chem_path) once it is connected. Volumes, TDS and the
+// cell are made up too; doses and the saturation index come from the
+// chemistry engine (chem.ts) using them.
 import type { CrewMember, Pool, Stop } from './types'
 
 const base = {
@@ -9,7 +10,6 @@ const base = {
   ideal: { ph: [7.4, 7.6] as [number, number] },
   visits: [],
   decay: [],
-  doses: [],
   equipment: [],
 }
 
@@ -43,22 +43,19 @@ export const POOLS: Pool[] = [
       { label: 'Salt', detail: '−50 ppm / week · splash-out + backwash', trend: 'steady' },
       { label: 'CYA', detail: '+0 / month · no trichlor used', trend: 'steady' },
     ],
-    doses: [
-      { amount: '61.4 fl oz', product: 'Liquid chlorine 12.5% (trade %)', basis: 'design-doc test case · engine pending' },
-      { amount: '91.7 fl oz', product: 'Muriatic acid 31.45%', basis: 'design-doc test case · engine pending' },
-    ],
-    lsi: '−0.22',
+    gallons: 18000,
+    cell: { make: 'Sample', model: 'Model X' },
     equipment: ['Liner · fair', 'Cover · n/a', 'Pump 2019', 'Cell 2021 · 3,200 hrs', 'Filter clean due (+4 psi)'],
     note: 'Chlorine was low today, so we added a top-up and checked your salt cell.',
   },
-  { ...base, id: 'birch-lane', name: 'Birch Lane', tags: ['22,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.1, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
-  { ...base, id: 'cedar-ridge', name: 'Cedar Ridge', tags: ['16,000 gal', 'Vinyl', 'Salt'], forecast: { fc: { value: 2.6, band: 0.5 }, ph: { value: 7.9, band: 0.2 } } },
-  { ...base, id: 'oak-hollow', name: 'Oak Hollow', tags: ['30,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 4.0, band: 0.5 }, ph: { value: 7.4, band: 0.2 } } },
-  { ...base, id: 'pine-court', name: 'Pine Court', tags: ['14,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 0.9, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
-  { ...base, id: 'willow-bend', name: 'Willow Bend', tags: ['20,000 gal', 'Fiberglass', 'Trichlor', 'Screened'], forecast: { fc: { value: 0.4, band: 0.5 }, cya: { value: 85, band: 10 } } },
-  { ...base, id: 'spruce-way', name: 'Spruce Way', tags: ['18,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 3.4, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
-  { ...base, id: 'aspen-drive', name: 'Aspen Drive', tags: ['25,000 gal', 'Plaster', 'Salt'], forecast: { fc: { value: 1.8, band: 0.5 }, salt: { value: 2850, band: 200 } } },
-  { ...base, id: 'elm-terrace', name: 'Elm Terrace', tags: ['15,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.0, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
+  { ...base, id: 'birch-lane', gallons: 22000, tds: 1100, name: 'Birch Lane', tags: ['22,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.1, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
+  { ...base, id: 'cedar-ridge', gallons: 16000, name: 'Cedar Ridge', tags: ['16,000 gal', 'Vinyl', 'Salt'], forecast: { fc: { value: 2.6, band: 0.5 }, ph: { value: 7.9, band: 0.2 } } },
+  { ...base, id: 'oak-hollow', gallons: 30000, tds: 900, name: 'Oak Hollow', tags: ['30,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 4.0, band: 0.5 }, ph: { value: 7.4, band: 0.2 } } },
+  { ...base, id: 'pine-court', gallons: 14000, tds: 1300, name: 'Pine Court', tags: ['14,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 0.9, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
+  { ...base, id: 'willow-bend', gallons: 20000, tds: 1500, name: 'Willow Bend', tags: ['20,000 gal', 'Fiberglass', 'Trichlor', 'Screened'], forecast: { fc: { value: 0.4, band: 0.5 }, cya: { value: 85, band: 10 } } },
+  { ...base, id: 'spruce-way', gallons: 18000, tds: 1000, name: 'Spruce Way', tags: ['18,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 3.4, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
+  { ...base, id: 'aspen-drive', gallons: 25000, name: 'Aspen Drive', tags: ['25,000 gal', 'Plaster', 'Salt'], forecast: { fc: { value: 1.8, band: 0.5 }, salt: { value: 2850, band: 200 } } },
+  { ...base, id: 'elm-terrace', gallons: 15000, tds: 1200, name: 'Elm Terrace', tags: ['15,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.0, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
 ]
 
 export const ROUTE = {
