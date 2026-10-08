@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "about": "Five test users for the test tenant. Made-up people only: no real names, addresses or gate codes (DESIGN.md section 3, constraint 1). Logins use the reserved .test domain, so none can reach a real inbox. See docs/TEST-USERS.md.",
+  "tenant": { "id": "test-01", "name": "Sample Pool Co." },
+  "users": [
+    {
+      "id": "stevens",
+      "login": "stevens@poolos.test",
+      "name": "Old Man Stevens",
+      "role": "customer",
+      "mode": "simple",
+      "persona": { "quote": "Old Man Stevens gets big buttons and one green light.", "source": "PoolOS pitch (Alphav00/poolos README)" },
+      "pool": "oak-hollow",
+      "device": "Android, text size 130%",
+      "wants": "To know if the grandkids can swim today, and to call someone if not.",
+      "breaksIf": "He sees a number he has to interpret, or a button smaller than his thumb.",
+      "checks": [
+        "Status reads from arm's length in direct sun",
+        "Calling the company takes one tap",
+        "No chemistry words: 'chlorine is fine', never 'FC 3.1'"
+      ]
+    },
+    {
+      "id": "kid",
+      "login": "kid@poolos.test",
+      "name": "The tech-savvy kid",
+      "role": "customer",
+      "mode": "technical",
+      "persona": { "quote": "The tech-savvy kid gets automation and data.", "source": "PoolOS pitch (Alphav00/poolos README)" },
+      "pool": "aspen-drive",
+      "device": "iPhone",
+      "wants": "Every reading, the math behind it, and alerts that fire without asking.",
+      "breaksIf": "Numbers are rounded, the source of a reading is hidden, or there is no export.",
+      "checks": [
+        "Each reading shows who took it and how (drop test, strip, photo)",
+        "An alert rule saves and fires once on seeded test data",
+        "CSV export opens in a spreadsheet unchanged"
+      ]
+    },
+    {
+      "id": "poolguy",
+      "login": "poolguy@poolos.test",
+      "name": "The pool guy",
+      "role": "tech",
+      "mode": "full",
+      "persona": { "quote": "The pool guy gets everything.", "source": "PoolOS pitch (Alphav00/poolos README)" },
+      "route": "B",
+      "device": "Pixel in a wet case, gloves, noon sun",
+      "wants": "Readings in, doses out, next stop, without slowing down.",
+      "breaksIf": "A control needs two hands or the screen washes out in sun.",
+      "checks": [
+        "A stop takes under 60 seconds with one thumb (DESIGN.md M3)",
+        "Every dose names the product and its strength",
+        "A refresh mid-stop loses nothing"
+      ]
+    },
+    {
+      "id": "newhire",
+      "login": "newhire@poolos.test",
+      "name": "Seasonal new hire",
+      "role": "tech",
+      "mode": "guided",
+      "persona": { "quote": "An under-qualified seasonal hire with a phone, a plain test kit and the right app can service pools competently, with a senior tech rotating for quality checks.", "source": "Product thesis (DESIGN.md section 1)" },
+      "route": "C",
+      "checkedBy": "poolguy",
+      "device": "Own phone, plain drop-test kit",
+      "wants": "To be told the next step and to know when to ask.",
+      "breaksIf": "The app assumes they know what TA or CYA means.",
+      "checks": [
+        "Every step says what to do with the kit in hand",
+        "A dose over the safety ceiling waits for the senior's OK",
+        "'Ask a senior' reaches someone from any screen"
+      ]
+    },
+    {
+      "id": "owner",
+      "login": "owner@poolos.test",
+      "name": "Owner",
+      "role": "owner",
+      "mode": "dashboard",
+      "persona": { "quote": "The numbers that tell an owner whether the business is healthy.", "source": "DESIGN.md section 1" },
+      "device": "Phone in the truck, laptop at night",
+      "wants": "Stops per day, time on site and chemical cost, each with its formula.",
+      "breaksIf": "A number appears without the records behind it.",
+      "checks": [
+        "Every KPI shows its formula and record count (DESIGN.md M12)",
+        "Tenant test-01 cannot read another tenant's rows (DESIGN.md M4)",
+        "A 'liner: poor' flag opens exactly one quote (DESIGN.md M9)"
+      ]
+    }
+  ]
+}
