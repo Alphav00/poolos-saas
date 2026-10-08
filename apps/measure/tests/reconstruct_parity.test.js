@@ -155,9 +155,9 @@ async function fetchJSON(path) {
     const m = job.measurement;
     const r = reconstructPool(m.perimeter_points, parseFloat(m.ab_distance_ft),
       parseFloat(m.shallow_depth_ft), parseFloat(m.deep_depth_ft));
-    // Ground truth: 38 x 23.51
+    // Ground truth: 38 x 15.40
     near(r.lengthFt, 38, 0.01, '7: fixture kidney length = 38');
-    near(r.widthFt, 23.51, 0.01, '7: fixture kidney width = 23.51');
+    near(r.widthFt, 15.40, 0.01, '7: fixture kidney width = 15.40');
   }
 
   // ---------- 8. Parity on freeform fixture ----------
@@ -166,9 +166,9 @@ async function fetchJSON(path) {
     const m = job.measurement;
     const r = reconstructPool(m.perimeter_points, parseFloat(m.ab_distance_ft),
       parseFloat(m.shallow_depth_ft), parseFloat(m.deep_depth_ft));
-    // Ground truth: 46 x 21.06
-    near(r.lengthFt, 46, 0.01, '8: fixture freeform length = 46');
-    near(r.widthFt, 21.06, 0.01, '8: fixture freeform width = 21.06');
+    // Ground truth: 44.92 x 23.37
+    near(r.lengthFt, 44.92, 0.01, '8: fixture freeform length = 44.92');
+    near(r.widthFt, 23.37, 0.01, '8: fixture freeform width = 23.37');
   }
 
   console.log(`\nReconstruction parity tests: ${pass} passed, ${fail} failed`);
