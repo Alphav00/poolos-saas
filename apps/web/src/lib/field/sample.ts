@@ -49,12 +49,12 @@ export const POOLS: Pool[] = [
     note: 'Chlorine was low today, so we added a top-up and checked your salt cell.',
   },
   { ...base, id: 'birch-lane', gallons: 22000, tds: 1100, name: 'Birch Lane', tags: ['22,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.1, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
-  { ...base, id: 'cedar-ridge', gallons: 16000, name: 'Cedar Ridge', tags: ['16,000 gal', 'Vinyl', 'Salt'], forecast: { fc: { value: 2.6, band: 0.5 }, ph: { value: 7.9, band: 0.2 } } },
+  { ...base, id: 'cedar-ridge', gallons: 16000, cell: { make: 'Hayward', model: 'T-CELL-15' }, name: 'Cedar Ridge', tags: ['16,000 gal', 'Vinyl', 'Salt'], forecast: { fc: { value: 2.6, band: 0.5 }, ph: { value: 7.9, band: 0.2 } } },
   { ...base, id: 'oak-hollow', gallons: 30000, tds: 900, name: 'Oak Hollow', tags: ['30,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 4.0, band: 0.5 }, ph: { value: 7.4, band: 0.2 } } },
   { ...base, id: 'pine-court', gallons: 14000, tds: 1300, name: 'Pine Court', tags: ['14,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 0.9, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
   { ...base, id: 'willow-bend', gallons: 20000, tds: 1500, name: 'Willow Bend', tags: ['20,000 gal', 'Fiberglass', 'Trichlor', 'Screened'], forecast: { fc: { value: 0.4, band: 0.5 }, cya: { value: 85, band: 10 } } },
   { ...base, id: 'spruce-way', gallons: 18000, tds: 1000, name: 'Spruce Way', tags: ['18,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 3.4, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
-  { ...base, id: 'aspen-drive', gallons: 25000, name: 'Aspen Drive', tags: ['25,000 gal', 'Plaster', 'Salt'], forecast: { fc: { value: 1.8, band: 0.5 }, salt: { value: 2850, band: 200 } } },
+  { ...base, id: 'aspen-drive', gallons: 25000, cell: { make: 'Pentair', model: 'IC40' }, name: 'Aspen Drive', tags: ['25,000 gal', 'Plaster', 'Salt'], forecast: { fc: { value: 1.8, band: 0.5 }, salt: { value: 2850, band: 200 } } },
   { ...base, id: 'elm-terrace', gallons: 15000, tds: 1200, name: 'Elm Terrace', tags: ['15,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.0, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
 ]
 

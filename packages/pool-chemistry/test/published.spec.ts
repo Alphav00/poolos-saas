@@ -42,7 +42,7 @@ describe('saturation index: Wojtowicz revised equation', () => {
   // SI = pH + log Hard + log CarbAlk + TC + C, TC = 0.0155 °C,
   // C = -11.30 - 0.333 log TDS. It is a regression with no ion pairs, so it
   // should track PHREEQC closely but not exactly.
-  test('PHREEQC agrees within 0.1 across normal pool water', () => {
+  test('PHREEQC agrees within 0.07 across normal pool water', () => {
     let worst = 0;
     for (const t of [60, 80, 95])
       for (const ph of [7.2, 7.5, 7.8])
@@ -56,6 +56,7 @@ describe('saturation index: Wojtowicz revised equation', () => {
                 const si = ph + Math.log10(ch) + Math.log10(v.alkalinity.carbonate) + 0.0155 * v.temperatureC - 11.3 - 0.333 * Math.log10(tds);
                 worst = Math.max(worst, Math.abs(v.saturationIndex - si));
               }
-    expect(worst).toBeLessThan(0.1); // 0.063 at the time of writing
+    // 0.063 with the pinned engine; the bound leaves room for a PHREEQC update, not for a regression.
+    expect(worst, `worst |PHREEQC SI − Wojtowicz SI| = ${worst.toFixed(4)}`).toBeLessThan(0.07);
   });
 });

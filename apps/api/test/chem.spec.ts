@@ -65,4 +65,20 @@ describe('chem: salt by the cell', () => {
 		const dose = await api('/dose', { method: 'POST', body: { kind: 'salt', water: WATER, gallons: 18000, product: { assayPercent: 99 }, cell: { make: 'Sample', model: 'Model X' } } });
 		expect(dose.status).toBe(422);
 	});
+
+	it('uses the manufacturer’s figure for a cell on file, and names the document', async () => {
+		const res = await api('/salt-cell?make=hayward&model=t%20cell%2015');
+		expect(res.status).toBe(200);
+		const r = (await res.json()) as { ok: true; value: { targetPpm: number; minPpm: number; maxPpm: number; source: string; url: string } };
+		expect(r.value).toMatchObject({ minPpm: 2700, maxPpm: 3400, targetPpm: 3200 });
+		expect(r.value.source).toContain('Hayward');
+		expect(r.value.url).toMatch(/^https:\/\/hayward\.com\//);
+		// The dose aims at that figure, whatever target the request carries.
+		const dose = await api('/dose', { method: 'POST', body: { kind: 'salt', water: { ...WATER, salt: 2500 }, target: 9999, gallons: 18000, product: { assayPercent: 99 }, cell: { make: 'Hayward', model: 'T-CELL-15' } } });
+		expect(dose.status).toBe(200);
+		const d = (await dose.json()) as { value: { after: { salt: number }; pounds: number } };
+		expect(Math.abs(d.value.after.salt - 3200)).toBeLessThan(1);
+		// 700 ppm in 18,000 gal: 0.7 g/L x 68,137 L / 0.99 purity = 48.2 kg
+		expect(d.value.pounds).toBeCloseTo((0.7 * 18000 * 3.785411784) / 0.99 / 453.59237, 1);
+	});
 });
