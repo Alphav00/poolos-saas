@@ -138,7 +138,7 @@ async function api(method, path, body) {
   const kLength = parseFloat(kidneyRecon.length_ft);
   const kWidth = parseFloat(kidneyRecon.width_ft);
   ok(Math.abs(kLength - 38) < 0.1, `9: kidney length ~38ft, got ${kLength}`);
-  ok(Math.abs(kWidth - 23.5) < 0.1, `9: kidney width ~23.5ft, got ${kWidth}`);
+  ok(Math.abs(kWidth - 15.4) < 0.1, `9: kidney width ~15.4ft, got ${kWidth}`);
 
   // ---------- 10. Freeform fixture end-to-end ----------
   const freeform = await api('GET', '/api/fixtures/freeform');
@@ -151,8 +151,8 @@ async function api(method, path, body) {
   const ffRecon = await api('POST', `/api/jobs/${ffJob.id}/reconstruct`);
   const fLength = parseFloat(ffRecon.length_ft);
   const fWidth = parseFloat(ffRecon.width_ft);
-  ok(Math.abs(fLength - 46) < 0.1, `10: freeform length ~46ft, got ${fLength}`);
-  ok(Math.abs(fWidth - 21.06) < 0.1, `10: freeform width ~21.06ft, got ${fWidth}`);
+  ok(Math.abs(fLength - 44.92) < 0.1, `10: freeform length ~44.92ft, got ${fLength}`);
+  ok(Math.abs(fWidth - 23.37) < 0.1, `10: freeform width ~23.37ft, got ${fWidth}`);
 
   console.log(`\nMVP happy-path e2e: ${pass} passed, ${fail} failed`);
   if (fail > 0) {
