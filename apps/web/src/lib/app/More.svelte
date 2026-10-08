@@ -30,6 +30,11 @@
     <div><div class="nm">Measure</div><div class="xs">Liners and covers: A/B walk, closure checks, order forms</div></div>
     <span></span>
   </a>
+  <a class="stop" href="#/more/chemistry">
+    <span class="num">⚗</span>
+    <div><div class="nm">Chemistry setup</div><div class="xs">Products with their label strengths, and the company's target ranges</div></div>
+    <span></span>
+  </a>
 </section>
 
 <section class="card">
