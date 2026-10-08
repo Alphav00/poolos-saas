@@ -6,7 +6,13 @@ import ts from 'typescript-eslint';
 export default ts.config(
   // apps/measure is Liner Measure Pro's Svelte 4 app brought over as is; its own
   // test suites cover it (pnpm --filter @poolos/measure test).
-  { ignores: ['**/node_modules/', '**/dist/', '**/.wrangler/', 'reference/', 'inputs/', 'apps/api/worker-configuration.d.ts', 'apps/measure/'] },
+  // phreeqc.mjs is Emscripten output from packages/pool-chemistry/phreeqc/build.sh.
+  {
+    ignores: [
+      '**/node_modules/', '**/dist/', '**/.wrangler/', 'reference/', 'inputs/', 'apps/api/worker-configuration.d.ts',
+      'apps/measure/', 'packages/pool-chemistry/phreeqc/phreeqc.mjs',
+    ],
+  },
   js.configs.recommended,
   ...ts.configs.recommended,
   ...svelte.configs.recommended,

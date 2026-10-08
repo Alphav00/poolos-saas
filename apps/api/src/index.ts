@@ -5,6 +5,7 @@
  */
 import { viewerFrom } from './auth';
 import { boardFor, handleBoards } from './boards';
+import { handleChem } from './chem';
 import { handleMeasure } from './measure';
 import { handleWeather } from './weather';
 
@@ -28,6 +29,9 @@ export default {
 		if (url.pathname === '/api/measure' || url.pathname.startsWith('/api/measure/')) {
 			const parts = url.pathname.slice('/api/measure'.length).split('/').filter(Boolean).map(decodeURIComponent);
 			return handleMeasure(request, env, viewer, parts);
+		}
+		if (url.pathname.startsWith('/api/chem/')) {
+			return handleChem(request, url.pathname.slice('/api/chem/'.length).split('/').filter(Boolean));
 		}
 		if (url.pathname === '/api/weather') return handleWeather(request, fetch, caches.default, (p) => ctx.waitUntil(p));
 		if (url.pathname.startsWith('/api/')) return Response.json({ error: { code: 'not_found', message: 'No such route' } }, { status: 404 });

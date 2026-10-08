@@ -35,6 +35,9 @@ importers:
       '@poolos/measure-core':
         specifier: workspace:*
         version: link:../../packages/measure-core
+      '@poolos/pool-chemistry':
+        specifier: workspace:*
+        version: link:../../packages/pool-chemistry
       jose:
         specifier: ^6.2.12
         version: 6.2.12
@@ -121,6 +124,18 @@ importers:
       pdf-lib:
         specifier: ^1.17.1
         version: 1.17.1
+    devDependencies:
+      '@types/node':
+        specifier: ^24.13.3
+        version: 24.19.1
+      typescript:
+        specifier: ~6.0.2
+        version: 6.0.3
+      vitest:
+        specifier: ~4.1.0
+        version: 4.1.11(@types/node@24.19.1)(vite@8.3.3(@types/node@24.19.1)(esbuild@0.28.1)(jiti@2.7.0))
+
+  packages/pool-chemistry:
     devDependencies:
       '@types/node':
         specifier: ^24.13.3
