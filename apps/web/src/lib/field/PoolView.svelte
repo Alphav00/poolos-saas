@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { amountWords, analyze, dose, plan, strengthWords, waterFrom, type Analysis, type Answer, type Ask, type Dose, type Product, type Targets } from './chem'
+  import { amountWords, analyze, cellRange, dose, plan, strengthWords, waterFrom, type Analysis, type Answer, type Ask, type CellRange, type Dose, type Product, type Targets } from './chem'
   import { compare } from './compare'
   import DecayChart from './DecayChart.svelte'
   import { loadReading, today } from './readings'
@@ -14,6 +14,8 @@
   let products = $state<Product[]>([])
   let targets = $state<Targets | null>(null)
   let setupError = $state('')
+  // The salt range for this pool's cell, from its manufacturer, or the question why not.
+  let cell = $state<Answer<CellRange> | null>(null)
 
   // Everything the engine said about today's water, or why it could not say.
   let analysis = $state<Answer<Analysis> | null>(null)
@@ -31,6 +33,7 @@
         targets = t
       })
       .catch((e: Error) => (setupError = e.message))
+    if (pool.cell) cellRange(pool.cell).then((r) => (cell = r)).catch(() => (cell = null))
   })
 
   const rows = $derived(
@@ -44,7 +47,7 @@
   const off = $derived(rows.filter((r) => r.status === 'off'))
   const methodLabel = $derived(reading ? { strip: 'strip', drop: 'drop kit', meter: 'meter' }[reading.method] : 'not tested yet')
   const water = $derived(waterFrom(reading, pool))
-  const planned = $derived(plan(reading, targets, products))
+  const planned = $derived(plan(reading, targets, products, cell?.ok ? cell.value : null))
   const tested = $derived(!!reading && Object.keys(reading.values).length > 0)
 
   // Ask the engine whenever the readings or the setup change.
@@ -159,7 +162,7 @@
           <div class="a">{amountWords(d.answer.value)}</div>
           <div>
             <div class="w">{strengthWords(d.ask.product)}</div>
-            <div class="xs">{s.label} → {fmt(d.ask.param, d.ask.target)}{d.answer.value.after ? ` · pH after ${d.answer.value.after.ph.toFixed(1)}` : ''}</div>
+            <div class="xs">{s.label} → {fmt(d.ask.param, d.ask.target)}{d.ask.source ? ` · ${d.ask.source}` : ''}{d.answer.value.after ? ` · pH after ${d.answer.value.after.ph.toFixed(1)}` : ''}</div>
           </div>
         </div>
       {:else}
@@ -175,6 +178,9 @@
     {#each planned.notes as n (n.param)}
       <div class="dose"><div class="a">—</div><div><div class="w">{scaleFor(n.param).label}</div><div class="xs">{n.text}</div></div></div>
     {/each}
+    {#if pool.cell && cell && !cell.ok}
+      <div class="dose"><div class="a">?</div><div><div class="w">Salt cell · {pool.cell.make} {pool.cell.model}</div><div class="xs">{cell.questions.map((q) => q.ask).join(' ')} Until then salt is judged against the company's range.</div></div></div>
+    {/if}
     {#if !doses.length && !planned.notes.length && !chemBusy}
       <p class="sm" style="margin-top:4px">Everything is inside the target ranges. Nothing to add.</p>
     {/if}

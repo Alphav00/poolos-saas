@@ -15,3 +15,5 @@ export type {
   WaterState,
 } from './pool';
 export * from './units';
+export { SALT_CELLS, cellKey, knownMakes, saltCellRange } from './saltCells';
+export type { SaltCellMatch, SaltCellRange } from './saltCells';

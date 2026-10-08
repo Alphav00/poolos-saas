@@ -2,15 +2,16 @@
  * /api/chem/* — pool water chemistry from @poolos/pool-chemistry, which runs
  * USGS PHREEQC (compiled to WebAssembly) inside this Worker.
  *
- *   GET  /api/chem/engine   which PHREEQC build and database answer
- *   POST /api/chem/analyze  { ...readings }                       -> analysis
- *   POST /api/chem/dose     { kind, water, target, gallons, product } -> dose
+ *   GET  /api/chem/engine                   which PHREEQC build and database answer
+ *   GET  /api/chem/salt-cell?make=&model=   the manufacturer's salt range for a cell
+ *   POST /api/chem/analyze  { ...readings }                              -> analysis
+ *   POST /api/chem/dose     { kind, water, target, gallons, product, cell? } -> dose
  *
  * When readings or label facts are missing or out of range, the answer is
  * 422 with the questions to ask, never a guessed number.
  */
 import phreeqcWasm from '@poolos/pool-chemistry/phreeqc.wasm'
-import { ENGINE_INFO, PhreeqcError, PoolChemistry, liquidChlorineDose, type Answer, type Water } from '@poolos/pool-chemistry'
+import { ENGINE_INFO, PhreeqcError, PoolChemistry, liquidChlorineDose, saltCellRange, type Answer, type Water } from '@poolos/pool-chemistry'
 
 const MAX_BODY = 64 * 1024
 
@@ -63,8 +64,17 @@ function dose(c: PoolChemistry, body: Body): Response {
 		}
 		case 'cyanuric-acid':
 			return answer(c.cyanuricAcidToTarget(water, target, gallons, product))
-		case 'salt':
+		case 'salt': {
+			// With a cell, the target is the manufacturer's figure for it; an
+			// unknown make or model is a question (DESIGN.md §3 #10).
+			const cell = body.cell as { make?: string; model?: string } | undefined
+			if (cell) {
+				const range = saltCellRange(cell.make ?? '', cell.model ?? '')
+				if (!range.ok) return answer(range)
+				return answer(c.saltToTarget(water, range.value.targetPpm, gallons, product))
+			}
 			return answer(c.saltToTarget(water, target, gallons, product))
+		}
 		case 'liquid-chlorine':
 			return answer(liquidChlorineDose(water.freeChlorine as number, target, gallons, product))
 	}
@@ -75,6 +85,11 @@ export async function handleChem(request: Request, parts: string[]): Promise<Res
 	if (route === 'engine') {
 		if (request.method !== 'GET') return fail(405, 'method_not_allowed', 'Use GET')
 		return json(ENGINE_INFO)
+	}
+	if (route === 'salt-cell') {
+		if (request.method !== 'GET') return fail(405, 'method_not_allowed', 'Use GET')
+		const q = new URL(request.url).searchParams
+		return answer(saltCellRange(q.get('make') ?? '', q.get('model') ?? ''))
 	}
 	if (route !== 'analyze' && route !== 'dose') return fail(404, 'not_found', 'No such route')
 	if (request.method !== 'POST') return fail(405, 'method_not_allowed', 'Use POST')

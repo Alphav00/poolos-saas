@@ -115,12 +115,27 @@ const MOVES: { param: TargetParam; low: ProductKind | null; high: ProductKind | 
   { param: 'salt', low: 'salt', high: null, highNote: 'above target · only dilution lowers it' },
 ]
 
+/** A chlorine generator cell's salt range, from its manufacturer's manual (/api/chem/salt-cell). */
+export interface CellRange {
+  make: string
+  model: string
+  minPpm: number
+  maxPpm: number
+  targetPpm: number
+  source: string
+  url: string
+}
+
 export interface Ask {
   kind: ProductKind
   param: TargetParam
-  /** the middle of the target range */
+  /** the middle of the target range, or the cell manufacturer's figure for salt */
   target: number
   product: Product
+  /** who set the target: the company (default) or the cell's manufacturer document */
+  source?: string
+  /** for salt with a known cell: the engine looks the target up itself */
+  cell?: { make: string; model: string }
 }
 
 export interface Note {
@@ -134,14 +149,18 @@ export interface Plan {
   notes: Note[]
 }
 
-/** Which doses to ask the engine for. Pure: readings, targets and products in, requests out. */
-export function plan(reading: Reading | null, targets: Targets | null, products: Product[]): Plan {
+/**
+ * Which doses to ask the engine for. Pure: readings, targets and products in,
+ * requests out. With a cell range, salt is judged against the manufacturer's
+ * range instead of the company's, and aimed at the manufacturer's figure.
+ */
+export function plan(reading: Reading | null, targets: Targets | null, products: Product[], cell?: CellRange | null): Plan {
   const asks: Ask[] = []
   const notes: Note[] = []
   if (!reading || !targets) return { asks, notes }
   for (const m of MOVES) {
     const v = reading.values[m.param]
-    const range = targets.ranges[m.param]
+    const range = m.param === 'salt' && cell ? [cell.minPpm, cell.maxPpm] : targets.ranges[m.param]
     if (v === undefined || !range) continue
     const [low, high] = range
     if (v >= low && v <= high) continue
@@ -155,7 +174,9 @@ export function plan(reading: Reading | null, targets: Targets | null, products:
       notes.push({ param: m.param, text: `${v < low ? 'below' : 'above'} target · no ${PRODUCT_WORDS[kind].toLowerCase()} set up` })
       continue
     }
-    asks.push({ kind, param: m.param, target: (low + high) / 2, product })
+    const ask: Ask = { kind, param: m.param, target: (low + high) / 2, product }
+    if (m.param === 'salt' && cell) Object.assign(ask, { target: cell.targetPpm, source: cell.source, cell: { make: cell.make, model: cell.model } })
+    asks.push(ask)
   }
   return { asks, notes }
 }
@@ -172,7 +193,16 @@ export const analyze = (water: Partial<Water>) => post<Analysis>('/api/chem/anal
 
 export function dose(ask: Ask, water: Partial<Water>, gallons: number): Promise<Answer<Dose>> {
   const { id: _id, kind: _kind, name: _name, ...product } = ask.product
-  return post<Dose>('/api/chem/dose', { kind: ask.kind, water, target: ask.target, gallons, product })
+  return post<Dose>('/api/chem/dose', { kind: ask.kind, water, target: ask.target, gallons, product, ...(ask.cell ? { cell: ask.cell } : {}) })
+}
+
+/** The manufacturer's salt range for a cell, or the engine's question when it has none on file. */
+export async function cellRange(cell: { make: string; model: string }): Promise<Answer<CellRange>> {
+  const q = new URLSearchParams(cell)
+  const res = await fetch(`/api/chem/salt-cell?${q}`, { credentials: 'same-origin' })
+  if (res.status === 200 || res.status === 422) return (await res.json()) as Answer<CellRange>
+  if (res.status === 401) throw new Error('Sign in again.')
+  throw new Error('The chemistry engine did not answer.')
 }
 
 /** Amount in the words a tech uses: fluid ounces for liquids, pounds and ounces for dry goods. */

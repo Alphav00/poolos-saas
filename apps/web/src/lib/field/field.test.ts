@@ -136,3 +136,23 @@ describe('chemistry: which doses to ask the engine for', () => {
     expect(strengthWords(acid)).toContain('31.45% HCl by weight')
   })
 })
+
+describe('chemistry: salt by the cell manufacturer', () => {
+  const salt: Product = { id: 's', kind: 'salt', name: 'Pool salt', assayPercent: 99 }
+  const targets: Targets = { source: 'test policy', ranges: { salt: [3000, 3400] } }
+  const reading = { method: 'drop' as const, values: { salt: 2700 } }
+  const cell = { make: 'Maker', model: 'C1', minPpm: 2800, maxPpm: 4500, targetPpm: 3400, source: 'Maker manual', url: 'https://example.test' }
+
+  it('aims at the manufacturer’s figure and names the document', () => {
+    const p = plan(reading, targets, [salt], cell)
+    expect(p.asks).toHaveLength(1)
+    expect(p.asks[0]).toMatchObject({ kind: 'salt', target: 3400, source: 'Maker manual', cell: { make: 'Maker', model: 'C1' } })
+    // inside the manufacturer's range but under the company's: nothing to add
+    expect(plan({ ...reading, values: { salt: 2900 } }, targets, [salt], cell).asks).toEqual([])
+  })
+
+  it('falls back to the company range without a cell', () => {
+    expect(plan(reading, targets, [salt], null).asks[0]).toMatchObject({ target: 3200 })
+    expect(plan(reading, targets, [salt], null).asks[0]!.cell).toBeUndefined()
+  })
+})

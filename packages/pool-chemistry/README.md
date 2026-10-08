@@ -24,8 +24,16 @@ come back as questions. There are no built-in product defaults.
 Every analysis carries the exact PHREEQC input, the engine commit and the
 database hashes, so any number can be re-run by hand.
 
-The Worker serves it at `/api/chem/engine`, `/api/chem/analyze` and
-`/api/chem/dose` (see `apps/api/src/chem.ts`).
+Salt targets are not one number: `saltCellRange(make, model)` returns the
+chlorine generator manufacturer's own range for that cell, from a table in
+`src/saltCells.ts` where every row carries the manual's URL and a verbatim
+quote. A make or model not in the table is a question, never a guess.
+
+The Worker serves it at `/api/chem/engine`, `/api/chem/salt-cell`,
+`/api/chem/analyze` and `/api/chem/dose` (see `apps/api/src/chem.ts`). The
+field screens use it through `apps/web/src/lib/field/chem.ts`: a reading
+outside the company's target range asks for the company's own product, with
+the strength from its label, to the middle of the range.
 
 ## Where the numbers come from
 
