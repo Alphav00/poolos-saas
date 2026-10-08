@@ -19,6 +19,7 @@
 	},
 	"dependencies": {
 		"jose": "^6.2.12",
-		"@poolos/measure-core": "workspace:*"
+		"@poolos/measure-core": "workspace:*",
+		"@poolos/pool-chemistry": "workspace:*"
 	}
 }

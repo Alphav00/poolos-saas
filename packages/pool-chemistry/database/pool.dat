@@ -1,0 +1,108 @@
+# pool.dat - additions to the USGS phreeqc.dat for pool and spa water.
+#
+# Loaded after phreeqc.dat, which is used unchanged. This file only adds free
+# available chlorine and cyanuric acid, which phreeqc.dat does not have.
+#
+# They are added as two new elements so PHREEQC can never convert them by
+# redox into chloride, or into CO2 and N2:
+#   Fc   the chlorine atom of free available chlorine, oxidation state +1.
+#        HOFc is HOCl and OFc- is OCl-. Entered in mg/L as Cl2, the way test
+#        kits report free chlorine: one mole of HOCl is one mole of Cl2 of
+#        available chlorine, so the input weight is 70.906 g/mol (2 x 35.453).
+#   Cya  the triisocyanurate ring C3N3O3. H3Cya is cyanuric acid,
+#        C3H3N3O3, 129.07 g/mol.
+# Chloroisocyanurates are written in the same letters: H2FcCya is H2ClCy,
+# HFcCya- is HClCy-, Fc2Cya- is Cl2Cy-, and so on.
+#
+# Source of every constant below:
+#   O'Brien, J. E., J. C. Morris and J. N. Butler (1974). "Equilibria in
+#   Aqueous Solutions of Chlorinated Isocyanurate", ch. 14 in A. J. Rubin
+#   (ed.), Chemistry of Water Supply, Treatment, and Distribution. Ann Arbor
+#   Science Publishers, pp. 333-358.
+#   as tabulated in Wojtowicz, J. A. (2001). "Relative Bactericidal
+#   Effectiveness of Hypochlorous Acid and Chloroisocyanurates", Journal of
+#   the Swimming Pool and Spa Industry 2(1): 34-41, Table 2, pK1 to pK13
+#   at about 25 C. pK13 (HOCl) is the value of Morris (1966) in that table.
+#
+#   pK1  Cl3Cy + H2O = HCl2Cy + HOCl       1.8
+#   pK2  HCl2Cy = H+ + Cl2Cy-              3.75
+#   pK3  HCl2Cy + H2O = H2ClCy + HOCl      2.93
+#   pK4  H2ClCy = H+ + HClCy-              5.33
+#   pK5  H2ClCy + H2O = H3Cy + HOCl        4.07
+#   pK6  H3Cy = H+ + H2Cy-                 6.88
+#   pK7  Cl2Cy- + H2O = HClCy- + HOCl      4.51
+#   pK8  HClCy- = H+ + ClCy2-              10.12
+#   pK9  HClCy- + H2O = H2Cy- + HOCl       5.62
+#   pK10 H2Cy- = H+ + HCy2-                11.40
+#   pK11 ClCy2- + H2O = HCy2- + HOCl       6.90
+#   pK12 HCy2- = H+ + Cy3-                 13.5
+#   pK13 HOCl = H+ + OCl-                  7.54
+#
+# PHREEQC defines each species from the master species H3Cya and HOFc, so
+# each log_k below is a sum of the pK values above, named on its line. The
+# table is over-determined: pK7, pK9 and pK11 are reached from pK2 to pK8 by
+# other paths, and test/database.spec.ts checks that both paths agree to
+# 0.01, the rounding of the table.
+#
+# Limits, stated rather than hidden:
+# - The constants were measured at 24-25 C and no temperature dependence is
+#   given in the source, so no -delta_h or -analytic is set and PHREEQC uses
+#   them unchanged at every temperature. Carbonate, calcite and borate come
+#   from phreeqc.dat and do follow temperature.
+# - O'Brien measured near ionic strength 0.02. PHREEQC treats the constants as
+#   thermodynamic and applies its own activity corrections.
+# - Alkalinity contributions follow PHREEQC's usual rule: H3Cya and HOFc
+#   carry none, so each proton removed from them adds one.
+
+SOLUTION_MASTER_SPECIES
+# element  master species  alkalinity  gfw for input  element gfw
+Fc         HOFc            0           70.906         35.453
+Cya        H3Cya           0           129.07         126.05
+
+SOLUTION_SPECIES
+HOFc = HOFc
+	log_k 0
+H3Cya = H3Cya
+	log_k 0
+
+# pK13
+HOFc = OFc- + H+
+	log_k -7.54
+
+# pK6
+H3Cya = H2Cya- + H+
+	log_k -6.88
+# pK6 + pK10
+H3Cya = HCya-2 + 2H+
+	log_k -18.28
+# pK6 + pK10 + pK12
+H3Cya = Cya-3 + 3H+
+	log_k -31.78
+
+# pK5
+H3Cya + HOFc = H2FcCya + H2O
+	log_k 4.07
+# pK5 - pK4
+H3Cya + HOFc = HFcCya- + H+ + H2O
+	log_k -1.26
+# pK5 - pK4 - pK8
+H3Cya + HOFc = FcCya-2 + 2H+ + H2O
+	log_k -11.38
+# pK5 + pK3
+H3Cya + 2HOFc = HFc2Cya + 2H2O
+	log_k 7.00
+# pK5 + pK3 - pK2
+H3Cya + 2HOFc = Fc2Cya- + H+ + 2H2O
+	log_k 3.25
+# pK5 + pK3 + pK1
+H3Cya + 3HOFc = Fc3Cya + 3H2O
+	log_k 8.80
+
+PHASES
+# Used only to hold pH at a target while acid or base is added. Its saturation
+# index is log a(H+), so a target of -7.5 means pH 7.5. This is the fixed-pH
+# technique given with EQUILIBRIUM_PHASES in the PHREEQC version 3 manual
+# (Parkhurst and Appelo 2013, USGS Techniques and Methods 6-A43).
+Fix_H+
+	H+ = H+
+	log_k 0

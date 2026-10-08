@@ -1,0 +1,21 @@
+{
+  "name": "@poolos/pool-chemistry",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Pool water chemistry on USGS PHREEQC (WebAssembly): saturation index, alkalinity split, hypochlorous acid with cyanuric acid, and doses.",
+  "exports": {
+    ".": "./src/index.ts",
+    "./phreeqc.wasm": "./phreeqc/phreeqc.wasm"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "embed": "node scripts/embed-database.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "typescript": "~6.0.2",
+    "vitest": "~4.1.0"
+  }
+}

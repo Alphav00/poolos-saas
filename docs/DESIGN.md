@@ -223,8 +223,9 @@ Backyards lose signal. The route module will not survive online-only for long.
 | Keep it Python, run as a Cloudflare Python Worker | No rewrite of 93 KB of cited code | Python Workers support pure-Python and Pyodide packages only; must confirm the file has no unsupported dependency |
 | Keep it Python, run as a FastAPI service on bld-golden | No rewrite; same stack as Liner Measure Pro | A home server becomes part of a paid product's uptime |
 | Port to TypeScript | Runs in the Worker and on the phone (offline dosing) | A rewrite. Hand-rolling under Chi's rule; needs her OK; every constant must be re-verified |
+| Run USGS PHREEQC, compiled to WebAssembly, with a small pool database | The standard, public-domain engine for saturation indices; runs in the Worker and could run on the phone; no hand-written chemistry | New engine rather than the 93 KB file; constants for chlorine and cyanuric acid had to be added (cited) |
 
-`PROPOSED` option 1 if the dependency check passes, with the exact-output tests in section 6 as the gate. `OPEN` — Chi's call (Gate 1 correction 3).
+`DECIDED` 2026-10-08, Chi: "create pool_chemistry from phreeqc". Built as `packages/pool-chemistry` (see its README). `pool_chemistry.py` is no longer needed for M1; parts of it that are not equilibrium chemistry (manufacturer salt ranges, product lists) can still be brought over later.
 
 ### 5.4 Front end
 `PROPOSED` Svelte + Vite + Tailwind, because Liner Measure Pro already uses them and its field-UI patterns (feet-and-inches parser, autosave, big closure card) can be lifted without translation. Counter-argument an agent may raise: a larger hiring pool for React.
@@ -255,6 +256,11 @@ The engine is a library with no network and no database. Input: readings, pool a
 | Saturation index | LSI −0.22, TDS basis ANSI/APSP-11 | R14 |
 
 Inputs for each case are in `design.md` on bld; copy them into the test file unchanged.
+
+`PROPOSED` (2026-10-08, with the PHREEQC engine; Chi to accept or reject):
+- Chlorine: the engine's trade-percent dose gives 61.44 fl oz for a 3 ppm rise in 20,000 gal of 12.5%. That matches 61.4 if those are design.md's inputs; not checked until design.md is copied in.
+- Saturation index: PHREEQC computes the calcite saturation index from activities (Plummer and Busenberg 1982 solubility), not the ANSI/APSP-11 LSI formula, so it will not give −0.22 exactly. Proposed replacement gate: the native-vs-WebAssembly parity goldens, Wojtowicz's published HOCl table (within 2.5%), and Wojtowicz's revised SI equation (within 0.1; 0.063 worst over 324 waters).
+- Acid: PHREEQC titrates the measured pH, alkalinity, CYA and borates to the target pH, so it gives an amount without an acid-demand count. That conflicts with the first rule below; Chi to decide whether the titration replaces the demand count or must agree with it.
 
 **Rules the engine enforces**
 - No acid amount without an acid-demand count.
@@ -341,6 +347,7 @@ Each milestone has sub-tests in the form "action gives result". A milestone is d
 **M1 — Chemistry engine callable**
 - Clean the header and defaults of `pool_chemistry.py`; decide where it runs (5.3).
 - Sub-tests: the three golden cases in section 6 return exactly · acid with no demand count returns no amount · unknown salt cell returns a question, not a number.
+- Status 2026-10-08: engine callable as `@poolos/pool-chemistry` and at `/api/chem/*`. Missing readings and missing label facts return questions. Golden cases pending design.md and the section 6 proposal.
 
 **M2 — One stop, end to end (the Gate 1 slice)**
 - Tech opens today's route, picks a stop, enters readings, sees doses by product and strength, logs what was added, closes the stop; a service note exists.
@@ -443,7 +450,7 @@ the command run and its literal output. Then: anything you could not verify.
 | 3 | Name: PoolOS for everything, or a separate product name | Repo, domain, brand |
 | 4 | Slice 1 online-only? | M2 scope |
 | 5 | Minimum readings per stop, or all optional | M2 |
-| 6 | Chemistry engine: Python Worker, bld service, or approved port | M1 |
+| 6 | ~~Chemistry engine: Python Worker, bld service, or approved port~~ Decided 2026-10-08: PHREEQC in WebAssembly | M1 |
 | 7 | Tenancy model | M4 |
 | 8 | Ownership of Liner Measure Pro for commercial use | M10 |
 | 9 | Auth, billing, email and SMS components | M4, M7, M8 |
