@@ -19,13 +19,14 @@ data marked **DEMO**.
 
 ## How to run it
 
-- **Local, real Worker (coming):** `pnpm install`, then `pnpm e2e`. It starts
+- **Local, real Worker:** `pnpm install`, then `pnpm e2e`. It starts
   the real Worker with a local D1 database, walks the journeys and writes
-  screenshots and a report to `e2e-output/`. Until it lands, `pnpm install`
-  and `pnpm check` (lint, typecheck, fixture lint, unit tests) are what run.
-- **CI artifacts (coming):** the "user-journeys" GitHub Actions workflow
-  uploads the same screenshots and report. Read the latest run's artifacts if
-  you cannot run a browser.
+  screenshots and a report to `e2e-output/`. Details in
+  [`docs/TESTING.md`](../docs/TESTING.md), "Run the user journeys".
+- **CI artifacts:** the "User journeys" GitHub Actions workflow (every pull
+  request, and weekly) uploads the same screenshots and report as the
+  `user-journeys` artifact. Read the latest run's artifacts if you cannot run
+  a browser.
 - **Never test against production** (poolos.pathofphi.com): it is a real
   company's test drive. The pull-request preview (poolos-preview.pathofphi.com,
   see [`docs/DEPLOY.md`](../docs/DEPLOY.md)) sits behind Cloudflare Access, so

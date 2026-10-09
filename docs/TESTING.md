@@ -87,3 +87,66 @@ app (`packages/pool-chemistry`); targets are the sample company's own policy
 and say so under every dose; salt targets by cell come from the maker's
 manual, cited in `packages/pool-chemistry/src/saltCells.ts`. Measure's
 geometry is held to the original Liner Measure Pro by 1,000+ golden tests.
+
+## Run the user journeys locally / in CI
+
+Scripted walks through the phone app, as an owner and as a tech, against the
+real Worker running on your machine. They are for catching a screen that no
+longer works before a tester (or an AI reviewer) finds it.
+
+```sh
+pnpm e2e                 # all journeys
+pnpm e2e owner-day       # just one (ids are in scripts/e2e/journeys/*.mjs)
+E2E_SKIP_BUILD=1 pnpm e2e   # reuse the last build (same BRAND; pnpm test rebuilds with the default brand)
+```
+
+What it does (`scripts/e2e/run.mjs`):
+
+1. `BRAND=ccs-pools pnpm build` (set `BRAND` for another brand).
+2. Makes a throwaway RS256 key and writes its public half to
+   `apps/api/.dev.vars` (`scripts/e2e/dev-auth.mjs`). The Worker checks the
+   Access token exactly as in production, against this key instead of
+   Cloudflare's: the same `ACCESS_JWKS` path the API tests use, no bypass.
+   `.dev.vars` is read only by `wrangler dev`, never deployed, and gitignored.
+   The kit refuses to overwrite a `.dev.vars` it did not write, and deletes
+   its own when the run ends (the API tests read `.dev.vars` too, and would
+   fail against the local issuer).
+3. Applies the D1 migrations to a fresh local database
+   (`apps/api/.wrangler/e2e-state`, wiped each run).
+4. Starts `wrangler dev --local` on 127.0.0.1:8787 and checks that a request
+   with no token still gets 401.
+5. Opens Chromium at 390×844, 2× (a phone), signed in as each journey's
+   persona (`owner@example.test`, `tech@example.test`; the owner list is
+   `owner@example.test` only).
+6. Runs each journey, owner first, screenshotting every step.
+
+Nothing touches production: local key, local D1, local R2, no Cloudflare
+account or secrets.
+
+**Results** land in `e2e-output/` (gitignored):
+
+- `report.md`: each journey, each step pass/FAIL with time and screenshot
+  link, then any console errors and HTTP 4xx/5xx the page saw (some 4xx are by
+  design, e.g. the made-up salt cell on Maple Court).
+- `<journey>/<nn>-<step>.png`: a full-screen screenshot after every step,
+  failed ones included.
+- `wrangler.log`: the Worker's output.
+
+The command exits non-zero if any step fails. A failed step ends its journey;
+the next journey still runs.
+
+**Chromium.** Uses `CHROMIUM_PATH` if set, else `/opt/pw-browsers/chromium`
+if present, else playwright-core's own install:
+`pnpm exec playwright-core install chromium`. `E2E_HEADED=1` shows the window.
+
+**In CI**, `.github/workflows/user-journeys.yml` runs on every pull request,
+weekly (Monday 06:17 UTC) and by hand (Actions → User journeys → Run
+workflow). The report is on the run's summary page, and the screenshots are
+in the `user-journeys` artifact at the bottom of it (kept 14 days).
+
+**Adding a journey.** A file in `scripts/e2e/journeys/` exporting
+`{ id, order, persona: { email, label }, async run(page, step, { brand }) }`.
+Wrap each user action in `await step('What the user does', async () => …)`.
+Find things by visible text or role (`page.getByRole('button', { name: 'Send report' })`),
+not CSS, and wait for what the user would wait for (`visible()` in
+`scripts/e2e/expect.mjs`). Use made-up `@example.test` addresses only.
