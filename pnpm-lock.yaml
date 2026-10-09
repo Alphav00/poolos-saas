@@ -20,6 +20,12 @@ importers:
       globals:
         specifier: ^17.13.0
         version: 17.13.0
+      jose:
+        specifier: ^6.2.12
+        version: 6.2.12
+      playwright-core:
+        specifier: ^1.63.0
+        version: 1.63.0
       svelte:
         specifier: ^5.57.2
         version: 5.57.2(@typescript-eslint/types@8.71.1)

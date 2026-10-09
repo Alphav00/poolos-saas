@@ -7,3 +7,5 @@ dist/
 worker-configuration.d.ts.bak
 inputs/*
 !inputs/README.md
+apps/api/.dev.vars
+e2e-output/
