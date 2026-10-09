@@ -88,6 +88,11 @@ describe('weather words', () => {
     expect(weatherWords(63).text).toBe('Rain')
     expect(weatherWords(95).text).toBe('Thunderstorms')
   })
+
+  it('names no weather when the source gave no code', () => {
+    expect(weatherWords(null).text).toBe('')
+    expect(weatherWords(undefined).text).toBe('')
+  })
 })
 
 describe('chemistry: which doses to ask the engine for', () => {

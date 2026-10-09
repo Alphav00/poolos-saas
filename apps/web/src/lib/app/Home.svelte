@@ -23,7 +23,7 @@
     if (document.hidden) return
     now = new Date()
     const spot = savedSpot()
-    if (spot && Date.now() - fetchedAt > 15 * 60 * 1000) showWeather(spot)
+    if (spot && !busy && Date.now() - fetchedAt > 15 * 60 * 1000) showWeather(spot)
   }
 
   let pools = $state<Pool[] | null>(null)
@@ -55,10 +55,11 @@
     weatherNote = ''
     try {
       weather = await loadWeather(spot)
-      fetchedAt = Date.now()
     } catch (e) {
       weatherNote = e instanceof Error ? e.message : 'Weather is unavailable right now.'
     } finally {
+      // Failed tries count too, so the minute tick does not retry every minute.
+      fetchedAt = Date.now()
       busy = false
     }
   }
@@ -75,6 +76,12 @@
 
   const saved = savedSpot()
   if (saved) showWeather(saved)
+
+  // Keep the clock ("Rain likely from…") and the weather current while the page stays open.
+  $effect(() => {
+    const tick = setInterval(onVisible, 60 * 1000)
+    return () => clearInterval(tick)
+  })
 
   const look = $derived(weather ? describe(weather.code) : null)
   const rainAt = $derived(weather ? rainFrom(weather, hour) : null)
@@ -113,20 +120,21 @@
     <div class="now">
       <span class="icon" aria-hidden="true">{look.icon}</span>
       <div style="flex:1;min-width:0">
-        <div class="row" style="justify-content:flex-start;gap:8px"><span class="temp">{weather.tempF}°</span><span class="sm">{look.text}<br />H {weather.highF}° · L {weather.lowF}°</span></div>
+        <div class="row" style="justify-content:flex-start;gap:8px"><span class="temp">{weather.tempF}°</span><span class="sm">{#if look.text}{look.text}<br />{/if}H {weather.highF}° · L {weather.lowF}°</span></div>
         <div class="pred">
           <span class={['pp', weather.rainChance >= 50 && 'warn']}>Rain {weather.rainChance}%</span>
-          <span class={['pp', weather.uvMax >= 8 && 'warn']}>UV {weather.uvMax}</span>
-          <span class="pp">Wind {weather.windMph} mph</span>
+          {#if weather.uvMax !== null}<span class={['pp', weather.uvMax >= 8 && 'warn']}>UV {weather.uvMax}</span>{/if}
+          {#if weather.windMph !== null}<span class="pp">Wind {weather.windMph} mph</span>{/if}
+          {#if weather.source === 'nws'}<span class="xs">via NWS</span>{/if}
         </div>
       </div>
       <button class="chip refresh" onclick={askLocation} disabled={busy} aria-label="Refresh weather for where I am">↻</button>
     </div>
     {#if rainAt !== null}<p class="alert-soft">Rain likely from {hourLabel(rainAt)}. Plan outdoor work and dosing before then.</p>{/if}
-    {#if weatherNote}<p class="xs" role="status" style="margin-top:6px">{weatherNote}</p>{/if}
+    {#if weatherNote}<p class="xs" role="status" style="margin-top:6px">{weatherNote}{#if weatherNote === 'Sign in again.'}<a class="signin" href="/">Sign in</a>{/if}</p>{/if}
   {:else}
     <div class="row">
-      <div><div class="h">Weather</div><p class="sm">{weatherNote || 'Uses your location, rounded to about 1 km.'}</p></div>
+      <div><div class="h">Weather</div><p class="sm" role="status">{weatherNote || 'Uses your location, rounded to about 1 km.'}{#if weatherNote === 'Sign in again.'}<a class="signin" href="/">Sign in</a>{/if}</p></div>
       <button class="chip" onclick={askLocation} disabled={busy}>{busy ? 'Loading…' : 'Show weather'}</button>
     </div>
   {/if}
@@ -208,6 +216,7 @@
   .day span { color: var(--mute); font-weight: 800; white-space: nowrap; }
   .msg { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 22px; font-weight: 900; font-size: 13px; color: #fff; text-decoration: none; background: linear-gradient(180deg, var(--brand-primary), var(--brand-primary-dark)); box-shadow: 0 3px 0 var(--brand-deep); text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
   .refresh { min-width: 44px; min-height: 44px; justify-content: center; font-size: 18px; }
+  .signin { display: inline-flex; align-items: center; min-height: 44px; margin-left: 8px; color: var(--brand-link); font-weight: 900; }
   .tap { display: block; color: inherit; text-decoration: none; }
   .tool { display: flex; align-items: center; gap: 12px; }
   .tool-icon { font-size: 28px; }
