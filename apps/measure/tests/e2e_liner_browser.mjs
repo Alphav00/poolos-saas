@@ -28,10 +28,12 @@ const ok = (c, m) => { if (c) { pass++; } else { fail++; fails.push(m); } };
 /**
  * Type into a field the way a person does.
  *
- * Playwright's fill() and keyboard.type() do not drive Svelte's `bind:value`
- * on these number inputs — the value reverts on the next flush. Going through
- * the native value setter and dispatching a bubbling InputEvent is what a real
- * keystroke does, and it is the only way this component actually updates.
+ * Note: this dispatches the event from script, which is NOT what a keystroke
+ * does. A real (trusted) input event runs queued microtasks between its
+ * listeners, so Svelte flushed between bind:value and on:input and
+ * DistanceInput reverted every keystroke; a script-dispatched event skips that
+ * checkpoint, which is why this helper "worked" and hid the bug. DistanceInput
+ * now accepts real typing; prefer locator.fill() / keyboard.type() in new tests.
  */
 async function typeInto(page, selector, value, nth = 0) {
   await page.evaluate(({ selector, value, nth }) => {
