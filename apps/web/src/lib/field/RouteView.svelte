@@ -1,5 +1,6 @@
 <script lang="ts">
   import NoPools from './NoPools.svelte'
+  import { addDemoCustomer } from './pools'
   import { ROUTE, STOPS } from './sample'
   import type { Pool } from './types'
 
@@ -7,14 +8,65 @@
   const byId = $derived(new Map(pools.map((p) => [p.id, p])))
   // The route itself is still the demo route (dispatch is not built); only stops whose pool is on file show.
   const stops = $derived(STOPS.filter((s) => byId.has(s.poolId)))
+  // Pools on file that today's route does not visit, e.g. generated demo customers.
+  const offRoute = $derived(pools.filter((p) => !STOPS.some((s) => s.poolId === p.id)))
+
+  let busy = $state(false)
+  let added = $state('')
+  let note = $state('')
+
+  function loaded(list: Pool[], name?: string) {
+    added = name ?? ''
+    onloaded(list)
+  }
+
+  async function addOne() {
+    busy = true
+    note = ''
+    added = ''
+    try {
+      const r = await addDemoCustomer(pools)
+      loaded(r.pools, r.name)
+    } catch (e) {
+      note = e instanceof Error ? e.message : 'Could not add a demo customer.'
+    } finally {
+      busy = false
+    }
+  }
 </script>
+
+{#snippet others()}
+{#if offRoute.length}
+<section class="card">
+  <div class="row"><h2 class="h">Not on today's route</h2><span class="xs">{offRoute.length} on file</span></div>
+  {#each offRoute as p (p.id)}
+    <a class="stop" href={`#/field/${p.id}`}>
+      <span class="num">·</span>
+      <div>
+        <div class="nm">{p.name}</div>
+        <div class="pred">{#each p.tags.slice(0, 3) as t (t)}<span class="pp">{t}</span>{/each}</div>
+      </div>
+      {#if p.demo}<span class="chip">DEMO</span>{/if}
+    </a>
+  {/each}
+</section>
+{/if}
+{#if isOwner}
+<section class="card">
+  <button class="btn ghost" style="margin-top:0" onclick={addOne} disabled={busy}>{busy ? 'Adding…' : 'Add a demo customer'}</button>
+  {#if added}<p class="sm" role="status" style="margin-top:8px;text-align:center">Added <b>{added}</b>, marked DEMO.</p>{/if}
+  {#if note}<p class="alert" role="alert"><b>{note}</b></p>{/if}
+</section>
+{/if}
+{/snippet}
 
 {#if pools.length === 0}
 <div class="bar"><span class="t">Route</span></div>
-<NoPools {isOwner} {onloaded} />
+<NoPools {isOwner} onloaded={loaded} />
 {:else if stops.length === 0}
 <div class="bar"><span class="t">Route</span></div>
 <section class="card" style="margin-top:0"><h2 class="h">No route assigned today</h2><p class="sm" style="margin-top:4px">{pools.length} pools on file. Routes come with dispatch.</p></section>
+{@render others()}
 {:else}
 
 <div class="bar"><span class="t">{ROUTE.title}</span><span class="chip">{stops.filter((s) => s.done).length} / {stops.length} done</span></div>
@@ -55,4 +107,5 @@
   </div>
   <p class="xs" style="margin-top:6px">When a reading and its forecast disagree, the app asks for a retest before dosing.</p>
 </section>
+{@render others()}
 {/if}
