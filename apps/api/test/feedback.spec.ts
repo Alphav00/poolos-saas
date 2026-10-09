@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { checkFeedbackDoc, linearMarkdown, sendToLinear } from '../src/feedback';
+import { checkFeedbackDoc } from '../src/feedback';
 import { call, migrate } from './helpers';
 
 beforeAll(migrate);
@@ -24,6 +24,8 @@ describe('problem reports', () => {
 		expect(got.data.reporter).toBe('tester@example.test');
 		expect(typeof got.data.reportedAt).toBe('string');
 		expect(got.data.linear).toBeUndefined();
+		// The Worker never files in Linear itself; the tester does that under their own sign-in.
+		expect(got.data.status).toBeUndefined();
 	});
 
 	it('lets the team add to a report but only an owner replace or delete it', async () => {
@@ -76,40 +78,5 @@ describe('problem reports', () => {
 		expect(checkFeedbackDoc('reports', id, { ...REPORT, linear: 'HEP-42', linearUrl: 'https://linear.app.evil.test/x' })).toMatch(/linearUrl/);
 		expect(checkFeedbackDoc('reports', id, { ...REPORT, linear: '<b>', linearUrl: 'https://linear.app/x' })).toMatch(/linear must be/);
 		expect(checkFeedbackDoc('reports', id, { ...REPORT, linearUrl: 'https://linear.app/x' })).toMatch(/go together/);
-	});
-});
-
-describe('sending a report to Linear', () => {
-	const stamped = { ...REPORT, reporter: 'tester@example.test', reportedAt: '2026-10-09T14:22:33.000Z' };
-
-	it('does nothing until Linear is set up', async () => {
-		const never = (() => {
-			throw new Error('should not be called');
-		}) as unknown as typeof fetch;
-		expect(await sendToLinear({ LINEAR_TEAM_ID: 'team-1' } as unknown as Env, stamped, never)).toBeNull();
-	});
-
-	it('opens an issue with the area in the title and severity as priority', async () => {
-		let sent: { variables: { input: Record<string, unknown> } } | undefined;
-		const fake = (async (_url: string, init: RequestInit) => {
-			sent = JSON.parse(init.body as string);
-			return Response.json({ data: { issueCreate: { success: true, issue: { identifier: 'HEP-42', url: 'https://linear.app/x/issue/HEP-42' } } } });
-		}) as unknown as typeof fetch;
-		const env = { LINEAR_API_KEY: 'k', LINEAR_TEAM_ID: 'team-1', LINEAR_PROJECT_ID: 'proj-1', LINEAR_LABEL_IDS: 'lab-1, lab-2' } as unknown as Env;
-		expect(await sendToLinear(env, stamped, fake)).toEqual({ linear: 'HEP-42', linearUrl: 'https://linear.app/x/issue/HEP-42' });
-		expect(sent!.variables.input).toMatchObject({ teamId: 'team-1', projectId: 'proj-1', title: '[Route View] Next stop shows the wrong pool', priority: 2, labelIds: ['lab-1', 'lab-2'] });
-		expect(sent!.variables.input.description).toContain('**Expected:** Stop 5 after stop 4');
-	});
-
-	it('keeps the report when Linear refuses', async () => {
-		const down = (async () => new Response('nope', { status: 500 })) as unknown as typeof fetch;
-		expect(await sendToLinear({ LINEAR_API_KEY: 'k', LINEAR_TEAM_ID: 't' } as unknown as Env, stamped, down)).toBeNull();
-	});
-
-	it('writes the description in the team template order', () => {
-		const md = linearMarkdown(stamped);
-		expect(md.indexOf('Feature area')).toBeLessThan(md.indexOf('Severity'));
-		expect(md.indexOf('Expected')).toBeLessThan(md.indexOf('Actual'));
-		expect(md).toContain('Reported in the app by tester@example.test');
 	});
 });

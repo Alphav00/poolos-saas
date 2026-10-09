@@ -9,14 +9,10 @@ parent [HEP-1](https://linear.app/holoeyes/issue/HEP-1), one sub-issue per step.
 
 1. Add each tester's email to the Cloudflare Access policy for
    poolos.pathofphi.com. Nobody gets in without it.
-2. Optional: let reports open Linear issues on their own.
-   `cd apps/api && pnpm exec wrangler secret put LINEAR_API_KEY` with a
-   Linear personal API key (Settings → Security & access). Team, project and
-   label ids are already in `wrangler.jsonc`. Without the key, reports are
-   kept in D1 and listed in the app; nothing is lost.
-3. Optional: invite the tester to the Linear workspace so they can tick off
-   the test tasks themselves. Otherwise they work from the app alone and
-   Chi moves the issues.
+2. Invite each tester to the Linear workspace (team PoolOS). Reports are
+   filed in Linear under the tester's own Linear sign-in, so they need a
+   seat; without one, their reports still save in the app and Chi files them.
+   Being in Linear also lets them tick off the test tasks themselves.
 
 ## The day
 
@@ -62,11 +58,17 @@ The app also records the screen the tester came from, the browser, who sent it
 Reports are kept at `feedback/reports/<id>` in D1 (`apps/api/src/feedback.ts`).
 Anyone signed in can read and add to a report; only an owner can replace or
 delete one, or change its status or Linear link (the Worker drops those from
-anyone else). With `LINEAR_API_KEY` set, each new report becomes a Linear issue:
+anyone else).
+
+After sending, the app shows **Open in Linear**: Linear's new-issue page in
+the team, already filled in, which the tester files under their own Linear
+sign-in by tapping Create. The Worker holds no Linear key and never files
+anything itself. The page is filled with:
 
 - title `[<Feature area>] <In a few words>`
 - priority: Blocker → Urgent, Major → High, Minor → Medium, Idea → Low
-- project **CCS Pools test drive**, label **Tester report**
+- project **CCS Pools test drive**, label **Tester report** (from `brands/ccs-pools/brand.json`)
 - the description lists the fields in the order above
 
-The issue id (for example HEP-21) is saved on the report and shown in the app.
+An owner can record the issue id (for example HEP-21) and link on the report;
+it then shows in the app's report list.

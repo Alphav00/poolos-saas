@@ -1,7 +1,10 @@
 <script lang="ts">
   import { untrack } from 'svelte'
+  import brand from 'virtual:brand'
+  import { newIssueUrl } from './linear'
   // "Report a problem": what a tester saw, saved on the feedback board. The
-  // Worker stamps who sent it and, when Linear is set up, opens it there too.
+  // Worker stamps who sent it; the tester can then file it in Linear under their
+  // own Linear sign-in (linear.ts).
   let { from = '' }: { from?: string } = $props()
 
   type Report = {
@@ -61,6 +64,11 @@
   let sending = $state(false)
   let note = $state('')
   let sent = $state<Report | null>(null)
+  // One id per report, kept across retries, so a send whose answer got lost is
+  // not saved (and filed in Linear) twice.
+  let draftId = ''
+  let opened = $state(false)
+  const linearLink = $derived(sent && !sent.linear ? newIssueUrl(brand.linear, sent) : null)
   let reports = $state<{ id: string; data: Report }[]>([])
   let listNote = $state('Loading…')
 
@@ -93,15 +101,21 @@
     if (expected.trim()) data.expected = expected.trim()
     if (steps.trim()) data.steps = steps.trim()
     if (from) data.screen = from.slice(0, 200)
+    draftId ||= newId()
+    const doc = `/api/boards/feedback/reports/${draftId}`
     try {
-      const res = await fetch(`/api/boards/feedback/reports/${newId()}`, {
+      const res = await fetch(doc, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { ...data, userAgent: navigator.userAgent.slice(0, 300) } }),
       })
       const out = await res.json()
-      if (!res.ok) throw new Error(out.error?.message ?? 'Could not send the report')
-      sent = out.data as Report
+      // 403 on a retry means the first try was saved and only its answer was lost.
+      const saved = res.status === 403 ? await fetch(doc).then((g) => (g.ok ? g.json() : null)) : null
+      if (!res.ok && !saved) throw new Error(out.error?.message ?? 'Could not send the report')
+      sent = (saved ?? out).data as Report
+      draftId = ''
+      opened = false
       title = expected = actual = steps = ''
       severity = ''
       loadReports()
@@ -114,6 +128,7 @@
 
   function another() {
     sent = null
+    opened = false
     note = ''
   }
 </script>
@@ -124,8 +139,16 @@
   <section class="card done" style="margin-top:0" role="status">
     <div class="big">Thanks, got it.</div>
     <p class="sm" style="margin-top:6px">
-      {#if sent.linear}Filed as {#if linearHref(sent.linearUrl)}<a href={linearHref(sent.linearUrl)} target="_blank" rel="noopener">{sent.linear}</a>{:else}{sent.linear}{/if} in Linear.{:else}Saved. It will be added to the Linear list.{/if}
+      {#if sent.linear}Filed as {#if linearHref(sent.linearUrl)}<a href={linearHref(sent.linearUrl)} target="_blank" rel="noopener">{sent.linear}</a>{:else}{sent.linear}{/if} in Linear.{:else}Saved in the app.{/if}
     </p>
+    {#if linearLink}
+      {#if opened}
+        <p class="sm lin-done">Opened in Linear ✓ Tap Create there to file it. <a href={linearLink} target="_blank" rel="noopener">Open again</a></p>
+      {:else}
+        <a class="btn lin-open" href={linearLink} target="_blank" rel="noopener" onclick={() => (opened = true)}>Open in Linear</a>
+        <p class="xs" style="margin-top:6px">Files it under your own Linear sign-in, already filled in. You need to be in the team's Linear workspace; ask Chi for an invite.</p>
+      {/if}
+    {/if}
     <button class="btn" onclick={another}>Report something else</button>
     <a class="btn ghost" href={from || '#/'}>Back to where I was</a>
   </section>
@@ -206,6 +229,8 @@
   .fl ::placeholder { color: #8a9aa8; font-weight: 600; }
   .done .btn.ghost { margin-top: 8px; text-decoration: none; }
   .done a { color: var(--brand-link); font-weight: 900; }
+  .done .btn.lin-open { margin-top: 10px; text-decoration: none; color: #fff; }
+  .lin-done { margin-top: 10px; }
   .rep { padding: 8px 0; border-top: 1px solid var(--line); }
   .rep:first-of-type { border-top: 0; }
   .lin { background: var(--brand-ice); color: var(--brand-link); text-decoration: none; }
