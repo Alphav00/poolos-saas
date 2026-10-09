@@ -4,6 +4,7 @@
  *   readings/<pool>:<yyyy-mm-dd>   one pool's readings for the day
  *   settings/products              the company's chemicals, with label facts
  *   settings/targets               the company's target ranges, with a source
+ *   pools/<id>                     a pool's profile (what it is; engine output is not kept here)
  * Returns a reason when the document is refused, or null when it is fine.
  */
 const PARAMS = new Set(['fc', 'ph', 'ta', 'cya', 'ch', 'salt', 'temp']);
@@ -84,12 +85,40 @@ function checkTargets(data: Record<string, unknown>): string | null {
 	return null;
 }
 
+const POOL_ID = /^[a-z0-9-]{1,60}$/;
+const POOL_FIELDS = new Set(['name', 'tags', 'gallons', 'tds', 'cell', 'equipment', 'note', 'demo']);
+const isTextList = (v: unknown) => Array.isArray(v) && v.length <= 20 && v.every((t) => isText(t));
+
+/** pools/<id>: { name, tags?, gallons?, tds?, cell?: {make, model}, equipment?, note?, demo? } */
+function checkPool(id: string, data: Record<string, unknown>): string | null {
+	if (!POOL_ID.test(id)) return 'Pool ids are lower-case letters, digits and dashes';
+	if (!isText(data.name, 80)) return 'a pool needs a name (at most 80 characters)';
+	for (const k of ['gallons', 'tds'] as const) {
+		if (data[k] !== undefined && (!isNumber(data[k]) || (data[k] as number) <= 0 || (data[k] as number) > 1_000_000)) return `"${k}" must be a positive number`;
+	}
+	if (data.cell !== undefined) {
+		const c = data.cell as Record<string, unknown> | null;
+		if (!c || typeof c !== 'object' || Array.isArray(c) || !isText(c.make, 60) || !isText(c.model, 60) || Object.keys(c).length !== 2) {
+			return 'cell must be {make, model}';
+		}
+	}
+	for (const k of ['tags', 'equipment'] as const) {
+		if (data[k] !== undefined && !isTextList(data[k])) return `"${k}" must be a list of at most 20 short texts`;
+	}
+	if (data.note !== undefined && !isText(data.note, 500)) return 'note must be text of at most 500 characters';
+	if (data.demo !== undefined && typeof data.demo !== 'boolean') return 'demo must be true or false';
+	const extra = Object.keys(data).filter((k) => !POOL_FIELDS.has(k));
+	if (extra.length) return `Unexpected field "${extra[0]}"`;
+	return null;
+}
+
 export function checkFieldDoc(collection: string, id: string, data: Record<string, unknown>): string | null {
 	if (collection === 'readings') return checkReadings(id, data);
+	if (collection === 'pools') return checkPool(id, data);
 	if (collection === 'settings') {
 		if (id === 'products') return checkProducts(data);
 		if (id === 'targets') return checkTargets(data);
 		return 'The field board keeps settings/products and settings/targets only';
 	}
-	return 'The field board only keeps "readings" and "settings"';
+	return 'The field board only keeps "readings", "settings" and "pools"';
 }

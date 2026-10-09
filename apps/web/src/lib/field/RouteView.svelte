@@ -1,8 +1,23 @@
 <script lang="ts">
-  import { poolById, ROUTE, STOPS } from './sample'
+  import NoPools from './NoPools.svelte'
+  import { ROUTE, STOPS } from './sample'
+  import type { Pool } from './types'
+
+  let { pools, isOwner, onloaded }: { pools: Pool[]; isOwner: boolean; onloaded: (pools: Pool[]) => void } = $props()
+  const byId = $derived(new Map(pools.map((p) => [p.id, p])))
+  // The route itself is still the demo route (dispatch is not built); only stops whose pool is on file show.
+  const stops = $derived(STOPS.filter((s) => byId.has(s.poolId)))
 </script>
 
-<div class="bar"><span class="t">{ROUTE.title}</span><span class="chip">{STOPS.filter((s) => s.done).length} / {STOPS.length} done</span></div>
+{#if pools.length === 0}
+<div class="bar"><span class="t">Route</span></div>
+<NoPools {isOwner} {onloaded} />
+{:else if stops.length === 0}
+<div class="bar"><span class="t">Route</span></div>
+<section class="card" style="margin-top:0"><h2 class="h">No route assigned today</h2><p class="sm" style="margin-top:4px">{pools.length} pools on file. Routes come with dispatch.</p></section>
+{:else}
+
+<div class="bar"><span class="t">{ROUTE.title}</span><span class="chip">{stops.filter((s) => s.done).length} / {stops.length} done</span></div>
 <span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>
 
 <section class="card" style="margin-top:0">
@@ -15,8 +30,8 @@
 
 <section class="card">
   <div class="row"><h2 class="h">Stops</h2><span class="xs">predicted · before test</span></div>
-  {#each STOPS as s, i (s.poolId)}
-    {@const pool = poolById(s.poolId)}
+  {#each stops as s, i (s.poolId)}
+    {@const pool = byId.get(s.poolId)}
     <a class="stop" href={`#/field/${s.poolId}`}>
       <span class={['num', s.done && 'done']}>{s.done ? '✓' : i + 1}</span>
       <div>
@@ -40,3 +55,4 @@
   </div>
   <p class="xs" style="margin-top:6px">When a reading and its forecast disagree, the app asks for a retest before dosing.</p>
 </section>
+{/if}
