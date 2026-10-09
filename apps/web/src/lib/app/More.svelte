@@ -1,7 +1,7 @@
 <script lang="ts">
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
 
-  let { email, isOwner, boards }: { email: string; isOwner: boolean; boards: Board[] } = $props()
+  let { email, isOwner, role, boards }: { email: string; isOwner: boolean; role: string | null; boards: Board[] } = $props()
   let importNote = $state<Record<string, string>>({})
 
   async function importFile(board: Board, input: HTMLInputElement) {
@@ -21,7 +21,7 @@
   }
 </script>
 
-<div class="bar"><span class="t">More</span><span class="xs">{email}</span></div>
+<div class="bar"><span class="t">More</span><span class="xs">{email}{isOwner ? ' · Owner' : role ? ` · ${role}` : ''}</span></div>
 
 <section class="card" style="margin-top:0">
   <h2 class="h">Tools</h2>
@@ -33,6 +33,11 @@
   <a class="stop" href="/measure">
     <span class="num">📏</span>
     <div><div class="nm">Measure</div><div class="xs">Liners and covers: A/B walk, closure checks, order forms</div></div>
+    <span></span>
+  </a>
+  <a class="stop" href="#/more/staff">
+    <span class="num">👥</span>
+    <div><div class="nm">Staff</div><div class="xs">Who's on the team, their role and route{isOwner ? '; add or remove people' : ''}</div></div>
     <span></span>
   </a>
   <a class="stop" href="#/more/chemistry">

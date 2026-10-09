@@ -4,13 +4,16 @@
   import Messages from './lib/app/Messages.svelte'
   import More from './lib/app/More.svelte'
   import Report from './lib/app/Report.svelte'
+  import Staff from './lib/app/Staff.svelte'
   import TabBar from './lib/app/TabBar.svelte'
   import brand from 'virtual:brand'
   import './lib/app/app.css'
   import Field from './lib/field/Field.svelte'
 
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
-  type Me = { email: string; isOwner: boolean }
+  // role comes from the staff record matching the sign-in email; canEditPools
+  // is what the Worker enforces on pool writes (owners, Leads, Dispatchers).
+  type Me = { email: string; isOwner: boolean; role: string | null; canEditPools: boolean }
 
   let me = $state<Me | null>(null)
   let boards = $state<Board[]>([])
@@ -64,10 +67,12 @@
       <Messages email={me?.email ?? ''} isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more' && route[1] === 'report'}
       <Report from={lastScreen} />
+    {:else if route[0] === 'more' && route[1] === 'staff'}
+      <Staff isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more' && route[1] === 'chemistry'}
       <ChemSetup />
     {:else if route[0] === 'more'}
-      <More email={me?.email ?? ''} isOwner={me?.isOwner ?? false} {boards} />
+      <More email={me?.email ?? ''} isOwner={me?.isOwner ?? false} role={me?.role ?? null} {boards} />
     {:else}
       <Home email={me?.email ?? ''} isOwner={me?.isOwner ?? false} />
     {/if}
