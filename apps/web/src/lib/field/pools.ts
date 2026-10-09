@@ -2,6 +2,7 @@
 // (apps/api/src/field.ts checks the shape; owners, Leads and Dispatchers may
 // write, see apps/api/src/roles.ts; only owners load the demo set). The screens
 // read them from here, never from the demo list in sample.ts.
+import { generateCustomer } from './generator'
 import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
 import type { Pool, Profile } from './types'
 
@@ -52,9 +53,9 @@ export function loadPools(fresh = false): Promise<Pool[]> {
   return cached
 }
 
-/** Owner only: writes the made-up demo pools to D1. Pools already on file with the same id are replaced. */
-export async function loadDemoPools(): Promise<Pool[]> {
-  for (const p of DEMO_PROFILES) {
+/** Owner only: writes each profile to D1 (same id replaces), then reads the whole list back. */
+export async function saveProfiles(list: Profile[]): Promise<Pool[]> {
+  for (const p of list) {
     const { id, ...data } = p
     const res = await fetch(`${COLLECTION}/${encodeURIComponent(id)}`, {
       method: 'PUT',
@@ -65,4 +66,15 @@ export async function loadDemoPools(): Promise<Pool[]> {
     if (!res.ok) throw new Error(res.status === 403 ? 'Only an owner can load the demo pools.' : 'Could not load the demo pools.')
   }
   return loadPools(true)
+}
+
+/** Owner only: writes the made-up demo pools to D1. Pools already on file with the same id are replaced. */
+export function loadDemoPools(): Promise<Pool[]> {
+  return saveProfiles(DEMO_PROFILES)
+}
+
+/** Owner only: adds one made-up customer (marked demo) whose id is not already on file. */
+export async function addDemoCustomer(onFile: { id: string }[]): Promise<{ name: string; pools: Pool[] }> {
+  const p = generateCustomer(Math.random, new Set(onFile.map((x) => x.id)))
+  return { name: p.name, pools: await saveProfiles([p]) }
 }
