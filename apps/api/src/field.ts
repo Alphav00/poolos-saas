@@ -5,8 +5,11 @@
  *   settings/products              the company's chemicals, with label facts
  *   settings/targets               the company's target ranges, with a source
  *   pools/<id>                     a pool's profile (what it is; engine output is not kept here)
+ *   staff/<id>                     a staff member: name, sign-in email, role, route
  * Returns a reason when the document is refused, or null when it is fine.
  */
+import { ROLES } from './roles';
+
 const PARAMS = new Set(['fc', 'ph', 'ta', 'cya', 'ch', 'salt', 'temp']);
 const METHODS = new Set(['strip', 'drop', 'meter']);
 const ID = /^[a-z0-9-]{1,60}:\d{4}-\d{2}-\d{2}$/;
@@ -112,13 +115,45 @@ function checkPool(id: string, data: Record<string, unknown>): string | null {
 	return null;
 }
 
+const STAFF_FIELDS = new Set(['name', 'email', 'role', 'route', 'demo', 'createdAt', 'createdBy']);
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * staff/<id>: { name, email, role, route?, demo?, createdAt, createdBy }. The id
+ * is a slug (ids cannot hold "@"); the email is what sign-in is matched against,
+ * kept lower-case. createdAt and createdBy are stamped by the Worker
+ * (stampStaff, called from boards.ts), not the form.
+ */
+function checkStaff(id: string, data: Record<string, unknown>): string | null {
+	if (!POOL_ID.test(id)) return 'Staff ids are lower-case letters, digits and dashes';
+	if (!isText(data.name, 80)) return 'staff need a name (at most 80 characters)';
+	if (typeof data.email !== 'string' || data.email.length > 120 || data.email !== data.email.toLowerCase() || !EMAIL.test(data.email)) {
+		return 'email must be a lower-case email address (at most 120 characters)';
+	}
+	if (!(ROLES as readonly unknown[]).includes(data.role)) return `role must be one of ${ROLES.join(', ')}`;
+	if (data.route !== undefined && !isText(data.route, 40)) return 'route must be text of at most 40 characters';
+	if (data.demo !== undefined && typeof data.demo !== 'boolean') return 'demo must be true or false';
+	if (data.createdAt !== undefined && (typeof data.createdAt !== 'string' || Number.isNaN(Date.parse(data.createdAt)))) return 'createdAt is set by the server';
+	if (data.createdBy !== undefined && typeof data.createdBy !== 'string') return 'createdBy is set by the server';
+	const extra = Object.keys(data).filter((k) => !STAFF_FIELDS.has(k));
+	if (extra.length) return `Unexpected field "${extra[0]}"`;
+	return null;
+}
+
+/** Who added someone and when come from the sign-in and the server, and never change; emails are kept lower-case so sign-in matches. */
+export function stampStaff(data: Record<string, unknown>, previous: Record<string, unknown> | null, by: string, at: string) {
+	const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : data.email;
+	return { ...data, email, createdAt: previous?.createdAt ?? at, createdBy: previous?.createdBy ?? by };
+}
+
 export function checkFieldDoc(collection: string, id: string, data: Record<string, unknown>): string | null {
 	if (collection === 'readings') return checkReadings(id, data);
 	if (collection === 'pools') return checkPool(id, data);
+	if (collection === 'staff') return checkStaff(id, data);
 	if (collection === 'settings') {
 		if (id === 'products') return checkProducts(data);
 		if (id === 'targets') return checkTargets(data);
 		return 'The field board keeps settings/products and settings/targets only';
 	}
-	return 'The field board only keeps "readings", "settings" and "pools"';
+	return 'The field board only keeps "readings", "settings", "pools" and "staff"';
 }

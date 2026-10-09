@@ -9,7 +9,7 @@
 // demo pools only. Real ones come from the forecasting engine (DESIGN.md,
 // chem_path) once it is connected. Doses and the saturation index come from
 // the chemistry engine (chem.ts) using the profile.
-import type { CrewMember, Profile, Stop, EngineView } from './types'
+import type { Profile, Stop, EngineView, StaffMember } from './types'
 
 export const DEMO_PROFILES: Profile[] = [
   {
@@ -95,10 +95,11 @@ export const STOPS: Stop[] = [
   { poolId: 'elm-terrace', x: 66, y: 76, eta: '11:30', done: false, flags: [{ text: 'FC 3.0' }, { text: 'LSI −0.4', level: 'warn' }] },
 ]
 
-export const CREW: CrewMember[] = [
-  { name: 'Alex', initials: 'AL', role: 'Route B', status: '4 of 9 stops', state: 'working' },
-  { name: 'Jordan', initials: 'JO', role: 'Route A', status: '6 of 10 stops', state: 'working' },
-  { name: 'Riley', initials: 'RI', role: 'Repairs', status: 'Filter swap · Oak Hollow', state: 'working' },
-  { name: 'Casey', initials: 'CA', role: 'Route C', status: 'Lunch until 12:30', state: 'break' },
-  { name: 'Morgan', initials: 'MO', role: 'Office', status: 'Off today', state: 'off' },
+/** Made-up staff for trying the app. Owners write them to D1 with "Load demo staff"; screens read D1, not this list. */
+export const DEMO_STAFF: StaffMember[] = [
+  { id: 'alex', name: 'Alex', email: 'alex@example.test', role: 'Lead', route: 'Route B', demo: true },
+  { id: 'jordan', name: 'Jordan', email: 'jordan@example.test', role: 'Technician', route: 'Route A', demo: true },
+  { id: 'riley', name: 'Riley', email: 'riley@example.test', role: 'Technician', route: 'Repairs', demo: true },
+  { id: 'casey', name: 'Casey', email: 'casey@example.test', role: 'Technician', route: 'Route C', demo: true },
+  { id: 'morgan', name: 'Morgan', email: 'morgan@example.test', role: 'Dispatcher', route: 'Office', demo: true },
 ]
