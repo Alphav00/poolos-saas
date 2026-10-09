@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { amountWords, plan, strengthWords, waterFrom, type Product, type Targets } from './chem'
 import { compare } from './compare'
+import { DEMO_CUSTOMER_NAMES, generateCustomer, slugify } from './generator'
+import DENYLIST from '../../../../../tests/denylist.txt?raw'
 import { cleanProfile, toPool } from './pools'
 import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
 import { cleanReading } from './readings'
@@ -184,5 +186,103 @@ describe('pool profiles', () => {
     expect(cleanProfile('x', { name: 'Quarry Lane', gallons: -1, tags: ['Vinyl', 3], cell: { make: 'Hayward' }, demo: 'yes' })).toEqual({
       id: 'x', name: 'Quarry Lane', tags: ['Vinyl'], equipment: [],
     })
+  })
+})
+
+describe('demo customer generator', () => {
+  // Tiny seeded source so the same seed gives the same customer.
+  const mulberry32 = (seed: number) => () => {
+    seed = (seed + 0x6d2b79f5) | 0
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+  const POOL_ID = /^[a-z0-9-]{1,60}$/
+  // A local copy of the limits in apps/api/src/field.ts checkPool.
+  const text = (v: unknown, max: number) => typeof v === 'string' && v.trim().length > 0 && v.length <= max
+  const list = (v: unknown, max: number) => Array.isArray(v) && v.length <= 20 && v.every((x) => text(x, max))
+  const num = (v: unknown) => v === undefined || (typeof v === 'number' && Number.isFinite(v) && v > 0 && v <= 1_000_000)
+  function checkPool(p: Record<string, unknown>): string | null {
+    const { id, ...d } = p
+    if (typeof id !== 'string' || !POOL_ID.test(id)) return 'id'
+    if (!text(d.name, 80)) return 'name'
+    if (!num(d.gallons) || !num(d.tds)) return 'numbers'
+    if (d.cell !== undefined) {
+      const c = d.cell as Record<string, unknown> | null
+      if (!c || !text(c.make, 60) || !text(c.model, 60) || Object.keys(c).length !== 2) return 'cell'
+    }
+    if (d.tags !== undefined && !list(d.tags, 120)) return 'tags'
+    if (d.equipment !== undefined && !list(d.equipment, 120)) return 'equipment'
+    if (d.note !== undefined && !text(d.note, 500)) return 'note'
+    if (d.demo !== true) return 'demo'
+    const allowed = new Set(['name', 'tags', 'gallons', 'tds', 'cell', 'equipment', 'note', 'demo'])
+    const extra = Object.keys(d).find((k) => !allowed.has(k))
+    return extra ? `extra ${extra}` : null
+  }
+
+  it('has at least 16 unique names with unique ids', () => {
+    expect(DEMO_CUSTOMER_NAMES.length).toBeGreaterThanOrEqual(16)
+    expect(new Set(DEMO_CUSTOMER_NAMES).size).toBe(DEMO_CUSTOMER_NAMES.length)
+    expect(new Set(DEMO_CUSTOMER_NAMES.map(slugify)).size).toBe(DEMO_CUSTOMER_NAMES.length)
+  })
+
+  it('makes profiles the Worker accepts, with sensible numbers', () => {
+    const rand = mulberry32(7)
+    for (let i = 0; i < 300; i++) {
+      const p = generateCustomer(rand)
+      expect(checkPool(p as unknown as Record<string, unknown>), JSON.stringify(p)).toBeNull()
+      expect(p.gallons! % 500).toBe(0)
+      expect(p.gallons).toBeGreaterThanOrEqual(12000)
+      expect(p.gallons).toBeLessThanOrEqual(35000)
+      expect(p.tags[0]).toBe(`${p.gallons!.toLocaleString('en-US')} gal`)
+      expect(p.equipment.length).toBeGreaterThanOrEqual(2)
+      expect(p.equipment.length).toBeLessThanOrEqual(4)
+      expect(new Set(p.equipment).size).toBe(p.equipment.length)
+      if (p.tags.includes('Salt')) {
+        expect(p.tds).toBeUndefined()
+        expect(['Hayward T-CELL-15', 'Pentair IC40']).toContain(`${p.cell!.make} ${p.cell!.model}`)
+      } else {
+        expect(p.cell).toBeUndefined()
+        expect(p.tds).toBeGreaterThanOrEqual(800)
+        expect(p.tds).toBeLessThanOrEqual(1600)
+      }
+      // Generated customers show "no forecast": toPool only attaches the demo set's forecasts.
+      expect(toPool(p).forecast).toEqual({})
+    }
+  })
+
+  it('never reuses an id already on file', () => {
+    const rand = mulberry32(42)
+    const taken = new Set<string>(['birch-lane'])
+    for (let i = 0; i < DEMO_CUSTOMER_NAMES.length * 3; i++) {
+      const p = generateCustomer(rand, taken)
+      expect(p.id).toMatch(POOL_ID)
+      expect(taken.has(p.id)).toBe(false)
+      taken.add(p.id)
+    }
+    // Every name is used before any id needs a -2.
+    for (const n of DEMO_CUSTOMER_NAMES) expect(taken.has(slugify(n))).toBe(true)
+    expect([...taken].some((id) => id.endsWith('-3'))).toBe(true)
+  })
+
+  it('is deterministic for a seed', () => {
+    const run = (seed: number) => {
+      const r = mulberry32(seed)
+      return Array.from({ length: 5 }, () => generateCustomer(r))
+    }
+    expect(run(99)).toEqual(run(99))
+    expect(run(1)).not.toEqual(run(2))
+  })
+
+  it('names nothing on the denylist', () => {
+    const terms = DENYLIST.split('\n')
+      .map((l) => l.trim())
+      .filter((l) => l && !l.startsWith('#'))
+    expect(terms.length).toBeGreaterThan(0)
+    const esc = (t: string) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    for (const t of terms) {
+      const re = new RegExp(`(?<![A-Za-z0-9])${esc(t)}(?![A-Za-z0-9])`, 'i')
+      for (const n of DEMO_CUSTOMER_NAMES) expect(re.test(n), `${n} matches ${t}`).toBe(false)
+    }
   })
 })
