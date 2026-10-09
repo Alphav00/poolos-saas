@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { amountWords, plan, strengthWords, waterFrom, type Product, type Targets } from './chem'
 import { compare } from './compare'
-import { POOLS } from './sample'
+import { cleanProfile, toPool } from './pools'
+import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
 import { cleanReading } from './readings'
 import { fmtDelta, parseTyped, scaleFor, SCALES, steps } from './scales'
 import { describe as weatherWords, hourLabel, rainFrom, type Weather } from './weather'
@@ -117,8 +118,8 @@ describe('chemistry: which doses to ask the engine for', () => {
   })
 
   it('turns readings into the engine’s words, with the pool’s TDS when there is no salt reading', () => {
-    const salty = POOLS.find((p) => p.id === 'maple-court')!
-    const plain = POOLS.find((p) => p.id === 'birch-lane')!
+    const salty = toPool(DEMO_PROFILES.find((p) => p.id === 'maple-court')!)
+    const plain = toPool(DEMO_PROFILES.find((p) => p.id === 'birch-lane')!)
     expect(waterFrom(reading({ temp: 84, ph: 7.6, ta: 90, ch: 300, cya: 40, fc: 3, salt: 3200 }), salty)).toEqual({
       temperatureF: 84, ph: 7.6, totalAlkalinity: 90, calciumHardness: 300, cyanuricAcid: 40, freeChlorine: 3, salt: 3200,
     })
@@ -154,5 +155,29 @@ describe('chemistry: salt by the cell manufacturer', () => {
   it('falls back to the company range without a cell', () => {
     expect(plan(reading, targets, [salt], null).asks[0]).toMatchObject({ target: 3200 })
     expect(plan(reading, targets, [salt], null).asks[0]!.cell).toBeUndefined()
+  })
+})
+
+describe('pool profiles', () => {
+  it('gives demo pools their demo forecasts and other pools none', () => {
+    const demo = toPool(DEMO_PROFILES[0]!)
+    expect(demo.forecast).toEqual(DEMO_FORECASTS[demo.id]!.forecast)
+    const own = toPool({ ...DEMO_PROFILES[0]!, demo: undefined })
+    expect(own.forecast).toEqual({})
+    expect(own.visits).toEqual([])
+    expect(own.decay).toEqual([])
+  })
+
+  it('has a demo forecast for every demo pool, and nothing else', () => {
+    expect(Object.keys(DEMO_FORECASTS).sort()).toEqual(DEMO_PROFILES.map((p) => p.id).sort())
+    expect(DEMO_PROFILES.every((p) => p.demo === true)).toBe(true)
+  })
+
+  it('keeps only what the screens can show from a stored profile', () => {
+    expect(cleanProfile('x', { name: ' ' })).toBeNull()
+    expect(cleanProfile('x', null)).toBeNull()
+    expect(cleanProfile('x', { name: 'Quarry Lane', gallons: -1, tags: ['Vinyl', 3], cell: { make: 'Hayward' }, demo: 'yes' })).toEqual({
+      id: 'x', name: 'Quarry Lane', tags: ['Vinyl'], equipment: [],
+    })
   })
 })

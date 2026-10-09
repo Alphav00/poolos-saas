@@ -1,10 +1,13 @@
 <script lang="ts">
   import brand from 'virtual:brand'
+  import NoPools from '../field/NoPools.svelte'
+  import { loadPools } from '../field/pools'
   import RouteMap from '../field/RouteMap.svelte'
-  import { CREW, poolById, ROUTE, STOPS } from '../field/sample'
+  import { CREW, ROUTE, STOPS } from '../field/sample'
+  import type { Pool } from '../field/types'
   import { describe, hourLabel, loadWeather, locate, rainFrom, savedSpot, type Spot, type Weather } from '../field/weather'
 
-  let { email }: { email: string } = $props()
+  let { email, isOwner }: { email: string; isOwner: boolean } = $props()
 
   // Re-read the clock when the app comes back to the front: an installed app
   // can sit open overnight, and there is no pull-to-refresh to fix it.
@@ -22,9 +25,17 @@
     if (spot && Date.now() - fetchedAt > 15 * 60 * 1000) showWeather(spot)
   }
 
-  const done = STOPS.filter((s) => s.done).length
-  const nextStop = STOPS.find((s) => !s.done)
-  const nextPool = nextStop ? poolById(nextStop.poolId) : undefined
+  let pools = $state<Pool[] | null>(null)
+  let poolsNote = $state('')
+  loadPools()
+    .then((p) => (pools = p))
+    .catch((e) => (poolsNote = e instanceof Error ? e.message : 'Could not load the pools.'))
+  const byId = $derived(new Map((pools ?? []).map((p) => [p.id, p])))
+  // Still the demo route (dispatch is not built); only stops whose pool is on file show.
+  const stops = $derived(STOPS.filter((s) => byId.has(s.poolId)))
+  const done = $derived(stops.filter((s) => s.done).length)
+  const nextStop = $derived(stops.find((s) => !s.done))
+  const nextPool = $derived(nextStop ? byId.get(nextStop.poolId) : undefined)
   const working = CREW.filter((c) => c.state !== 'off')
 
   let weather = $state<Weather | null>(null)
@@ -113,18 +124,27 @@
   {/if}
 </section>
 
+{#if poolsNote}
+  <p class="alert" role="alert"><b>{poolsNote}</b></p>
+{:else if pools === null}
+  <section class="card"><h2 class="h">Today's route</h2><p class="sm" style="margin-top:4px">Loading pools…</p></section>
+{:else if pools.length === 0}
+  <NoPools {isOwner} onloaded={(p) => (pools = p)} />
+{:else if stops.length === 0}
+  <section class="card"><h2 class="h">Today's route</h2><p class="sm" style="margin-top:4px">No route assigned today. {pools.length} pools on file.</p></section>
+{:else}
 <a class="card tap" href="#/field">
   <div class="row"><h2 class="h">Today's route</h2><span class="sample">DEMO</span></div>
   <div class="row" style="margin-top:4px">
     <div class="big">{ROUTE.headline}</div>
   </div>
-  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={STOPS.length} aria-valuenow={done} aria-label="Stops done">
-    <span style:width={`${(done / STOPS.length) * 100}%`}></span>
+  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={stops.length} aria-valuenow={done} aria-label="Stops done">
+    <span style:width={`${(done / stops.length) * 100}%`}></span>
   </div>
-  <div class="row xs" style="margin-top:4px"><span>{done} of {STOPS.length} stops done</span><span>{STOPS.length - done} to go</span></div>
+  <div class="row xs" style="margin-top:4px"><span>{done} of {stops.length} stops done</span><span>{stops.length - done} to go</span></div>
   {#if nextStop && nextPool}
     <div class="next">
-      <span class="num">{STOPS.indexOf(nextStop) + 1}</span>
+      <span class="num">{stops.indexOf(nextStop) + 1}</span>
       <div style="flex:1">
         <div class="nm">Next · {nextPool.name}</div>
         <div class="pred">{#each nextStop.flags as f (f.text)}<span class={['pp', f.level]}>{f.text}</span>{/each}</div>
@@ -132,9 +152,10 @@
       <span class="chip">{nextStop.eta.replace(/^next · /, '') || 'next'}</span>
     </div>
   {/if}
-  <RouteMap stops={STOPS} />
+  <RouteMap {stops} />
   <div class="tags">{#each ROUTE.load as l (l)}<span class="tag">{l}</span>{/each}</div>
 </a>
+{/if}
 
 <a class="card tap tool" href="/measure">
   <span class="tool-icon" aria-hidden="true">📏</span>

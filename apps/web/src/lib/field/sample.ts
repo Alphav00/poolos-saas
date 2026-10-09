@@ -1,24 +1,42 @@
-// SAMPLE DATA. Made-up pools for showing the field screens. Forecasts, decay
-// rates and bands here are illustrative; real ones come from the forecasting
-// engine (DESIGN.md, chem_path) once it is connected. Volumes, TDS and the
-// cell are made up too; doses and the saturation index come from the
-// chemistry engine (chem.ts) using them.
-import type { CrewMember, Pool, Stop } from './types'
+// DEMO DATA. Made-up pools for trying the field screens; nothing here is a
+// real customer (DESIGN.md §3 #1).
+//
+// DEMO_PROFILES are what a pool *is* (volume, cell, equipment). They are not
+// read by the screens directly: an owner loads them into D1 with "Load the
+// demo pools" (pools.ts), and the screens read pools from there.
+//
+// DEMO_FORECASTS are engine output (forecast, decay, visit history) for those
+// demo pools only. Real ones come from the forecasting engine (DESIGN.md,
+// chem_path) once it is connected. Doses and the saturation index come from
+// the chemistry engine (chem.ts) using the profile.
+import type { CrewMember, Profile, Stop, EngineView } from './types'
 
-const base = {
-  tags: [] as string[],
-  ideal: { ph: [7.4, 7.6] as [number, number] },
-  visits: [],
-  decay: [],
-  equipment: [],
-}
-
-export const POOLS: Pool[] = [
+export const DEMO_PROFILES: Profile[] = [
   {
-    ...base,
     id: 'maple-court',
     name: 'Maple Court',
     tags: ['18,000 gal · measured', 'Vinyl', 'Salt · Model X', 'Full sun', 'No screen', 'Filter 14 psi (base 10)', 'Weekly · last Tue'],
+    gallons: 18000,
+    cell: { make: 'Sample', model: 'Model X' },
+    equipment: ['Liner · fair', 'Cover · n/a', 'Pump 2019', 'Cell 2021 · 3,200 hrs', 'Filter clean due (+4 psi)'],
+    note: 'Chlorine was low today, so we added a top-up and checked your salt cell.',
+    demo: true,
+  },
+  { id: 'birch-lane', name: 'Birch Lane', gallons: 22000, tds: 1100, tags: ['22,000 gal', 'Plaster', 'Liquid chlorine'], equipment: [], demo: true },
+  { id: 'cedar-ridge', name: 'Cedar Ridge', gallons: 16000, cell: { make: 'Hayward', model: 'T-CELL-15' }, tags: ['16,000 gal', 'Vinyl', 'Salt'], equipment: [], demo: true },
+  { id: 'oak-hollow', name: 'Oak Hollow', gallons: 30000, tds: 900, tags: ['30,000 gal', 'Plaster', 'Liquid chlorine'], equipment: [], demo: true },
+  { id: 'pine-court', name: 'Pine Court', gallons: 14000, tds: 1300, tags: ['14,000 gal', 'Vinyl', 'Liquid chlorine'], equipment: [], demo: true },
+  { id: 'willow-bend', name: 'Willow Bend', gallons: 20000, tds: 1500, tags: ['20,000 gal', 'Fiberglass', 'Trichlor', 'Screened'], equipment: [], demo: true },
+  { id: 'spruce-way', name: 'Spruce Way', gallons: 18000, tds: 1000, tags: ['18,000 gal', 'Vinyl', 'Liquid chlorine'], equipment: [], demo: true },
+  { id: 'aspen-drive', name: 'Aspen Drive', gallons: 25000, cell: { make: 'Pentair', model: 'IC40' }, tags: ['25,000 gal', 'Plaster', 'Salt'], equipment: [], demo: true },
+  { id: 'elm-terrace', name: 'Elm Terrace', gallons: 15000, tds: 1200, tags: ['15,000 gal', 'Plaster', 'Liquid chlorine'], equipment: [], demo: true },
+]
+
+const ideal = { ph: [7.4, 7.6] as [number, number] }
+
+export const DEMO_FORECASTS: Record<string, EngineView> = {
+  'maple-court': {
+    ideal,
     forecast: {
       fc: { value: 2.2, band: 0.5 },
       ph: { value: 7.7, band: 0.2 },
@@ -43,20 +61,16 @@ export const POOLS: Pool[] = [
       { label: 'Salt', detail: '−50 ppm / week · splash-out + backwash', trend: 'steady' },
       { label: 'CYA', detail: '+0 / month · no trichlor used', trend: 'steady' },
     ],
-    gallons: 18000,
-    cell: { make: 'Sample', model: 'Model X' },
-    equipment: ['Liner · fair', 'Cover · n/a', 'Pump 2019', 'Cell 2021 · 3,200 hrs', 'Filter clean due (+4 psi)'],
-    note: 'Chlorine was low today, so we added a top-up and checked your salt cell.',
   },
-  { ...base, id: 'birch-lane', gallons: 22000, tds: 1100, name: 'Birch Lane', tags: ['22,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.1, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
-  { ...base, id: 'cedar-ridge', gallons: 16000, cell: { make: 'Hayward', model: 'T-CELL-15' }, name: 'Cedar Ridge', tags: ['16,000 gal', 'Vinyl', 'Salt'], forecast: { fc: { value: 2.6, band: 0.5 }, ph: { value: 7.9, band: 0.2 } } },
-  { ...base, id: 'oak-hollow', gallons: 30000, tds: 900, name: 'Oak Hollow', tags: ['30,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 4.0, band: 0.5 }, ph: { value: 7.4, band: 0.2 } } },
-  { ...base, id: 'pine-court', gallons: 14000, tds: 1300, name: 'Pine Court', tags: ['14,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 0.9, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
-  { ...base, id: 'willow-bend', gallons: 20000, tds: 1500, name: 'Willow Bend', tags: ['20,000 gal', 'Fiberglass', 'Trichlor', 'Screened'], forecast: { fc: { value: 0.4, band: 0.5 }, cya: { value: 85, band: 10 } } },
-  { ...base, id: 'spruce-way', gallons: 18000, tds: 1000, name: 'Spruce Way', tags: ['18,000 gal', 'Vinyl', 'Liquid chlorine'], forecast: { fc: { value: 3.4, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
-  { ...base, id: 'aspen-drive', gallons: 25000, cell: { make: 'Pentair', model: 'IC40' }, name: 'Aspen Drive', tags: ['25,000 gal', 'Plaster', 'Salt'], forecast: { fc: { value: 1.8, band: 0.5 }, salt: { value: 2850, band: 200 } } },
-  { ...base, id: 'elm-terrace', gallons: 15000, tds: 1200, name: 'Elm Terrace', tags: ['15,000 gal', 'Plaster', 'Liquid chlorine'], forecast: { fc: { value: 3.0, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
-]
+  'birch-lane': { ideal, forecast: { fc: { value: 3.1, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
+  'cedar-ridge': { ideal, forecast: { fc: { value: 2.6, band: 0.5 }, ph: { value: 7.9, band: 0.2 } } },
+  'oak-hollow': { ideal, forecast: { fc: { value: 4.0, band: 0.5 }, ph: { value: 7.4, band: 0.2 } } },
+  'pine-court': { ideal, forecast: { fc: { value: 0.9, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
+  'willow-bend': { ideal, forecast: { fc: { value: 0.4, band: 0.5 }, cya: { value: 85, band: 10 } } },
+  'spruce-way': { ideal, forecast: { fc: { value: 3.4, band: 0.5 }, ph: { value: 7.5, band: 0.2 } } },
+  'aspen-drive': { ideal, forecast: { fc: { value: 1.8, band: 0.5 }, salt: { value: 2850, band: 200 } } },
+  'elm-terrace': { ideal, forecast: { fc: { value: 3.0, band: 0.5 }, ph: { value: 7.6, band: 0.2 } } },
+}
 
 export const ROUTE = {
   title: 'TUE · ROUTE B · ALEX',
@@ -80,8 +94,6 @@ export const STOPS: Stop[] = [
   { poolId: 'aspen-drive', x: 80, y: 62, eta: '11:05', done: false, flags: [{ text: 'FC 1.8', level: 'warn' }, { text: 'salt 2,850' }] },
   { poolId: 'elm-terrace', x: 66, y: 76, eta: '11:30', done: false, flags: [{ text: 'FC 3.0' }, { text: 'LSI −0.4', level: 'warn' }] },
 ]
-
-export const poolById = (id: string) => POOLS.find((p) => p.id === id)
 
 export const CREW: CrewMember[] = [
   { name: 'Alex', initials: 'AL', role: 'Route B', status: '4 of 9 stops', state: 'working' },

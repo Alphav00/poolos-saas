@@ -21,14 +21,11 @@ export interface DecayRow {
   alert?: boolean
 }
 
-export interface Pool {
+/** What a pool is, as kept in D1 at field/pools/<id> (apps/api/src/field.ts checks it). */
+export interface Profile {
   id: string
   name: string
   tags: string[]
-  forecast: Partial<Record<Param, Forecast>>
-  ideal: Partial<Record<Param, [number, number]>>
-  visits: Visit[]
-  decay: DecayRow[]
   /** Volume, US gallons. Doses need it; without it the screen says so. */
   gallons?: number
   /** Last TDS reading, ppm. Stands in for salt on pools with no chlorine generator. */
@@ -37,6 +34,24 @@ export interface Pool {
   cell?: { make: string; model: string }
   equipment: string[]
   note?: string
+  /** Made-up pool from the demo set; screens mark it DEMO. */
+  demo?: boolean
+}
+
+/** Engine output for a pool: where its readings are heading. Not part of the profile. */
+export interface EngineView {
+  forecast: Partial<Record<Param, Forecast>>
+  ideal: Partial<Record<Param, [number, number]>>
+  visits?: Visit[]
+  decay?: DecayRow[]
+}
+
+/** A pool as the screens use it: its profile plus the engine's view of it. */
+export interface Pool extends Profile {
+  forecast: Partial<Record<Param, Forecast>>
+  ideal: Partial<Record<Param, [number, number]>>
+  visits: Visit[]
+  decay: DecayRow[]
 }
 
 export interface Stop {

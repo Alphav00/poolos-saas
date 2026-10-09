@@ -123,6 +123,10 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 		return request.method === 'POST' ? importBoard(request, env, viewer, board) : fail(405, 'method_not_allowed', 'Use POST to import');
 	}
 	if (!collection || !COLLECTION.test(collection)) return fail(400, 'bad_request', 'Bad collection name');
+	// Pool profiles are read by the whole team but changed by owners only.
+	if (board === 'field' && collection === 'pools' && request.method !== 'GET' && !viewer.isOwner) {
+		return fail(403, 'forbidden', 'Only an owner can change pool profiles');
+	}
 	if (id !== undefined && !DOC_ID.test(id)) return fail(400, 'bad_request', 'Bad document id');
 
 	if (id === undefined) {
