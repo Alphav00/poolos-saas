@@ -20,6 +20,10 @@
     status?: string
   }
 
+  // Reports written before the Worker checked links may hold anything; only a
+  // Linear address is ever made a link.
+  const linearHref = (u?: string) => (u && /^https:\/\/linear\.app\//.test(u) ? u : undefined)
+
   const AREAS = [
     ['dispatch', 'Dispatch'],
     ['route', 'Route View'],
@@ -120,7 +124,7 @@
   <section class="card done" style="margin-top:0" role="status">
     <div class="big">Thanks, got it.</div>
     <p class="sm" style="margin-top:6px">
-      {#if sent.linear}Filed as <a href={sent.linearUrl} target="_blank" rel="noopener">{sent.linear}</a> in Linear.{:else}Saved. It will be added to the Linear list.{/if}
+      {#if sent.linear}Filed as {#if linearHref(sent.linearUrl)}<a href={linearHref(sent.linearUrl)} target="_blank" rel="noopener">{sent.linear}</a>{:else}{sent.linear}{/if} in Linear.{:else}Saved. It will be added to the Linear list.{/if}
     </p>
     <button class="btn" onclick={another}>Report something else</button>
     <a class="btn ghost" href={from || '#/'}>Back to where I was</a>
@@ -179,7 +183,7 @@
       <div class="row" style="justify-content:flex-start;gap:6px;flex-wrap:wrap">
         <span class={['pp', r.data.severity === 'blocker' ? 'bad' : r.data.severity === 'major' ? 'warn' : '']}>{r.data.severity}</span>
         <span class="pp">{areaName(r.data.area)}</span>
-        {#if r.data.linear}<a class="pp lin" href={r.data.linearUrl} target="_blank" rel="noopener">{r.data.linear}</a>{/if}
+        {#if r.data.linear && linearHref(r.data.linearUrl)}<a class="pp lin" href={linearHref(r.data.linearUrl)} target="_blank" rel="noopener">{r.data.linear}</a>{:else if r.data.linear}<span class="pp">{r.data.linear}</span>{/if}
       </div>
       <div class="nm" style="margin-top:3px">{r.data.title}</div>
       <div class="xs">{r.data.reporter} · {r.data.reportedAt ? new Date(r.data.reportedAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}</div>
