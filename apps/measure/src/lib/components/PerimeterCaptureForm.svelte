@@ -36,8 +36,7 @@
   let undoStack = [];   // snapshots for undo (max 20)
 
   function snapshot() {
-    undoStack.push(JSON.parse(JSON.stringify(pts)));
-    if (undoStack.length > 20) undoStack.shift();
+    undoStack = [...undoStack, JSON.parse(JSON.stringify(pts))].slice(-20);
   }
 
   function addPoint() {
@@ -69,7 +68,8 @@
 
   function undo() {
     if (undoStack.length === 0) return;
-    const prev = undoStack.pop();
+    const prev = undoStack[undoStack.length - 1];
+    undoStack = undoStack.slice(0, -1);
     job.measurement.perimeter_points = prev;
     lastAddedNumber = null;
     store.markDirty();

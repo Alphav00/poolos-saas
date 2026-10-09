@@ -33,7 +33,10 @@
     return n;
   }
 
-  function emit() {
+  // `clamp` is applied when the field loses focus, not on every keystroke:
+  // clamping mid-entry rewrote the box under the thumb (typing "28" into a
+  // field with min 10 became 10, then 108, then 100).
+  function emit(clamp = false) {
     const f = parseFeet(feetStr);
     if (f == null) {
       // invalid feet
@@ -49,14 +52,16 @@
       inches = parsed;
     }
     const ft = f + inches / 12;
-    if (ft !== lastEmittedFt) {
-      lastEmittedFt = ft;
-      value = Math.max(min, Math.min(max, ft));
+    const next = clamp ? Math.max(min, Math.min(max, ft)) : ft;
+    if (next !== lastEmittedFt) {
+      lastEmittedFt = next;
+      value = next;
     }
   }
 
-  // Hydrate from external value -> strings
-  $: if (mounted && value != null) {
+  // Hydrate from external value -> strings. A function, so the reactive
+  // statement below depends on `value` only, not on what the user is typing.
+  function hydrate(value) {
     const wholeFeet = Math.floor(value);
     const totalInches = (value - wholeFeet) * 12;
     // Round to nearest 1/16" for display
@@ -86,9 +91,15 @@
     }
   }
 
+  $: if (mounted && value != null) hydrate(value);
+
   // Re-emit when inputs change
   function onFeetChange() { emit(); }
   function onInchesChange() { emit(); }
+  function onLeave() { emit(true); }
+  // Tapping into a box selects what is there, so typing replaces it. Without
+  // this a new point's "0" stays put and typing 11 in front of it reads 110.
+  function selectAll(e) { e.currentTarget.select(); }
 
   import { onMount, tick } from 'svelte';
   onMount(() => {
@@ -138,7 +149,8 @@
           step="1"
           bind:value={feetStr}
           on:input={onFeetChange}
-          on:blur={onFeetChange}
+          on:blur={onLeave}
+          on:focus={selectAll}
           placeholder="0"
           aria-label="{label} feet"
           {autoFocus}
@@ -154,7 +166,8 @@
           inputmode="decimal"
           bind:value={inchesStr}
           on:input={onInchesChange}
-          on:blur={onInchesChange}
+          on:blur={onLeave}
+          on:focus={selectAll}
           placeholder="0"
           aria-label="{label} inches"
         />

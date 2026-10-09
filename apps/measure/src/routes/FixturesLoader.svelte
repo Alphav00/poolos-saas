@@ -11,9 +11,12 @@
     // Save it to DB so it has a real ID
     const created = await api.createJob({
       meta: job.meta,
+      product_type: job.product_type,
       measurement: job.measurement,
       cover_spec: job.cover_spec,
+      liner_spec: job.liner_spec,
       hardware: job.hardware,
+      notes: job.notes,
     });
     navigate(`/measure/jobs/${created.id}`);
   }
