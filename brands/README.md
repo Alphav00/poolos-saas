@@ -17,7 +17,7 @@ it with its own name, logo and colours while it tests.
 
 | File | Used for |
 |---|---|
-| `brand.json` | name, short name (home-screen label), legal name, tagline, `pilot`, colours |
+| `brand.json` | name, short name (home-screen label), legal name, tagline, `pilot`, `linear`, colours |
 | `logo.png` | full logo, transparent, square, 512 px: top of the Today screen |
 | `mark.png` | logo without words, transparent, 256 px: Measure header |
 | `favicon.png` | 64 px browser tab icon |
@@ -27,6 +27,13 @@ it with its own name, logo and colours while it tests.
 
 `pilot: true` shows the "You're test-driving the app" card and the Report
 button on Today.
+
+`linear` (optional) says where the tester's problem reports go in Linear:
+`{ "team": "HEP", "project": "CCS Pools test drive", "labels": ["Tester report"] }`.
+The team is the Linear team key; project and labels are names as they appear
+in Linear. After saving a report, the app offers **Open in Linear**: Linear's
+new-issue page, filled in, which the tester files under their own Linear
+sign-in. Without `linear` the button is not shown. Nothing here is a secret.
 
 ### Colours (`brand.json` → CSS variable)
 

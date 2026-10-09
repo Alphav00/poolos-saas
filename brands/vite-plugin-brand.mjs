@@ -26,7 +26,17 @@ export function loadBrand(id = process.env.BRAND || 'poolos') {
     if (!HEX.test(b.colors?.[k] ?? '')) throw new Error(`brands/${id}/brand.json colors.${k} must be #rrggbb`)
   }
   for (const f of FILES) if (!existsSync(join(dir, f))) throw new Error(`brands/${id}/ is missing ${f}`)
-  return { id, dir, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot === true, colors: b.colors }
+  return { id, dir, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot === true, colors: b.colors, linear: linearTarget(id, b.linear) }
+}
+
+/** Where testers file problems in Linear (optional): team key, and project and label names. */
+function linearTarget(id, l) {
+  if (l === undefined) return null
+  const text = (v) => typeof v === 'string' && v.trim().length > 0 && v.length <= 80
+  if (!/^[A-Z][A-Z0-9]{0,9}$/.test(l?.team ?? '')) throw new Error(`brands/${id}/brand.json linear.team must be a Linear team key like HEP`)
+  if (l.project !== undefined && !text(l.project)) throw new Error(`brands/${id}/brand.json linear.project must be a project name`)
+  if (l.labels !== undefined && !(Array.isArray(l.labels) && l.labels.every(text))) throw new Error(`brands/${id}/brand.json linear.labels must be label names`)
+  return { team: l.team, project: l.project, labels: l.labels ?? [] }
 }
 
 const kebab = (s) => s.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())
@@ -64,7 +74,7 @@ export function manifest(b) {
  */
 export default function brandPlugin({ emit = false } = {}) {
   const b = loadBrand()
-  const pub = { id: b.id, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot, logo: '/brand/logo.png', mark: '/brand/mark.png' }
+  const pub = { id: b.id, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot, linear: b.linear, logo: '/brand/logo.png', mark: '/brand/mark.png' }
   const html = { BRAND_NAME: b.name, BRAND_SHORT_NAME: b.shortName, BRAND_SURFACE: b.colors.surface, BRAND_BACKGROUND: b.colors.background, BRAND_INK: b.colors.ink, BRAND_PRIMARY: b.colors.primary }
   const images = readdirSync(b.dir).filter((f) => f.endsWith('.png'))
   return {

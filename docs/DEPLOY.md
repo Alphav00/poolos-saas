@@ -51,8 +51,8 @@ Configure → add the domain `poolos-preview.pathofphi.com`. Same policy, same
 email list. Until then the preview answers "Sign in required" to everyone
 and the workflow ends with a warning instead of failing.
 
-Problem reports on the preview are not sent to Linear unless the key is set
-for it too: `cd apps/api && pnpm exec wrangler secret put LINEAR_API_KEY --env preview`.
+Problem reports are filed in Linear by the tester from the app, under their
+own Linear sign-in; neither Worker holds a Linear key.
 
 To remove the preview: delete the `poolos-preview` Worker and the
 `poolos-preview` D1 database in the dashboard, then the certificate for

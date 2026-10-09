@@ -2,10 +2,10 @@
  * The `feedback` board: problem reports from people testing the app.
  *   reports/<id>   one report, written from the app's "Report a problem" form
  *
- * The Worker stamps who reported it and when. With the LINEAR_API_KEY secret
- * and the LINEAR_* vars in wrangler.jsonc set, a new report is also opened as a Linear issue and
- * the issue's id and link are saved on the report. Without them the report
- * stays in D1 for the owner to triage by hand.
+ * The Worker stamps who reported it and when. The Worker never files reports in
+ * Linear: the app offers the tester a prefilled Linear page to file it under
+ * their own Linear sign-in (apps/web/src/lib/app/linear.ts), and an owner can
+ * record the issue id and link here afterwards.
  */
 export const AREAS: Record<string, string> = {
 	dispatch: 'Dispatch',
@@ -16,11 +16,11 @@ export const AREAS: Record<string, string> = {
 	invoicing: 'Invoicing',
 	other: 'Other',
 };
-export const SEVERITIES: Record<string, { label: string; linearPriority: number }> = {
-	blocker: { label: 'Blocker: stops the work', linearPriority: 1 },
-	major: { label: 'Major: wrong result or a hard workaround', linearPriority: 2 },
-	minor: { label: 'Minor: annoying, has a workaround', linearPriority: 3 },
-	idea: { label: 'Idea or wish', linearPriority: 4 },
+export const SEVERITIES: Record<string, { label: string }> = {
+	blocker: { label: 'Blocker: stops the work' },
+	major: { label: 'Major: wrong result or a hard workaround' },
+	minor: { label: 'Minor: annoying, has a workaround' },
+	idea: { label: 'Idea or wish' },
 };
 export const DEVICES = new Set(['phone', 'tablet', 'desktop']);
 const ID = /^r-\d{8}-\d{6}-[a-z0-9]{4}$/;
@@ -55,9 +55,9 @@ export function checkFeedbackDoc(collection: string, id: string, data: Record<st
 
 /**
  * Who reported it and when come from the sign-in, not the form, and never change.
- * The Linear link and the status are set by the Worker (sendToLinear) or by an
- * owner; anything else a form sends for them is dropped, so a tester cannot plant
- * a link that the report list later shows, or mark their own report fixed.
+ * The Linear link and the status are set only by an owner; anything else a form
+ * sends for them is dropped, so a tester cannot plant a link that the report list
+ * later shows, or mark their own report fixed.
  */
 export function stampFeedback(data: Record<string, unknown>, previous: Record<string, unknown> | null, email: string, at: string, isOwner: boolean) {
 	const { reporter: _reporter, reportedAt: _reportedAt, linear, linearUrl, status, ...rest } = data;
@@ -65,49 +65,4 @@ export function stampFeedback(data: Record<string, unknown>, previous: Record<st
 	const out: Record<string, unknown> = { ...rest, reporter: previous?.reporter ?? email, reportedAt: previous?.reportedAt ?? at };
 	for (const [k, v] of Object.entries(source)) if (v !== undefined) out[k] = v;
 	return out;
-}
-
-export function linearMarkdown(r: Record<string, unknown>): string {
-	const line = (label: string, v: unknown) => (typeof v === 'string' && v.trim() ? `**${label}:** ${v.trim()}\n\n` : '');
-	return (
-		`**Feature area:** ${AREAS[r.area as string]}\n\n` +
-		`**Severity:** ${SEVERITIES[r.severity as string]!.label}\n\n` +
-		`**Device / viewport:** ${r.device as string}\n\n` +
-		line('Screen', r.screen) +
-		line('Expected', r.expected) +
-		line('Actual', r.actual) +
-		line('Steps to repeat', r.steps) +
-		`---\nReported in the app by ${r.reporter as string} at ${r.reportedAt as string}.` +
-		(r.userAgent ? `\nBrowser: ${r.userAgent as string}` : '')
-	);
-}
-
-/** Opens the report as a Linear issue. Returns null when Linear is not set up or refuses. */
-export async function sendToLinear(env: Env, r: Record<string, unknown>, fetcher: typeof fetch = fetch): Promise<{ linear: string; linearUrl: string } | null> {
-	if (!env.LINEAR_API_KEY || !env.LINEAR_TEAM_ID) return null;
-	const input: Record<string, unknown> = {
-		teamId: env.LINEAR_TEAM_ID,
-		title: `[${AREAS[r.area as string]}] ${(r.title as string).trim()}`,
-		description: linearMarkdown(r),
-		priority: SEVERITIES[r.severity as string]!.linearPriority,
-	};
-	if (env.LINEAR_PROJECT_ID) input.projectId = env.LINEAR_PROJECT_ID;
-	const labels = (env.LINEAR_LABEL_IDS ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-	if (labels.length) input.labelIds = labels;
-	try {
-		const res = await fetcher('https://api.linear.app/graphql', {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', Authorization: env.LINEAR_API_KEY },
-			body: JSON.stringify({
-				query: 'mutation($input: IssueCreateInput!) { issueCreate(input: $input) { success issue { identifier url } } }',
-				variables: { input },
-			}),
-		});
-		if (!res.ok) return null;
-		const out = (await res.json()) as { data?: { issueCreate?: { success: boolean; issue?: { identifier: string; url: string } } } };
-		const issue = out.data?.issueCreate?.issue;
-		return out.data?.issueCreate?.success && issue ? { linear: issue.identifier, linearUrl: issue.url } : null;
-	} catch {
-		return null;
-	}
 }

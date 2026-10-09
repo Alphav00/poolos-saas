@@ -1,5 +1,5 @@
 import type { Viewer } from './auth';
-import { checkFeedbackDoc, sendToLinear, stampFeedback } from './feedback';
+import { checkFeedbackDoc, stampFeedback } from './feedback';
 import { checkFieldDoc, stampStaff } from './field';
 import { checkMessageDoc, stampMessage } from './messages';
 import { canEditPools, roleFor } from './roles';
@@ -219,11 +219,6 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 		if (taken) return fail(409, 'conflict', `${next.email as string} is already on file as staff/${taken.id}`);
 	}
 	if (op === 'delete' && board === 'feedback' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can delete a report');
-	// A new problem report is also opened in Linear when Linear is set up.
-	if (board === 'feedback' && op === 'set' && !current) {
-		const issue = await sendToLinear(env, next);
-		if (issue) next = { ...next, ...issue, status: 'in-linear' };
-	}
 	const data = JSON.stringify(next);
 	if (data.length > MAX_DOC_BYTES) return fail(413, 'too_large', 'Document is larger than 512 KB');
 	await env.DB.batch([

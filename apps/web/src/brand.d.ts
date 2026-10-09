@@ -8,6 +8,8 @@ declare module 'virtual:brand' {
     tagline: string
     /** A company trying the app before it is theirs: shows the tester strip and the problem form up front. */
     pilot: boolean
+    /** Where testers file problems in Linear under their own sign-in; null shows no Linear button. */
+    linear: { team: string; project?: string; labels: string[] } | null
     logo: string
     mark: string
   }

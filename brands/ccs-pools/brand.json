@@ -4,6 +4,7 @@
   "legalName": "CCS Pools LLC",
   "tagline": "Cherry Hill, NJ · Est. 2021",
   "pilot": true,
+  "linear": { "team": "HEP", "project": "CCS Pools test drive", "labels": ["Tester report"] },
   "colors": {
     "primary": "#139ad1",
     "primaryDark": "#0b6fa3",
