@@ -87,7 +87,7 @@
     <p class="xs">{greeting}{email ? ` · ${email}` : ''}</p>
     <h1 class="day">{day} <span>· {date}</span></h1>
   </div>
-  <a class="msg" href="/boards/shallow-end"><span aria-hidden="true">💬</span> Message board</a>
+  <a class="msg" href="#/messages"><span aria-hidden="true">💬</span> Message board</a>
 </header>
 
 {#if brand.pilot}
