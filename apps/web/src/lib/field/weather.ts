@@ -1,13 +1,16 @@
 export interface Weather {
   tempF: number
-  code: number
-  windMph: number
-  uv: number
+  /** WMO weather code; null when the source gave none. */
+  code: number | null
+  windMph: number | null
+  /** Null when the source has no UV (the National Weather Service has none). */
+  uv: number | null
   highF: number
   lowF: number
   rainChance: number
-  uvMax: number
+  uvMax: number | null
   hourlyRain: { hour: number; chance: number }[]
+  source?: 'open-meteo' | 'nws'
 }
 
 export interface Spot {
@@ -18,7 +21,8 @@ export interface Spot {
 const KEY = 'poolos.weatherSpot'
 
 /** WMO weather code (as Open-Meteo reports it) to words and an icon. */
-export function describe(code: number): { text: string; icon: string } {
+export function describe(code: number | null | undefined): { text: string; icon: string } {
+  if (code === null || code === undefined || !Number.isFinite(code)) return { text: '', icon: '🌡️' }
   if (code === 0) return { text: 'Clear', icon: '☀️' }
   if (code <= 2) return { text: 'Partly cloudy', icon: '⛅' }
   if (code === 3) return { text: 'Overcast', icon: '☁️' }
@@ -68,7 +72,17 @@ export function locate(): Promise<Spot> {
 }
 
 export async function loadWeather(s: Spot): Promise<Weather> {
-  const res = await fetch(`/api/weather?lat=${s.lat}&lon=${s.lon}`, { credentials: 'same-origin' })
+  let res: Response
+  try {
+    // An expired Cloudflare Access session answers with a redirect to its login
+    // page on another origin. Not following it lets us tell that apart.
+    res = await fetch(`/api/weather?lat=${s.lat}&lon=${s.lon}`, { credentials: 'same-origin', redirect: 'manual' })
+  } catch {
+    // A network failure. Online, that is most often the Access login redirect
+    // failing cross-origin; reloading (the Sign in link) also helps a dropped signal.
+    throw new Error(typeof navigator !== 'undefined' && navigator.onLine === false ? 'You are offline.' : 'Sign in again.')
+  }
+  if (res.type === 'opaqueredirect') throw new Error('Sign in again.')
   if (!res.ok) throw new Error(res.status === 401 ? 'Sign in again.' : 'Weather is unavailable right now.')
   return (await res.json()) as Weather
 }
