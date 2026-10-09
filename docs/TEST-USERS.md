@@ -35,6 +35,15 @@ section 1) and the owner.
   on the account, not separate apps. Nothing reads them yet: the API has no
   users table, and the owner is still set by `OWNER_EMAILS`.
 
+## Personas for AI testers
+
+Each login above has a persona file in
+[`testing/personas/`](../testing/personas/) with its device, goals, journeys
+(numbered steps with the expected result, using the app's own button labels),
+"breaks if" lines and the HEP issues each journey covers. There is also a
+dispatcher persona with no login yet. AI reviewers start at
+[`testing/README.md`](../testing/README.md).
+
 ## Not done here
 
 - Nothing loads this file yet. Seeding it into D1 waits for the accounts
