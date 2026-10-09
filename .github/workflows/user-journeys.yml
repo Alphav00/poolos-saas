@@ -1,0 +1,43 @@
+name: User journeys
+# Drives the phone app in Chromium against a real Worker running locally
+# (wrangler dev --local, local D1, a throwaway Access key). No Cloudflare
+# secrets: nothing here reaches production. See docs/TESTING.md.
+on:
+  pull_request:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: user-journeys-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  journeys:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Chromium for playwright-core
+        run: pnpm exec playwright-core install --with-deps chromium
+      - name: Run the user journeys
+        run: pnpm e2e
+      - name: Summary
+        if: always()
+        run: test -f e2e-output/report.md && cat e2e-output/report.md >> "$GITHUB_STEP_SUMMARY" || echo "No report was written." >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: user-journeys
+          path: e2e-output/
+          if-no-files-found: warn
+          retention-days: 14
