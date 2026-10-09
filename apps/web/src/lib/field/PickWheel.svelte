@@ -59,7 +59,7 @@
       onclick={() => pick(i)}
       onkeydown={(e) => onkey(e, i)}
     >
-      <path d={w.path} fill={on ? '#0aa3e6' : wedgeColor(i, parts.length)} stroke="#fff" stroke-width="2" />
+      <path d={w.path} style:fill={on ? 'var(--brand-sky)' : wedgeColor(i, parts.length)} style:stroke="#fff" stroke-width="2" />
       {#if i === forecastAt}
         <circle cx={w.lx} cy={w.ly - 5} r="21" fill="none" stroke={on ? '#fff' : '#1d2a36'} stroke-width="3" stroke-dasharray="5 4" />
       {/if}

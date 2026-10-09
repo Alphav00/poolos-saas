@@ -25,6 +25,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - name: Build the web app and Measure
+        # The brand pack the live site wears (brands/README.md).
+        env:
+          BRAND: ccs-pools
         run: pnpm build
       - name: Apply database migrations
         working-directory: apps/api

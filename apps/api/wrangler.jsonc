@@ -24,6 +24,12 @@
 		"ACCESS_AUD": "4db28440a6320c1dc9f22f201073ece46307c61d2e3c116e2980f88c1f8c034f",
 		// Comma-separated. Owners can assign cards and approve requests on boards.
 		"OWNER_EMAILS": "alphav00@gmail.com",
+		// Where problem reports from the app open in Linear (src/feedback.ts):
+		// team PoolOS, project "CCS Pools test drive", label "Tester report".
+		// Nothing is sent until the LINEAR_API_KEY secret is set.
+		"LINEAR_TEAM_ID": "d823f7a2-7856-4bf8-8569-3c2449010f3f",
+		"LINEAR_PROJECT_ID": "beba12d4-a983-4da0-9663-df61a204ea7f",
+		"LINEAR_LABEL_IDS": "25b17c55-169e-4cde-9fb4-1237d46eb8e9",
 	},
 	"d1_databases": [
 		{ "binding": "DB", "database_name": "poolos", "database_id": "ff199d7f-f102-4fb0-97f1-0c7237b7a0e5", "migrations_dir": "migrations" },

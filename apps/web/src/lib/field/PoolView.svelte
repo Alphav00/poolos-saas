@@ -88,7 +88,7 @@
   <a class="back" href="#/field">‹ Route</a>
   {#if off.length}<span class="chip bad">{off.length} off forecast</span>{:else if reading}<span class="chip ok">on forecast</span>{/if}
 </div>
-<span class="sample">SAMPLE DATA</span>
+<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>
 
 <section class="card" style="margin-top:0">
   <h1 class="big">{pool.name}</h1>

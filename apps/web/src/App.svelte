@@ -2,7 +2,9 @@
   import ChemSetup from './lib/app/ChemSetup.svelte'
   import Home from './lib/app/Home.svelte'
   import More from './lib/app/More.svelte'
+  import Report from './lib/app/Report.svelte'
   import TabBar from './lib/app/TabBar.svelte'
+  import brand from 'virtual:brand'
   import './lib/app/app.css'
   import Field from './lib/field/Field.svelte'
 
@@ -16,11 +18,11 @@
   async function load() {
     try {
       const [m, b] = await Promise.all([fetch('/api/me'), fetch('/api/boards')])
-      if (!m.ok || !b.ok) throw new Error(m.status === 401 ? 'Sign in again.' : 'Could not load PoolOS.')
+      if (!m.ok || !b.ok) throw new Error(m.status === 401 ? 'Sign in again.' : `Could not load ${brand.shortName}.`)
       me = await m.json()
       boards = (await b.json()).boards
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Could not load PoolOS.'
+      error = e instanceof Error ? e.message : `Could not load ${brand.shortName}.`
     }
   }
   load()
@@ -30,6 +32,8 @@
   if (location.hash.length > 2 && !KNOWN.includes(location.hash.replace(/^#\/?/, '').split('/')[0]!)) history.replaceState(null, '', '#/')
 
   let hash = $state(location.hash)
+  // The screen a problem report is about: the last one seen before the form.
+  let lastScreen = $state('')
   const route = $derived(hash.replace(/^#\/?/, '').split('/').filter(Boolean))
   const tab = $derived(route[0] === 'field' ? 'route' : route[0] === 'more' ? 'more' : 'today')
   const entering = $derived(route[0] === 'field' && route[2] === 'readings')
@@ -45,6 +49,7 @@
 <svelte:window
   onhashchange={() => {
     if (location.hash.length > 2 && !KNOWN.includes(location.hash.replace(/^#\/?/, '').split('/')[0]!)) history.replaceState(null, '', '#/')
+    if (!/^#\/more\/report/.test(hash)) lastScreen = hash || '#/'
     hash = location.hash
   }}
 />
@@ -54,6 +59,8 @@
     {#if error}<p class="alert" role="alert"><b>{error}</b>{#if error === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
     {#if route[0] === 'field'}
       <Field path={route} />
+    {:else if route[0] === 'more' && route[1] === 'report'}
+      <Report from={lastScreen} />
     {:else if route[0] === 'more' && route[1] === 'chemistry'}
       <ChemSetup />
     {:else if route[0] === 'more'}

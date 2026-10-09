@@ -135,7 +135,7 @@
     <a class="back" href={`#/field/${poolId}`}>‹ {pool.name}</a>
     <span class="chip">{entered} / {SCALES.length}</span>
   </div>
-  <h1 class="h" style="margin:0 6px">Today's readings · {date} <span class="sample">SAMPLE DATA</span></h1>
+  <h1 class="h" style="margin:0 6px">Today's readings · {date} <span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span></h1>
 
   <div class="eg">
     {#each SCALES as s (s.key)}

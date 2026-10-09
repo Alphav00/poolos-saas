@@ -3,7 +3,7 @@
 </script>
 
 <div class="bar"><span class="t">{ROUTE.title}</span><span class="chip">{STOPS.filter((s) => s.done).length} / {STOPS.length} done</span></div>
-<span class="sample">SAMPLE DATA</span>
+<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>
 
 <section class="card" style="margin-top:0">
   <div class="h">Predicted for today</div>
