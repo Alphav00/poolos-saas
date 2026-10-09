@@ -1,0 +1,58 @@
+name: Preview
+# Deploys a pull request to https://poolos-preview.pathofphi.com so it can be
+# tried before it merges. The live site (deploy.yml) is not touched: the
+# preview is its own Worker (poolos-preview) with its own D1 database.
+# See docs/DEPLOY.md, "Preview".
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  workflow_dispatch:
+
+# One preview hostname, so one deploy at a time and the last push wins.
+# A run that is already deploying is never cut off.
+concurrency:
+  group: deploy-preview
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only branches in this repository: forks get no Cloudflare token.
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 6434b48ad9cb48899c80a75c8804bade
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - name: Build the web app and Measure
+        # The brand pack the preview wears (brands/README.md).
+        env:
+          BRAND: ccs-pools
+        run: pnpm build
+      - name: Apply database migrations
+        working-directory: apps/api
+        run: pnpm exec wrangler d1 migrations apply poolos-preview --remote --env preview
+      - name: Deploy the preview Worker
+        working-directory: apps/api
+        run: pnpm exec wrangler deploy --env preview
+      - name: Check it is up and behind Access
+        # 302: Access sends visitors to sign in (ready).
+        # 401: the Worker is up but Access does not cover the hostname yet;
+        #      the Worker still refuses everything. Add the hostname to the
+        #      PoolOS Access application (docs/DEPLOY.md).
+        run: |
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos-preview.pathofphi.com/ || true)
+            echo "attempt $i: home without sign-in: $code"
+            if [ "$code" = "302" ]; then echo "Preview is up and behind Access."; exit 0; fi
+            if [ "$code" = "401" ]; then echo "::warning::Preview is deployed but Cloudflare Access does not cover poolos-preview.pathofphi.com yet. Add it to the PoolOS Access application (docs/DEPLOY.md)."; exit 0; fi
+            sleep 5
+          done
+          exit 1
