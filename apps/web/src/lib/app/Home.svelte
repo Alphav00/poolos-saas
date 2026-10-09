@@ -1,4 +1,5 @@
 <script lang="ts">
+  import brand from 'virtual:brand'
   import RouteMap from '../field/RouteMap.svelte'
   import { CREW, poolById, ROUTE, STOPS } from '../field/sample'
   import { describe, hourLabel, loadWeather, locate, rainFrom, savedSpot, type Spot, type Weather } from '../field/weather'
@@ -62,6 +63,14 @@
 
 <svelte:document onvisibilitychange={onVisible} />
 
+<header class="brandbar">
+  <img src={brand.logo} alt={brand.legalName} class="logo" />
+  <div class="who">
+    <div class="bn">{brand.name}</div>
+    <div class="xs">{brand.tagline}</div>
+  </div>
+</header>
+
 <header class="hello">
   <div>
     <p class="xs">{greeting}{email ? ` · ${email}` : ''}</p>
@@ -69,6 +78,16 @@
   </div>
   <a class="msg" href="/boards/shallow-end"><span aria-hidden="true">💬</span> Message board</a>
 </header>
+
+{#if brand.pilot}
+  <section class="card pilot" aria-label="Test drive">
+    <div style="flex:1;min-width:0">
+      <div class="nm">You're test-driving the app</div>
+      <div class="xs">Pools and crew marked DEMO are made up. Spot anything wrong or missing? Tell us.</div>
+    </div>
+    <a class="chip" href="#/more/report">🐞 Report</a>
+  </section>
+{/if}
 
 <section class="card weather" aria-label="Weather">
   {#if weather && look}
@@ -95,7 +114,7 @@
 </section>
 
 <a class="card tap" href="#/field">
-  <div class="row"><h2 class="h">Today's route</h2><span class="sample">SAMPLE</span></div>
+  <div class="row"><h2 class="h">Today's route</h2><span class="sample">DEMO</span></div>
   <div class="row" style="margin-top:4px">
     <div class="big">{ROUTE.headline}</div>
   </div>
@@ -124,7 +143,7 @@
 </a>
 
 <section class="card">
-  <div class="row"><h2 class="h">Working today</h2><span class="xs">{working.length} on <span class="sample" style="margin:0 0 0 4px">SAMPLE</span></span></div>
+  <div class="row"><h2 class="h">Working today</h2><span class="xs">{working.length} on <span class="sample" style="margin:0 0 0 4px">DEMO</span></span></div>
   <ul class="crew">
     {#each CREW as c (c.name)}
       <li class={c.state}>
@@ -138,12 +157,18 @@
 
 
 <style>
+  .brandbar { display: flex; align-items: center; gap: 10px; padding: 0 4px 8px; }
+  .brandbar .logo { width: 64px; height: 64px; object-fit: contain; flex: none; filter: drop-shadow(0 2px 3px rgba(14, 60, 95, .18)); }
+  .brandbar .who { min-width: 0; }
+  .brandbar .bn { font-size: 20px; font-weight: 900; line-height: 1.1; color: var(--brand-deep); }
+  .pilot { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, #fff, var(--brand-ice)); border: 2px solid rgb(var(--brand-accent-rgb) / .8); }
+  .pilot .chip { min-height: 44px; padding: 0 14px; font-weight: 900; text-decoration: none; background: var(--brand-accent); color: var(--brand-deep); }
   .hello { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding: 2px 4px 0; }
   .hello > div { min-width: 0; }
   .hello .xs { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .day { font-size: 22px; font-weight: 900; line-height: 1.15; }
   .day span { color: var(--mute); font-weight: 800; white-space: nowrap; }
-  .msg { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 22px; font-weight: 900; font-size: 13px; color: #fff; text-decoration: none; background: linear-gradient(180deg, #0a8fd0, #066fa6); box-shadow: 0 3px 0 #05587f; text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
+  .msg { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 22px; font-weight: 900; font-size: 13px; color: #fff; text-decoration: none; background: linear-gradient(180deg, var(--brand-primary), var(--brand-primary-dark)); box-shadow: 0 3px 0 var(--brand-deep); text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
   .refresh { min-width: 44px; min-height: 44px; justify-content: center; font-size: 18px; }
   .tap { display: block; color: inherit; text-decoration: none; }
   .tool { display: flex; align-items: center; gap: 12px; }
@@ -159,7 +184,7 @@
   .crew li { display: grid; grid-template-columns: 32px 1fr 14px; align-items: center; gap: 10px; padding: 4px 0; border-top: 1px solid var(--line); }
   .crew li:first-child { border-top: 0; }
   .crew li.off .nm, .crew li.off .xs { color: #7b8a97; }
-  .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: #0a6f9e; background: linear-gradient(180deg, #e3f5fd, #c9ecfb); box-shadow: 0 2px 0 #b6dcee; }
+  .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: var(--brand-link); background: var(--brand-ice); box-shadow: 0 2px 0 rgb(var(--brand-sky-rgb) / .35); }
   .dot { width: 12px; height: 12px; border-radius: 50%; background: #c3ced8; }
   .dot.working { background: #2bb673; box-shadow: 0 0 0 3px #e6f7ee; }
   .dot.break { background: #f39c12; box-shadow: 0 0 0 3px #fff3df; }

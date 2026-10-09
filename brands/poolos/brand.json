@@ -1,0 +1,19 @@
+{
+  "name": "PoolOS",
+  "shortName": "PoolOS",
+  "legalName": "PoolOS",
+  "tagline": "Pool service, one thumb",
+  "pilot": false,
+  "colors": {
+    "primary": "#0a8fd0",
+    "primaryDark": "#066fa6",
+    "deep": "#05587f",
+    "link": "#0a6f9e",
+    "sky": "#0aa3e6",
+    "ice": "#e3f5fd",
+    "accent": "#f39c12",
+    "ink": "#1d2a36",
+    "surface": "#f7fafc",
+    "background": "#eaf0f5"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "CCS Pools",
+  "shortName": "CCS Pools",
+  "legalName": "CCS Pools LLC",
+  "tagline": "Cherry Hill, NJ · Est. 2021",
+  "pilot": true,
+  "colors": {
+    "primary": "#139ad1",
+    "primaryDark": "#0b6fa3",
+    "deep": "#0e3c5f",
+    "link": "#0b5f8c",
+    "sky": "#28a5d5",
+    "ice": "#e4f3fb",
+    "accent": "#fad321",
+    "ink": "#0f2a3d",
+    "surface": "#f6fbfe",
+    "background": "#e6f0f7"
+  }
+}

@@ -1,4 +1,5 @@
 import type { Viewer } from './auth';
+import { checkFeedbackDoc, sendToLinear, stampFeedback } from './feedback';
 import { checkFieldDoc } from './field';
 
 /**
@@ -11,6 +12,7 @@ export const BOARDS: readonly { slug: string; title: string; access: 'owner' | '
 	{ slug: 'shallow-end', title: 'The Shallow End', access: 'team' },
 	{ slug: 'work-orders', title: 'Work Order Notebook', access: 'owner' },
 	{ slug: 'field', title: 'Field readings', access: 'team', page: false },
+	{ slug: 'feedback', title: 'Problem reports', access: 'team', page: false },
 ];
 
 export function boardFor(slug: string, viewer: Viewer) {
@@ -24,6 +26,7 @@ const IMPORT_CHUNK = 40;
 /** Boards whose documents have a fixed shape. */
 const CHECKS: Record<string, (collection: string, id: string, data: Record<string, unknown>) => string | null> = {
 	field: checkFieldDoc,
+	feedback: checkFeedbackDoc,
 };
 
 /** Owner-only: load a board export ({collections: {name: {id: data}}}) into D1. */
@@ -172,14 +175,24 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 			next = body;
 		}
 	}
+	// Strictly increasing per document so pollers using `since` never miss a change.
+	const at = new Date(Math.max(Date.now(), row ? Date.parse(row.updated_at) + 1 : 0)).toISOString();
+	if (board === 'feedback' && op !== 'delete') {
+		if (op === 'set' && current && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can replace a report; add to it with PATCH');
+		next = stampFeedback(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at);
+	}
 	if (op !== 'delete') {
 		const refused = CHECKS[board]?.(collection, id, next);
 		if (refused) return fail(400, 'bad_request', refused);
 	}
+	if (op === 'delete' && board === 'feedback' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can delete a report');
+	// A new problem report is also opened in Linear when Linear is set up.
+	if (board === 'feedback' && op === 'set' && !current) {
+		const issue = await sendToLinear(env, next);
+		if (issue) next = { ...next, ...issue, status: 'in-linear' };
+	}
 	const data = JSON.stringify(next);
 	if (data.length > MAX_DOC_BYTES) return fail(413, 'too_large', 'Document is larger than 512 KB');
-	// Strictly increasing per document so pollers using `since` never miss a change.
-	const at = new Date(Math.max(Date.now(), row ? Date.parse(row.updated_at) + 1 : 0)).toISOString();
 	await env.DB.batch([
 		env.DB.prepare(
 			`INSERT INTO board_docs (board, collection, id, data, updated_at, updated_by, deleted) VALUES (?,?,?,?,?,?,?)

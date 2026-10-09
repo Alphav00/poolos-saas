@@ -21,7 +21,7 @@
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-tap-highlight-color: transparent;
-    background: linear-gradient(180deg, #f7fafc 0%, #eaf0f5 100%);
+    background: linear-gradient(180deg, var(--brand-surface) 0%, var(--brand-background) 100%);
     font-weight: 600;
   }
   #app {
@@ -49,14 +49,14 @@
   .btn {
     @apply inline-flex items-center justify-center px-4 py-3 rounded-2xl font-black text-white
            transition-transform active:translate-y-px disabled:opacity-50 disabled:cursor-not-allowed;
-    background: linear-gradient(180deg, #0a8fd0, #066fa6);
-    box-shadow: 0 3px 0 #05587f;
+    background: linear-gradient(180deg, var(--brand-primary), var(--brand-primary-dark));
+    box-shadow: 0 3px 0 var(--brand-deep);
     text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
   }
   .btn-ghost {
     @apply inline-flex items-center justify-center px-4 py-3 rounded-2xl font-extrabold
            bg-white transition-transform active:translate-y-px;
-    color: #0a6f9e;
+    color: var(--brand-link);
     box-shadow: 0 3px 0 #cfdbe4;
   }
   .btn-danger {
@@ -70,7 +70,7 @@
            focus:outline-none focus:ring-4 focus:ring-pool-500/25;
     border: 2px solid #e3eaf0;
   }
-  .field:focus { border-color: #0a8fd0; }
+  .field:focus { border-color: var(--brand-primary); }
   .field::placeholder { color: #8a9aa8; font-weight: 600; }
   .label {
     @apply block text-xs font-extrabold uppercase tracking-wider mb-1;

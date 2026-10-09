@@ -25,6 +25,11 @@
 
 <section class="card" style="margin-top:0">
   <h2 class="h">Tools</h2>
+  <a class="stop" href="#/more/report">
+    <span class="num">🐞</span>
+    <div><div class="nm">Report a problem</div><div class="xs">Something wrong or missing? Tell us, and see what others reported</div></div>
+    <span></span>
+  </a>
   <a class="stop" href="/measure">
     <span class="num">📏</span>
     <div><div class="nm">Measure</div><div class="xs">Liners and covers: A/B walk, closure checks, order forms</div></div>
@@ -56,5 +61,5 @@
 </section>
 
 <style>
-  .imp { display: flex; align-items: center; min-height: 44px; font-size: 13px; color: #0a6f9e; text-decoration: underline; cursor: pointer; padding-left: 32px; }
+  .imp { display: flex; align-items: center; min-height: 44px; font-size: 13px; color: var(--brand-link); text-decoration: underline; cursor: pointer; padding-left: 32px; }
 </style>

@@ -29,7 +29,7 @@
   <div class="flex items-center justify-between">
     <h1 class="text-2xl font-bold">Jobs</h1>
     <div class="flex gap-2">
-      <a href="/measure/fixtures" class="btn-ghost text-sm">Load fixture…</a>
+      <a href="/measure/fixtures" class="btn-ghost text-sm">Try a sample pool…</a>
       <a href="/measure/new" class="btn text-sm">+ New job</a>
     </div>
   </div>

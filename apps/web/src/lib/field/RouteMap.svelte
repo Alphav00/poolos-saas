@@ -15,10 +15,10 @@
   <path d="M40,0 C44,14 38,28 46,40" stroke="#fff" stroke-width="2" fill="none" />
   <path d="M78,0 C74,16 84,28 80,40" stroke="#fff" stroke-width="1.6" fill="none" />
   <ellipse cx="90" cy="7" rx="8" ry="4" fill="#bfe3f5" />
-  <polyline points={path} fill="none" stroke="#0aa3e6" stroke-width="1" stroke-dasharray="2 1.5" stroke-linejoin="round" />
+  <polyline points={path} style:fill="none" style:stroke="var(--brand-sky)" stroke-width="1" stroke-dasharray="2 1.5" stroke-linejoin="round" />
   {#each stops as s, i (s.poolId)}
-    <circle cx={s.x} cy={2 + s.y * Y} r={i === next ? 4 : 3.2} fill={s.done ? '#2bb673' : i === next ? '#0aa3e6' : '#fff'} stroke={s.done ? '#fff' : '#0a6f9e'} stroke-width="0.7" />
-    <text x={s.x} y={2 + s.y * Y + 1.3} font-size={i === next ? 4.2 : 3.4} text-anchor="middle" font-weight="900" fill={s.done || i === next ? '#fff' : '#0a6f9e'}>{s.done ? '✓' : i + 1}</text>
+    <circle cx={s.x} cy={2 + s.y * Y} r={i === next ? 4 : 3.2} style:fill={s.done ? '#2bb673' : i === next ? 'var(--brand-sky)' : '#fff'} style:stroke={s.done ? '#fff' : 'var(--brand-link)'} stroke-width="0.7" />
+    <text x={s.x} y={2 + s.y * Y + 1.3} font-size={i === next ? 4.2 : 3.4} text-anchor="middle" font-weight="900" style:fill={s.done || i === next ? '#fff' : 'var(--brand-link)'}>{s.done ? '✓' : i + 1}</text>
   {/each}
 </svg>
 

@@ -4,6 +4,7 @@
   import JobEditor from './routes/JobEditor.svelte';
   import JobView from './routes/JobView.svelte';
   import FixturesLoader from './routes/FixturesLoader.svelte';
+  import brand from 'virtual:brand';
 
   let url = '';
 </script>
@@ -11,11 +12,11 @@
 <Router url="{url}">
   <header class="sticky top-0 z-10 bg-ink-950/90 backdrop-blur">
     <div class="max-w-3xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
-      <a href="/" class="flex items-center gap-2 min-w-0" title="Back to PoolOS">
-        <img src="/measure/icon-192.png" alt="" class="w-9 h-9 rounded-xl shadow-card" />
+      <a href="/" class="flex items-center gap-2 min-w-0" title="Back to {brand.shortName}">
+        <img src={brand.mark} alt="" class="w-10 h-10 object-contain" />
         <span class="leading-tight">
           <span class="block text-lg font-bold">Measure</span>
-          <span class="block text-xs text-ink-100/80 font-semibold whitespace-nowrap">‹ PoolOS</span>
+          <span class="block text-xs text-ink-100/80 font-semibold whitespace-nowrap">‹ {brand.shortName}</span>
         </span>
       </a>
       <nav class="flex gap-2 text-sm">

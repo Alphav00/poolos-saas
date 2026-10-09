@@ -28,6 +28,36 @@ If it fails at "Apply database migrations" with an authentication error,
 the token is missing D1 Edit. If it fails at "Deploy the Worker" mentioning
 routes or DNS, the token is missing the pathofphi.com zone.
 
+## Preview: try a branch before it merges
+
+Every pull request from a branch in this repo is deployed by
+`.github/workflows/preview.yml` to **https://poolos-preview.pathofphi.com**.
+The live site is not touched.
+
+| | Live | Preview |
+|---|---|---|
+| Worker | `poolos-api` | `poolos-preview` |
+| Address | poolos.pathofphi.com | poolos-preview.pathofphi.com |
+| D1 database | `poolos` | `poolos-preview` (own data, starts empty) |
+| R2 bucket | `poolos-files` | `poolos-files` (shared; the app does not use it yet) |
+| Deployed by | push to `main` (deploy.yml) | pull request push (preview.yml) |
+| Brand pack | `ccs-pools` | `ccs-pools` |
+
+The settings are `env.preview` in `apps/api/wrangler.jsonc`. There is one
+preview: the last pushed pull request wins.
+
+**One-time, in the Zero Trust dashboard:** Access → Applications → PoolOS →
+Configure → add the domain `poolos-preview.pathofphi.com`. Same policy, same
+email list. Until then the preview answers "Sign in required" to everyone
+and the workflow ends with a warning instead of failing.
+
+Problem reports on the preview are not sent to Linear unless the key is set
+for it too: `cd apps/api && pnpm exec wrangler secret put LINEAR_API_KEY --env preview`.
+
+To remove the preview: delete the `poolos-preview` Worker and the
+`poolos-preview` D1 database in the dashboard, then the certificate for
+poolos-preview.pathofphi.com under SSL/TLS → Edge Certificates.
+
 ## Letting colleagues in
 
 Zero Trust dashboard → Access → Applications → PoolOS → Policies →
