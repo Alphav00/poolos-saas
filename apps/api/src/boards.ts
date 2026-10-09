@@ -1,6 +1,7 @@
 import type { Viewer } from './auth';
 import { checkFeedbackDoc, sendToLinear, stampFeedback } from './feedback';
 import { checkFieldDoc, stampStaff } from './field';
+import { checkMessageDoc, stampMessage } from './messages';
 import { canEditPools, roleFor } from './roles';
 
 /**
@@ -10,10 +11,11 @@ import { canEditPools, roleFor } from './roles';
  */
 export const BOARDS: readonly { slug: string; title: string; access: 'owner' | 'team'; page?: false }[] = [
 	{ slug: 'agent-board', title: 'Agent Board', access: 'owner' },
-	{ slug: 'shallow-end', title: 'The Shallow End', access: 'team' },
+	{ slug: 'shallow-end', title: 'The Shallow End', access: 'owner' },
 	{ slug: 'work-orders', title: 'Work Order Notebook', access: 'owner' },
 	{ slug: 'field', title: 'Field readings', access: 'team', page: false },
 	{ slug: 'feedback', title: 'Problem reports', access: 'team', page: false },
+	{ slug: 'messages', title: 'Message board', access: 'team', page: false },
 ];
 
 export function boardFor(slug: string, viewer: Viewer) {
@@ -28,6 +30,7 @@ const IMPORT_CHUNK = 40;
 const CHECKS: Record<string, (collection: string, id: string, data: Record<string, unknown>) => string | null> = {
 	field: checkFieldDoc,
 	feedback: checkFeedbackDoc,
+	messages: checkMessageDoc,
 };
 
 /** Owner-only: load a board export ({collections: {name: {id: data}}}) into D1. */
@@ -195,6 +198,14 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	}
 	if (board === 'field' && collection === 'staff' && op !== 'delete') {
 		next = stampStaff(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at);
+	}
+	// A post is changed or removed only by its author or an owner.
+	if (board === 'messages' && current && !viewer.isOwner) {
+		const author = (JSON.parse(current.data) as Record<string, unknown>).author;
+		if (author !== viewer.email) return fail(403, 'forbidden', 'Only the author or an owner can change this post');
+	}
+	if (board === 'messages' && op !== 'delete') {
+		next = stampMessage(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at);
 	}
 	if (op !== 'delete') {
 		const refused = CHECKS[board]?.(collection, id, next);

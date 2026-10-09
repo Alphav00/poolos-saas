@@ -1,6 +1,7 @@
 <script lang="ts">
   import ChemSetup from './lib/app/ChemSetup.svelte'
   import Home from './lib/app/Home.svelte'
+  import Messages from './lib/app/Messages.svelte'
   import More from './lib/app/More.svelte'
   import Report from './lib/app/Report.svelte'
   import Staff from './lib/app/Staff.svelte'
@@ -30,7 +31,7 @@
   }
   load()
 
-  const KNOWN = ['field', 'more']
+  const KNOWN = ['field', 'messages', 'more']
   // Unknown links land on Today rather than a screen with no tab lit.
   if (location.hash.length > 2 && !KNOWN.includes(location.hash.replace(/^#\/?/, '').split('/')[0]!)) history.replaceState(null, '', '#/')
 
@@ -38,7 +39,7 @@
   // The screen a problem report is about: the last one seen before the form.
   let lastScreen = $state('')
   const route = $derived(hash.replace(/^#\/?/, '').split('/').filter(Boolean))
-  const tab = $derived(route[0] === 'field' ? 'route' : route[0] === 'more' ? 'more' : 'today')
+  const tab = $derived(route[0] === 'field' ? 'route' : route[0] === 'messages' ? 'messages' : route[0] === 'more' ? 'more' : 'today')
   const entering = $derived(route[0] === 'field' && route[2] === 'readings')
 
   let screen = $state<HTMLElement>()
@@ -62,6 +63,8 @@
     {#if error}<p class="alert" role="alert"><b>{error}</b>{#if error === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
     {#if route[0] === 'field'}
       <Field path={route} isOwner={me?.isOwner ?? false} />
+    {:else if route[0] === 'messages'}
+      <Messages email={me?.email ?? ''} isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more' && route[1] === 'report'}
       <Report from={lastScreen} />
     {:else if route[0] === 'more' && route[1] === 'staff'}
