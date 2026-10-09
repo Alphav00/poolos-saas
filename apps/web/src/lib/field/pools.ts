@@ -1,5 +1,6 @@
 // Pool profiles are kept in D1 at field/pools/<id>, through the Worker
-// (apps/api/src/field.ts checks the shape; only owners may write). The screens
+// (apps/api/src/field.ts checks the shape; owners, Leads and Dispatchers may
+// write, see apps/api/src/roles.ts; only owners load the demo set). The screens
 // read them from here, never from the demo list in sample.ts.
 import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
 import type { Pool, Profile } from './types'

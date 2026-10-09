@@ -7,6 +7,7 @@ import { viewerFrom } from './auth';
 import { boardFor, handleBoards } from './boards';
 import { handleChem } from './chem';
 import { handleMeasure } from './measure';
+import { canEditPools, roleFor } from './roles';
 import { handleWeather } from './weather';
 
 export default {
@@ -21,7 +22,10 @@ export default {
 				: new Response('Sign in required.', { status: 401, headers: { 'Content-Type': 'text/plain' } });
 		}
 
-		if (url.pathname === '/api/me') return Response.json({ email: viewer.email, isOwner: viewer.isOwner });
+		if (url.pathname === '/api/me') {
+			const role = await roleFor(env, viewer.email);
+			return Response.json({ email: viewer.email, isOwner: viewer.isOwner, role, canEditPools: canEditPools(viewer.isOwner, role) });
+		}
 		if (url.pathname === '/api/boards' || url.pathname.startsWith('/api/boards/')) {
 			const parts = url.pathname.slice('/api/boards'.length).split('/').filter(Boolean).map(decodeURIComponent);
 			return handleBoards(request, env, viewer, parts);

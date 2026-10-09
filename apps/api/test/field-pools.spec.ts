@@ -16,10 +16,27 @@ describe('pool profiles', () => {
 		expect(list.docs.map((d) => d.id)).toContain('quarry-lane');
 	});
 
-	it('refuses writes from anyone but an owner', async () => {
+	it('refuses writes from anyone not on file as an owner, Lead or Dispatcher', async () => {
 		expect((await put('quarry-lane', POOL, 'tech@example.test')).status).toBe(403);
 		expect((await call(doc('quarry-lane'), { method: 'PATCH', body: { data: { note: 'x' } } })).status).toBe(403);
 		expect((await call(doc('quarry-lane'), { method: 'DELETE' })).status).toBe(403);
+	});
+
+	it('lets staff on file as Lead or Dispatcher change pools, and no other staff', async () => {
+		const staff = (id: string, role: string) =>
+			call(`/api/boards/field/staff/${id}`, { method: 'PUT', as: 'owner@example.test', body: { data: { name: id, email: `${id}@example.test`, role } } });
+		for (const [id, role] of [['lead', 'Lead'], ['dispatch', 'Dispatcher'], ['tech', 'Technician'], ['operator', 'Operator']] as const) {
+			expect((await staff(id, role)).status).toBe(200);
+		}
+		expect((await put('quarry-lane', POOL, 'Lead@example.test')).status).toBe(200);
+		expect((await call(doc('quarry-lane'), { method: 'PATCH', as: 'dispatch@example.test', body: { data: { note: 'Gate fixed' } } })).status).toBe(200);
+		expect((await put('quarry-lane', POOL, 'tech@example.test')).status).toBe(403);
+		expect((await put('quarry-lane', POOL, 'operator@example.test')).status).toBe(403);
+		expect((await put('quarry-lane', POOL, 'stranger@example.test')).status).toBe(403);
+		expect((await put('quarry-lane', POOL)).status).toBe(200);
+		// Once a Lead's record is removed, so is their right to change pools.
+		expect((await call('/api/boards/field/staff/lead', { method: 'DELETE', as: 'owner@example.test' })).status).toBe(200);
+		expect((await put('quarry-lane', POOL, 'lead@example.test')).status).toBe(403);
 	});
 
 	it('refuses a profile that is not a pool', async () => {

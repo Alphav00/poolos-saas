@@ -72,10 +72,19 @@ export interface Reading {
   values: Partial<Record<Param, number>>
 }
 
-export interface CrewMember {
+export type Role = 'Technician' | 'Lead' | 'Dispatcher' | 'Operator'
+
+/** A staff member, as kept in D1 at field/staff/<id> (apps/api/src/field.ts checks it). Owners add them. */
+export interface StaffMember {
+  id: string
   name: string
-  initials: string
-  role: string
-  status: string
-  state: 'working' | 'break' | 'off'
+  /** Sign-in email, lower-case. The Worker matches it to give the viewer their role. */
+  email: string
+  role: Role
+  route?: string
+  /** Made-up person from the demo set; screens mark it DEMO. */
+  demo?: boolean
+  /** When the record was added, and by whom; stamped by the Worker. */
+  createdAt?: string
+  createdBy?: string
 }

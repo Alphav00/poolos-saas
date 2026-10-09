@@ -3,8 +3,9 @@
   import NoPools from '../field/NoPools.svelte'
   import { loadPools } from '../field/pools'
   import RouteMap from '../field/RouteMap.svelte'
-  import { CREW, ROUTE, STOPS } from '../field/sample'
-  import type { Pool } from '../field/types'
+  import { ROUTE, STOPS } from '../field/sample'
+  import { initials, loadStaff } from '../field/staff'
+  import type { Pool, StaffMember } from '../field/types'
   import { describe, hourLabel, loadWeather, locate, rainFrom, savedSpot, type Spot, type Weather } from '../field/weather'
 
   let { email, isOwner }: { email: string; isOwner: boolean } = $props()
@@ -36,7 +37,14 @@
   const done = $derived(stops.filter((s) => s.done).length)
   const nextStop = $derived(stops.find((s) => !s.done))
   const nextPool = $derived(nextStop ? byId.get(nextStop.poolId) : undefined)
-  const working = CREW.filter((c) => c.state !== 'off')
+
+  // Staff on file. There is no clock-in yet, so this lists who is on the team, not who is on shift.
+  let staff = $state<StaffMember[] | null>(null)
+  let staffNote = $state('')
+  loadStaff()
+    .then((s) => (staff = s))
+    .catch((e) => (staffNote = e instanceof Error ? e.message : 'Could not load the staff list.'))
+  const staffDemo = $derived((staff ?? []).some((s) => s.demo))
 
   let weather = $state<Weather | null>(null)
   let weatherNote = $state('')
@@ -164,16 +172,25 @@
 </a>
 
 <section class="card">
-  <div class="row"><h2 class="h">Working today</h2><span class="xs">{working.length} on <span class="sample" style="margin:0 0 0 4px">DEMO</span></span></div>
-  <ul class="crew">
-    {#each CREW as c (c.name)}
-      <li class={c.state}>
-        <span class="av" aria-hidden="true">{c.initials}</span>
-        <div><div class="nm">{c.name} <span class="xs">· {c.role}</span></div><div class="xs">{c.status}</div></div>
-        <span class={['dot', c.state]} aria-label={c.state === 'working' ? 'working' : c.state === 'break' ? 'on break' : 'off'}></span>
-      </li>
-    {/each}
-  </ul>
+  <div class="row"><h2 class="h">Working today</h2>{#if staff?.length}<span class="xs">{staff.length} on staff{#if staffDemo}<span class="sample" style="margin:0 0 0 4px">DEMO</span>{/if}</span>{/if}</div>
+  {#if staffNote}
+    <p class="sm" role="status" style="margin-top:4px">{staffNote}</p>
+  {:else if staff === null}
+    <p class="sm" style="margin-top:4px">Loading staff…</p>
+  {:else if staff.length === 0}
+    <p class="sm" style="margin-top:4px">No staff on file yet.</p>
+    {#if isOwner}<a class="chip addstaff" href="#/more/staff">Add staff</a>{/if}
+  {:else}
+    <ul class="crew">
+      {#each staff as s (s.id)}
+        <li>
+          <span class="av" aria-hidden="true">{initials(s.name)}</span>
+          <div style="min-width:0"><div class="nm">{s.name}</div><div class="xs">{s.route ?? 'No route set'}</div></div>
+          <span class="chip">{s.role}</span>
+        </li>
+      {/each}
+    </ul>
+  {/if}
 </section>
 
 
@@ -202,11 +219,8 @@
   .progress span { display: block; height: 100%; background: linear-gradient(90deg, #2bb673, #4fd18f); border-radius: 99px; }
   .next { display: flex; align-items: center; gap: 8px; margin-top: 10px; background: #f5f8fb; border-radius: 16px; padding: 8px 10px; }
   .crew { list-style: none; margin: 6px 0 0; padding: 0; }
-  .crew li { display: grid; grid-template-columns: 32px 1fr 14px; align-items: center; gap: 10px; padding: 4px 0; border-top: 1px solid var(--line); }
+  .crew li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 4px 0; border-top: 1px solid var(--line); }
   .crew li:first-child { border-top: 0; }
-  .crew li.off .nm, .crew li.off .xs { color: #7b8a97; }
+  .addstaff { margin-top: 8px; min-height: 44px; padding: 0 14px; text-decoration: none; }
   .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: var(--brand-link); background: var(--brand-ice); box-shadow: 0 2px 0 rgb(var(--brand-sky-rgb) / .35); }
-  .dot { width: 12px; height: 12px; border-radius: 50%; background: #c3ced8; }
-  .dot.working { background: #2bb673; box-shadow: 0 0 0 3px #e6f7ee; }
-  .dot.break { background: #f39c12; box-shadow: 0 0 0 3px #fff3df; }
 </style>

@@ -1,5 +1,6 @@
 <script lang="ts">
-  // Shown when no pools are on file. Owners can load the made-up demo set.
+  // Shown when no pools are on file. Owners can load the made-up demo set
+  // (Leads and Dispatchers can change pools, but loading the demo set stays with owners).
   import { loadDemoPools } from './pools'
   import type { Pool } from './types'
 

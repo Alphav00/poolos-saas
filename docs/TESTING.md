@@ -50,7 +50,11 @@ Start on **Today**, then the **Route** tab.
 
 Not built yet, so not a bug: the route order and the stop list are fixed
 sample data; there is no "log what I added" step; no customer note goes
-anywhere; no sign-in roles (everyone is a tech; the owner sees extra boards).
+anywhere; no clock-in, so "Working today" lists staff on file, not who is on
+shift. Roles come from More → **Staff** (owners add people by sign-in email):
+the Worker lets owners, Leads and Dispatchers change pool profiles and
+Technicians and Operators only read them (there is no pool edit form yet);
+owners also see extra boards.
 
 ## Tester 2 — Measure (liners and covers)
 

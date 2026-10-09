@@ -27,8 +27,8 @@ describe('sign-in', () => {
 	});
 
 	it('knows who is signed in and who owns the boards', async () => {
-		expect(await (await call('/api/me', { as: 'Tech@Example.test' })).json()).toEqual({ email: 'tech@example.test', isOwner: false });
-		expect(await (await call('/api/me', { as: 'owner@example.test' })).json()).toEqual({ email: 'owner@example.test', isOwner: true });
+		expect(await (await call('/api/me', { as: 'Tech@Example.test' })).json()).toEqual({ email: 'tech@example.test', isOwner: false, role: null, canEditPools: false });
+		expect(await (await call('/api/me', { as: 'owner@example.test' })).json()).toEqual({ email: 'owner@example.test', isOwner: true, role: null, canEditPools: true });
 	});
 
 	it('serves the app and board pages once signed in', async () => {

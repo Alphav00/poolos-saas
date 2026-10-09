@@ -1,6 +1,7 @@
 import type { Viewer } from './auth';
 import { checkFeedbackDoc, sendToLinear, stampFeedback } from './feedback';
-import { checkFieldDoc } from './field';
+import { checkFieldDoc, stampStaff } from './field';
+import { canEditPools, roleFor } from './roles';
 
 /**
  * Boards served by this app, each a page under /boards/<slug>.
@@ -40,6 +41,8 @@ async function importBoard(request: Request, env: Env, viewer: Viewer, board: st
 	}
 	const cols = body.collections;
 	if (!cols || typeof cols !== 'object' || Array.isArray(cols)) return fail(400, 'bad_request', 'Body must be {"collections": {...}}');
+	// Staff decide who may change pools, so an import cannot skip their checks.
+	if (board === 'field' && cols.staff !== undefined) return fail(400, 'bad_request', 'Staff cannot be imported; add them on the Staff screen');
 	const rows: [string, string, string][] = [];
 	for (const [collection, docs] of Object.entries(cols)) {
 		if (!COLLECTION.test(collection)) return fail(400, 'bad_request', `Bad collection name "${collection}"`);
@@ -123,11 +126,16 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 		return request.method === 'POST' ? importBoard(request, env, viewer, board) : fail(405, 'method_not_allowed', 'Use POST to import');
 	}
 	if (!collection || !COLLECTION.test(collection)) return fail(400, 'bad_request', 'Bad collection name');
-	// Pool profiles are read by the whole team but changed by owners only.
-	if (board === 'field' && collection === 'pools' && request.method !== 'GET' && !viewer.isOwner) {
-		return fail(403, 'forbidden', 'Only an owner can change pool profiles');
-	}
 	if (id !== undefined && !DOC_ID.test(id)) return fail(400, 'bad_request', 'Bad document id');
+	// Staff and pool profiles are read by the whole team. Owners manage staff;
+	// owners and staff on file as Lead or Dispatcher change pool profiles.
+	// The role lookup runs only on these writes.
+	if (board === 'field' && id !== undefined && request.method !== 'GET') {
+		if (collection === 'staff' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can change staff');
+		if (collection === 'pools' && !viewer.isOwner && !canEditPools(false, await roleFor(env, viewer.email))) {
+			return fail(403, 'forbidden', 'Only an owner, a Lead or a Dispatcher can change pool profiles');
+		}
+	}
 
 	if (id === undefined) {
 		if (request.method !== 'GET') return fail(405, 'method_not_allowed', 'Use GET on a collection');
@@ -185,9 +193,19 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 		if (op === 'set' && current && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can replace a report; add to it with PATCH');
 		next = stampFeedback(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at);
 	}
+	if (board === 'field' && collection === 'staff' && op !== 'delete') {
+		next = stampStaff(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at);
+	}
 	if (op !== 'delete') {
 		const refused = CHECKS[board]?.(collection, id, next);
 		if (refused) return fail(400, 'bad_request', refused);
+	}
+	// One staff record per sign-in email, so a viewer's role is never ambiguous.
+	if (board === 'field' && collection === 'staff' && op !== 'delete') {
+		const taken = await env.DB.prepare(
+			"SELECT id FROM board_docs WHERE board = 'field' AND collection = 'staff' AND deleted = 0 AND id <> ? AND json_valid(data) AND lower(json_extract(data, '$.email')) = ?",
+		).bind(id, next.email).first<{ id: string }>();
+		if (taken) return fail(409, 'conflict', `${next.email as string} is already on file as staff/${taken.id}`);
 	}
 	if (op === 'delete' && board === 'feedback' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can delete a report');
 	// A new problem report is also opened in Linear when Linear is set up.
