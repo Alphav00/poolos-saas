@@ -36,6 +36,28 @@ describe('problem reports', () => {
 		expect((await call(doc, { method: 'DELETE', as: 'owner@example.test' })).status).toBe(200);
 	});
 
+	it('drops a Linear link or status a tester sends, and keeps what was there', async () => {
+		const own = '/api/boards/feedback/reports/r-20261009-150000-cd34';
+		const planted = { ...REPORT, linear: 'HEP-1', linearUrl: 'javascript:alert(1)', status: 'fixed' };
+		expect((await call(own, { method: 'PUT', as: 'tester@example.test', body: { data: planted } })).status).toBe(200);
+		let got = (await (await call(own)).json()) as { data: Record<string, unknown> };
+		expect(got.data.linear).toBeUndefined();
+		expect(got.data.linearUrl).toBeUndefined();
+		expect(got.data.status).toBeUndefined();
+
+		expect((await call(own, { method: 'PATCH', as: 'owner@example.test', body: { data: { status: 'wont-fix' } } })).status).toBe(200);
+		expect((await call(own, { method: 'PATCH', as: 'tester@example.test', body: { data: { status: 'fixed', linear: 'HEP-2', linearUrl: 'https://linear.app/x/issue/HEP-2' } } })).status).toBe(200);
+		got = (await (await call(own)).json()) as { data: Record<string, unknown> };
+		expect(got.data.status).toBe('wont-fix');
+		expect(got.data.linear).toBeUndefined();
+
+		expect((await call(own, { method: 'PATCH', as: 'owner@example.test', body: { data: { linear: 'HEP-3', linearUrl: 'javascript:alert(1)' } } })).status).toBe(400);
+		expect((await call(own, { method: 'PATCH', as: 'owner@example.test', body: { data: { linear: 'HEP-3', linearUrl: 'https://linear.app/x/issue/HEP-3' } } })).status).toBe(200);
+		got = (await (await call(own)).json()) as { data: Record<string, unknown> };
+		expect(got.data.linearUrl).toBe('https://linear.app/x/issue/HEP-3');
+		expect((await call(own, { method: 'DELETE', as: 'owner@example.test' })).status).toBe(200);
+	});
+
 	it('is not listed as a board page', async () => {
 		const res = (await (await call('/api/boards', { as: 'owner@example.test' })).json()) as { boards: { slug: string }[] };
 		expect(res.boards.map((b) => b.slug)).not.toContain('feedback');
@@ -48,6 +70,12 @@ describe('problem reports', () => {
 		expect(checkFeedbackDoc('reports', 'r-20261009-142233-ab12', { ...REPORT, actual: ' ' })).toMatch(/"actual" is needed/);
 		expect(checkFeedbackDoc('reports', 'r-20261009-142233-ab12', { ...REPORT, colour: 'red' })).toMatch(/Unexpected field "colour"/);
 		expect(checkFeedbackDoc('notes', 'r-20261009-142233-ab12', REPORT)).toMatch(/only keeps "reports"/);
+		const id = 'r-20261009-142233-ab12';
+		expect(checkFeedbackDoc('reports', id, { ...REPORT, linear: 'HEP-42', linearUrl: 'https://linear.app/x/issue/HEP-42' })).toBeNull();
+		expect(checkFeedbackDoc('reports', id, { ...REPORT, linear: 'HEP-42', linearUrl: 'javascript:alert(1)' })).toMatch(/linearUrl/);
+		expect(checkFeedbackDoc('reports', id, { ...REPORT, linear: 'HEP-42', linearUrl: 'https://linear.app.evil.test/x' })).toMatch(/linearUrl/);
+		expect(checkFeedbackDoc('reports', id, { ...REPORT, linear: '<b>', linearUrl: 'https://linear.app/x' })).toMatch(/linear must be/);
+		expect(checkFeedbackDoc('reports', id, { ...REPORT, linearUrl: 'https://linear.app/x' })).toMatch(/go together/);
 	});
 });
 

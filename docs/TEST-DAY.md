@@ -61,7 +61,8 @@ The app also records the screen the tester came from, the browser, who sent it
 
 Reports are kept at `feedback/reports/<id>` in D1 (`apps/api/src/feedback.ts`).
 Anyone signed in can read and add to a report; only an owner can replace or
-delete one. With `LINEAR_API_KEY` set, each new report becomes a Linear issue:
+delete one, or change its status or Linear link (the Worker drops those from
+anyone else). With `LINEAR_API_KEY` set, each new report becomes a Linear issue:
 
 - title `[<Feature area>] <In a few words>`
 - priority: Blocker → Urgent, Major → High, Minor → Medium, Idea → Low

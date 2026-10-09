@@ -186,7 +186,7 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	const at = new Date(Math.max(Date.now(), row ? Date.parse(row.updated_at) + 1 : 0)).toISOString();
 	if (board === 'feedback' && op !== 'delete') {
 		if (op === 'set' && current && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can replace a report; add to it with PATCH');
-		next = stampFeedback(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at);
+		next = stampFeedback(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at, viewer.isOwner);
 	}
 	// A post is changed or removed only by its author or an owner.
 	if (board === 'messages' && current && !viewer.isOwner) {

@@ -27,6 +27,9 @@ const ID = /^r-\d{8}-\d{6}-[a-z0-9]{4}$/;
 const LIMITS: Record<string, number> = { title: 120, expected: 2000, actual: 2000, steps: 2000, screen: 200, userAgent: 300 };
 const REQUIRED = ['title', 'actual'];
 const STAMPED = ['reporter', 'reportedAt', 'linear', 'linearUrl'];
+/** Only links into Linear are kept, so the app never renders a javascript: or other link from a report. */
+export const LINEAR_URL = /^https:\/\/linear\.app\/[^\s"<>]{1,180}$/;
+const LINEAR_ID = /^[A-Z][A-Z0-9]{0,9}-\d{1,7}$/;
 
 const isText = (v: unknown, max: number) => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
 
@@ -41,20 +44,27 @@ export function checkFeedbackDoc(collection: string, id: string, data: Record<st
 		if (data[k] !== undefined && data[k] !== '' && !isText(data[k], max)) return `"${k}" must be text of at most ${max} characters`;
 	}
 	if (data.status !== undefined && !['new', 'in-linear', 'fixed', 'wont-fix'].includes(data.status as string)) return 'status must be new, in-linear, fixed or wont-fix';
+	if ((data.linear === undefined) !== (data.linearUrl === undefined)) return 'linear and linearUrl go together';
+	if (data.linear !== undefined && (typeof data.linear !== 'string' || !LINEAR_ID.test(data.linear))) return 'linear must be a Linear issue id like HEP-12';
+	if (data.linearUrl !== undefined && (typeof data.linearUrl !== 'string' || !LINEAR_URL.test(data.linearUrl))) return 'linearUrl must be an https://linear.app/ link';
 	const allowed = new Set(['area', 'severity', 'device', 'status', ...Object.keys(LIMITS), ...STAMPED]);
 	const extra = Object.keys(data).filter((k) => !allowed.has(k));
 	if (extra.length) return `Unexpected field "${extra[0]}"`;
 	return null;
 }
 
-/** Who reported it and when come from the sign-in, not the form, and never change. */
-export function stampFeedback(data: Record<string, unknown>, previous: Record<string, unknown> | null, email: string, at: string) {
-	return {
-		...data,
-		reporter: previous?.reporter ?? email,
-		reportedAt: previous?.reportedAt ?? at,
-		...(previous?.linear ? { linear: previous.linear, linearUrl: previous.linearUrl } : {}),
-	};
+/**
+ * Who reported it and when come from the sign-in, not the form, and never change.
+ * The Linear link and the status are set by the Worker (sendToLinear) or by an
+ * owner; anything else a form sends for them is dropped, so a tester cannot plant
+ * a link that the report list later shows, or mark their own report fixed.
+ */
+export function stampFeedback(data: Record<string, unknown>, previous: Record<string, unknown> | null, email: string, at: string, isOwner: boolean) {
+	const { reporter: _reporter, reportedAt: _reportedAt, linear, linearUrl, status, ...rest } = data;
+	const source = isOwner ? { linear, linearUrl, status } : { linear: previous?.linear, linearUrl: previous?.linearUrl, status: previous?.status };
+	const out: Record<string, unknown> = { ...rest, reporter: previous?.reporter ?? email, reportedAt: previous?.reportedAt ?? at };
+	for (const [k, v] of Object.entries(source)) if (v !== undefined) out[k] = v;
+	return out;
 }
 
 export function linearMarkdown(r: Record<string, unknown>): string {
