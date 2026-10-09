@@ -178,16 +178,22 @@ async function test7() {
 
 async function test8() {
   let saveCount = 0;
+  // Wait for the debounced save to actually start rather than sleeping a
+  // fixed time: on a busy machine the 10 ms timer can fire after 30 ms, so
+  // run() would start the first save and the late timer would add a third.
+  let started;
+  const inFlight = new Promise((resolve) => (started = resolve));
   const q = new SaveQueue({
     save: async () => {
       saveCount++;
+      started();
       await sleep(20);  // simulate slow save
     },
     debounceMs: 10,
   });
 
   q.schedule();
-  await sleep(30);  // save is in flight
+  await inFlight;  // save is in flight
   // Try to trigger another save while in flight
   q.run();
   q.run();
