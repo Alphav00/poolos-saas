@@ -33,7 +33,7 @@ parent [HEP-1](https://linear.app/holoeyes/issue/HEP-1), one sub-issue per step.
 | 8:40 | tech | Test, log readings, see what to add | Works: wheel or typed readings, strip/drop, doses by product and strength, retest prompt | HEP-10 |
 | 9:00 | tech | Checklist, photos, close the job | **Not built** | HEP-11 |
 | 10:00 | tech | Measure a liner or cover | Works: Measure, sample pools, closure check, order form | HEP-12 |
-| any | everyone | Message board | Works: Messages tab | HEP-13 |
+| any | everyone | Message board | Works: Messages tab (native board) | HEP-13 |
 | any | everyone | Report a problem | Works: More → Report a problem, or Report on Today | HEP-14 |
 | 4:00 | office | Chemical log review | **Not built**: readings are saved per pool and day, no review screen | HEP-15 |
 | 4:30 | office | Billing and invoicing | **Not built** | HEP-16 |
