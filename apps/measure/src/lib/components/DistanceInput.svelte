@@ -12,10 +12,8 @@
 
   export let value = 0;            // decimal feet
   export let label = '';
-  export let placeholder = '';
   export let min = 0;
   export let max = 500;
-  export let step = 0.25;         // default 1/4" precision
   export let hint = '';
   export let error = '';
   export let required = false;
@@ -133,9 +131,9 @@
 
 <div class="space-y-1">
   {#if label}
-    <label class="label">
+    <div class="label">
       {label}{#if required} *{/if}
-    </label>
+    </div>
   {/if}
   <div class="flex gap-2 items-center">
     <div class="flex-1">
@@ -152,7 +150,7 @@
           on:blur={onLeave}
           on:focus={selectAll}
           placeholder="0"
-          aria-label="{label} feet"
+          aria-label={label ? `${label} feet` : 'Feet'}
           {autoFocus}
         />
         <span class="inline-flex items-center px-3 rounded-r-lg bg-ink-100/20 text-ink-100/70 font-semibold border border-l-0 border-ink-100/20">ft</span>
@@ -169,7 +167,7 @@
           on:blur={onLeave}
           on:focus={selectAll}
           placeholder="0"
-          aria-label="{label} inches"
+          aria-label={label ? `${label} inches` : 'Inches'}
         />
         <span class="inline-flex items-center px-3 rounded-r-lg bg-ink-100/20 text-ink-100/70 font-semibold border border-l-0 border-ink-100/20">in</span>
       </div>
