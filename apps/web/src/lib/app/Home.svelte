@@ -109,7 +109,7 @@
   <section class="card pilot" aria-label="Test drive">
     <div style="flex:1;min-width:0">
       <div class="nm">You're test-driving the app</div>
-      <div class="xs">Pools and crew marked DEMO are made up. Spot anything wrong or missing? Tell us.</div>
+      <div class="xs">Anything marked DEMO is made up. See something wrong or missing? Tell us.</div>
     </div>
     <a class="chip" href="#/more/report">🐞 Report</a>
   </section>

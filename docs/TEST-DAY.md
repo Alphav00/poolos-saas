@@ -19,7 +19,7 @@ parent [HEP-1](https://linear.app/holoeyes/issue/HEP-1), one sub-issue per step.
 | Time | Who | Step | In the app today | Linear |
 |---|---|---|---|---|
 | 6:45 | everyone | Put the app on the phone | Works: Add to Home Screen; icon and name come from the brand pack | HEP-2 |
-| 7:00 | office | Morning check | Works: weather, today's route summary, who is working (DEMO) | HEP-3 |
+| 7:00 | office | Morning check | Works: weather, today's route summary (DEMO), who is working (from More → Staff) | HEP-3 |
 | 7:15 | office | Chemicals and target ranges | Works: More → Chemistry setup | HEP-4 |
 | 7:30 | office | Schedule cleanings and repairs, assign techs | **Not built** | HEP-5 |
 | 7:45 | office | Route order and optimisation | **Not built**: fixed demo order | HEP-6 |
@@ -34,8 +34,10 @@ parent [HEP-1](https://linear.app/holoeyes/issue/HEP-1), one sub-issue per step.
 | 4:00 | office | Chemical log review | **Not built**: readings are saved per pool and day, no review screen | HEP-15 |
 | 4:30 | office | Billing and invoicing | **Not built** | HEP-16 |
 
-Pools and crew on the route are made-up demo data (`apps/web/src/lib/field/sample.ts`),
-marked DEMO on every screen that shows them. Real customers wait for the
+The route, the pools loaded with **Load the demo pools**, and any staff loaded
+with **Load demo staff** are made-up demo data (`apps/web/src/lib/field/sample.ts`),
+marked DEMO on every screen that shows them. Staff added by hand under
+More → Staff are real and show no badge. Real customers wait for the
 customer list (DESIGN.md §7, §10).
 
 ## Reporting a problem
