@@ -1,0 +1,19 @@
+{
+  "name": "S&M Pools",
+  "shortName": "S&M Pools",
+  "legalName": "S&M Pools",
+  "tagline": "Service & Maintenance · Sewell, NJ",
+  "pilot": true,
+  "colors": {
+    "primary": "#2e0997",
+    "primaryDark": "#2e0997",
+    "deep": "#2e0997",
+    "link": "#2e0997",
+    "sky": "#1896fa",
+    "ice": "#f4f5fb",
+    "accent": "#fade18",
+    "ink": "#1c1b19",
+    "surface": "#ffffff",
+    "background": "#f4f5fb"
+  }
+}

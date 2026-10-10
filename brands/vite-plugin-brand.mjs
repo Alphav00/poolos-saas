@@ -1,8 +1,11 @@
-// Picks the brand pack for a build. BRAND=<folder> selects brands/<folder>/
-// (default: poolos). The pack's brand.json reaches the app as the module
-// 'virtual:brand'; its colours become --brand-* CSS variables in index.html;
-// its images are served at /brand/<file> and the web app's manifest is built
-// from it. See brands/README.md.
+// Picks the brand packs for a build. BRAND=<folder> selects brands/<folder>/
+// (default: poolos); BRAND=<a>,<b> builds several, the first being the default.
+// The default pack reaches the app as the module 'virtual:brand' (every pack
+// as its `brands` export); colours become --brand-* CSS variables in
+// index.html, per pack under :root[data-brand="<id>"]; images are served at
+// /brand/<file> (default pack) and /brand/<id>/<file> (each pack, when there
+// are several). The web app's manifest is built from the default pack.
+// See brands/README.md.
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -43,10 +46,30 @@ const kebab = (s) => s.replace(/[A-Z]/g, (c) => '-' + c.toLowerCase())
 const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(' ')
 const escapeHtml = (s) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 
-/** --brand-<name> as hex, and --brand-<name>-rgb as "r g b" for Tailwind's alpha syntax. */
-export function brandCss(b) {
-  const vars = COLORS.flatMap((k) => [`--brand-${kebab(k)}:${b.colors[k]}`, `--brand-${kebab(k)}-rgb:${rgb(b.colors[k])}`])
-  return `:root{${vars.join(';')}}`
+/** Reads every pack in a comma list (BRAND=a,b). The first is the default; one id behaves as loadBrand. */
+export function loadBrands(list = process.env.BRAND || 'poolos') {
+  const ids = list.split(',').map((s) => s.trim()).filter(Boolean)
+  if (ids.length === 0) throw new Error('BRAND names no brand pack')
+  if (new Set(ids).size !== ids.length) throw new Error(`BRAND "${list}" names a pack twice`)
+  return ids.map((id) => loadBrand(id))
+}
+
+const vars = (b) => COLORS.flatMap((k) => [`--brand-${kebab(k)}:${b.colors[k]}`, `--brand-${kebab(k)}-rgb:${rgb(b.colors[k])}`]).join(';')
+
+/**
+ * --brand-<name> as hex, and --brand-<name>-rgb as "r g b" for Tailwind's alpha syntax.
+ * The first pack is :root; with several, each also gets :root[data-brand="<id>"].
+ */
+export function brandCss(...packs) {
+  const css = [`:root{${vars(packs[0])}}`]
+  if (packs.length > 1) for (const b of packs) css.push(`:root[data-brand="${b.id}"]{${vars(b)}}`)
+  return css.join('')
+}
+
+/** What the app sees of a pack. With several packs, its images live under /brand/<id>/. */
+export function publicBrand(b, multi = false) {
+  const at = multi ? `/brand/${b.id}/` : '/brand/'
+  return { id: b.id, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot, linear: b.linear, logo: `${at}logo.png`, mark: `${at}mark.png` }
 }
 
 export function manifest(b) {
@@ -73,21 +96,26 @@ export function manifest(b) {
  * output and reuses them.
  */
 export default function brandPlugin({ emit = false } = {}) {
-  const b = loadBrand()
-  const pub = { id: b.id, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot, linear: b.linear, logo: '/brand/logo.png', mark: '/brand/mark.png' }
+  const packs = loadBrands()
+  const b = packs[0]
+  const multi = packs.length > 1
+  const pubs = packs.map((p) => publicBrand(p, multi))
   const html = { BRAND_NAME: b.name, BRAND_SHORT_NAME: b.shortName, BRAND_SURFACE: b.colors.surface, BRAND_BACKGROUND: b.colors.background, BRAND_INK: b.colors.ink, BRAND_PRIMARY: b.colors.primary }
-  const images = readdirSync(b.dir).filter((f) => f.endsWith('.png'))
+  const pngs = (dir) => readdirSync(dir).filter((f) => f.endsWith('.png'))
+  // Served path -> file on disk.
+  const images = new Map(pngs(b.dir).map((f) => [`brand/${f}`, join(b.dir, f)]))
+  if (multi) for (const p of packs) for (const f of pngs(p.dir)) images.set(`brand/${p.id}/${f}`, join(p.dir, f))
   return {
     name: 'poolos-brand',
     resolveId(id) {
       if (id === 'virtual:brand') return '\0virtual:brand'
     },
     load(id) {
-      if (id === '\0virtual:brand') return `export default ${JSON.stringify(pub)}`
+      if (id === '\0virtual:brand') return `export default ${JSON.stringify(pubs[0])}\nexport const brands = ${JSON.stringify(pubs)}`
     },
     transformIndexHtml(src) {
       const out = src.replace(/%(BRAND_[A-Z_]+)%/g, (m, k) => (k in html ? escapeHtml(html[k]) : m))
-      return { html: out, tags: [{ tag: 'style', attrs: { id: 'brand-colors' }, children: brandCss(b), injectTo: 'head-prepend' }] }
+      return { html: out, tags: [{ tag: 'style', attrs: { id: 'brand-colors' }, children: brandCss(...packs), injectTo: 'head-prepend' }] }
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
@@ -96,17 +124,17 @@ export default function brandPlugin({ emit = false } = {}) {
           res.setHeader('Content-Type', 'application/manifest+json')
           return res.end(JSON.stringify(manifest(b), null, 2))
         }
-        const m = path.match(/^\/brand\/([a-z0-9-]+\.png)$/)
-        if (m && images.includes(m[1])) {
+        const file = images.get(path.slice(1))
+        if (file) {
           res.setHeader('Content-Type', 'image/png')
-          return res.end(readFileSync(join(b.dir, m[1])))
+          return res.end(readFileSync(file))
         }
         next()
       })
     },
     generateBundle() {
       if (!emit) return
-      for (const f of images) this.emitFile({ type: 'asset', fileName: `brand/${f}`, source: readFileSync(join(b.dir, f)) })
+      for (const [fileName, file] of images) this.emitFile({ type: 'asset', fileName, source: readFileSync(file) })
       this.emitFile({ type: 'asset', fileName: 'manifest.webmanifest', source: JSON.stringify(manifest(b), null, 2) })
     },
   }

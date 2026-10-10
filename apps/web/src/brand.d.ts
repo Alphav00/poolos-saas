@@ -1,6 +1,6 @@
-/** The brand pack chosen at build time (BRAND=<folder>; see brands/README.md). */
+/** The brand packs chosen at build time (BRAND=<folder>[,<folder>]; see brands/README.md). */
 declare module 'virtual:brand' {
-  const brand: {
+  export type Brand = {
     id: string
     name: string
     shortName: string
@@ -13,5 +13,9 @@ declare module 'virtual:brand' {
     logo: string
     mark: string
   }
+  /** The default pack: the first in BRAND. */
+  const brand: Brand
+  /** Every pack in the build, default first. More than one turns on the placeholder sign-in. */
+  export const brands: Brand[]
   export default brand
 }
