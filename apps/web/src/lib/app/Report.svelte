@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { docId } from '../field/ids'
   import { untrack } from 'svelte'
   import brand from 'virtual:brand'
   import { newIssueUrl } from './linear'
@@ -87,12 +88,6 @@
   }
   loadReports()
 
-  function newId() {
-    const iso = new Date().toISOString()
-    const rand = Math.random().toString(36).slice(2, 6).padEnd(4, '0')
-    return `r-${iso.slice(0, 10).replaceAll('-', '')}-${iso.slice(11, 19).replaceAll(':', '')}-${rand}`
-  }
-
   async function send() {
     if (!ready || sending) return
     sending = true
@@ -101,7 +96,7 @@
     if (expected.trim()) data.expected = expected.trim()
     if (steps.trim()) data.steps = steps.trim()
     if (from) data.screen = from.slice(0, 200)
-    draftId ||= newId()
+    draftId ||= docId('r')
     const doc = `/api/boards/feedback/reports/${draftId}`
     try {
       const res = await fetch(doc, {

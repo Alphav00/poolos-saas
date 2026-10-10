@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { docId } from '../field/ids'
   import { untrack } from 'svelte'
   // The team's message board, saved on the `messages` board. The Worker stamps
   // who posted and when, and lets only the author or an owner remove a post.
@@ -64,18 +65,12 @@
     return () => clearTimeout(timer)
   })
 
-  function newId() {
-    const iso = new Date().toISOString()
-    const rand = Math.random().toString(36).slice(2, 6).padEnd(4, '0')
-    return `m-${iso.slice(0, 10).replaceAll('-', '')}-${iso.slice(11, 19).replaceAll(':', '')}-${rand}`
-  }
-
   async function post() {
     if (!ready || sending) return
     sending = true
     note = ''
     try {
-      const res = await fetch(`${API}/${newId()}`, {
+      const res = await fetch(`${API}/${docId('m')}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ data: { text: text.trim(), category } }),
