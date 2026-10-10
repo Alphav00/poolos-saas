@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { brand, needsSignIn, signOut } from './account.svelte'
+
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
 
   let { email, isOwner, role, boards }: { email: string; isOwner: boolean; role: string | null; boards: Board[] } = $props()
@@ -46,6 +48,14 @@
     <span></span>
   </a>
 </section>
+
+{#if needsSignIn}
+  <section class="card">
+    <h2 class="h">Account</h2>
+    <p class="xs">Signed in as <b>{brand().id}</b> ({brand().name}). A placeholder account until real sign-in arrives.</p>
+    <button class="btn ghost" onclick={() => { signOut(); location.hash = '#/' }}>Sign out</button>
+  </section>
+{/if}
 
 <section class="card">
   <h2 class="h">Boards</h2>

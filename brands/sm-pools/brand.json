@@ -15,5 +15,16 @@
     "ink": "#1c1b19",
     "surface": "#ffffff",
     "background": "#f4f5fb"
+  },
+  "loader": {
+    "balls": [
+      "#f60882",
+      "#fbad15",
+      "#1896fa",
+      "#25c142",
+      "#fade18",
+      "#8435e9"
+    ],
+    "word": "Filling the pool"
   }
 }

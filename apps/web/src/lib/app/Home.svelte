@@ -1,5 +1,5 @@
 <script lang="ts">
-  import brand from 'virtual:brand'
+  import { brand as current } from './account.svelte'
   import NoPools from '../field/NoPools.svelte'
   import { loadPools } from '../field/pools'
   import RouteMap from '../field/RouteMap.svelte'
@@ -7,6 +7,8 @@
   import { initials, loadStaff } from '../field/staff'
   import type { Pool, StaffMember } from '../field/types'
   import { describe, hourLabel, loadWeather, locate, rainFrom, savedSpot, type Spot, type Weather } from '../field/weather'
+
+  const brand = $derived(current())
 
   let { email, isOwner }: { email: string; isOwner: boolean } = $props()
 

@@ -20,7 +20,7 @@
     {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
     <button class="btn" type="submit">Sign in</button>
   </form>
-  <p class="xs hint">Placeholder accounts for now, one per company: {brands.map((b) => b.id).join(', ')}</p>
+  <p class="xs hint">Placeholder accounts for now, one per company: {#each brands as b, i (b.id)}{i ? ', ' : ''}<b class="id">{b.id}</b>{/each}</p>
 </section>
 
 <style>
@@ -30,4 +30,5 @@
   .fl input { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; min-height: 44px; background: #fff; }
   .fl input:focus { outline: none; border-color: var(--brand-primary); }
   .hint { margin-top: 12px; }
+  .id { white-space: nowrap; }
 </style>

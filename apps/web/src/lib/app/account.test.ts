@@ -2,7 +2,7 @@ import type { Brand } from 'virtual:brand'
 import { describe, expect, it } from 'vitest'
 import { matchUsername, savedUsername, saveUsername } from './account.svelte'
 
-const pack = (id: string, name: string): Brand => ({ id, name, shortName: name, legalName: name, tagline: '', pilot: true, linear: null, logo: '', mark: '' })
+const pack = (id: string, name: string): Brand => ({ id, name, shortName: name, legalName: name, tagline: '', pilot: true, linear: null, loader: null, logo: '', mark: '' })
 const PACKS = [pack('blue-lagoon', 'Blue Lagoon Pools'), pack('k-and-r', 'K&R Pools')]
 
 describe('matchUsername', () => {

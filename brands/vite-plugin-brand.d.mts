@@ -9,6 +9,7 @@ export type BrandPack = {
   pilot: boolean
   colors: Record<string, string>
   linear: { team: string; project?: string; labels: string[] } | null
+  loader: { balls: string[]; word: string } | null
 }
 export function loadBrand(id?: string): BrandPack
 export function loadBrands(list?: string): BrandPack[]

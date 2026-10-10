@@ -10,6 +10,8 @@ declare module 'virtual:brand' {
     pilot: boolean
     /** Where testers file problems in Linear under their own sign-in; null shows no Linear button. */
     linear: { team: string; project?: string; labels: string[] } | null
+    /** The company's loading screen after sign-in; null shows none. */
+    loader: { balls: string[]; word: string } | null
     logo: string
     mark: string
   }

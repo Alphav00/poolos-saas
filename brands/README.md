@@ -6,9 +6,26 @@ screens read `virtual:brand`, colours come from `--brand-*` CSS variables, and
 images are served at `/brand/<file>`.
 
 ```bash
-pnpm build                     # brands/poolos
-BRAND=ccs-pools pnpm build     # brands/ccs-pools (what deploy.yml ships)
+pnpm build                               # brands/poolos
+BRAND=ccs-pools pnpm build               # brands/ccs-pools only
+BRAND=ccs-pools,sm-pools pnpm build      # both, with a sign-in (what deploy.yml ships)
 ```
+
+## Several packs and the placeholder sign-in
+
+With more than one pack in `BRAND` the first is the default, and the app opens
+on a sign-in screen. The usernames are placeholders: each pack's folder name
+(`sm-pools`), or its name (`S&M Pools`). Signing in sets
+`<html data-brand="<id>">`, which switches the `--brand-*` colours, and the
+screens read that pack's name, logo and tagline. The choice is saved in the
+browser (`localStorage`, key `poolos.account`); More → Account signs out.
+Measure wears the same pack. Cloudflare Access still decides who gets in; the
+username only picks the company. Each pack's images are also served at
+`/brand/<id>/<file>`. The manifest, favicon and home-screen icon are static, so
+they stay the default pack's.
+
+Both companies share the deployment's boards and D1 database, so only demo
+data goes in while two testers share it (DECISIONS d0021).
 
 This is not a white-label product. A pack lets a company trying the app see
 it with its own name, logo and colours while it tests.
@@ -24,6 +41,12 @@ it with its own name, logo and colours while it tests.
 | `icon-192.png`, `icon-512.png` | installed-app icons, opaque |
 | `icon-maskable-512.png` | Android adaptive icon: logo inside the middle 80% |
 | `apple-touch-icon.png` | 180 px iPhone home-screen icon, opaque |
+
+`loader` (optional) is the company's loading screen after sign-in: up to 8
+`balls` (hex colours) spiral in and merge as a count runs to 100%, over the
+`deep` colour, with `word` underneath:
+`{ "balls": ["#f60882", "#1896fa"], "word": "Filling the pool" }`.
+Without it the app loads with no loading screen.
 
 `pilot: true` shows the "You're test-driving the app" card and the Report
 button on Today.
@@ -60,4 +83,19 @@ From the logo CCS Pools supplied on 2026-10-09: navy `#0e3c5f`, pool blue
 `#139ad1`, aqua `#28a5d5`, duck yellow `#fad321`. The logo's black background
 and the image generator's corner sparkle were removed; the artwork is
 otherwise unchanged. Tests and fixtures still may not name the company
+(`tests/denylist.txt`).
+
+## sm-pools
+
+From the S&M Pools design system (claude.ai Design System artifact, and the
+"S&M Pools Design System" folder on Chi's Google Drive, 2026-10-10). Colours are
+its tokens: lane-navy `#2e0997` for buttons, links and the company name
+(flat, since the system uses no gradients, so `primary` and `primaryDark`
+match), sky `#1896fa`, sun-yellow `#fade18` for the Report button, ink
+`#1c1b19`, surface-100 `#ffffff`, surface-200 `#f4f5fb`. The loader is the
+design system's goo loader in the six logo-bubble colours. The logos are the design
+system's `sm-pools-logo-transparent.png` (logo, mark, favicon) and
+`sm-pools-logo.png` on white (app icons; maskable inside the middle 80%).
+Both are rasters cut from the 2026 flyer: swap in the owners' originals when
+they arrive, without redrawing. Tests and fixtures may not name the company
 (`tests/denylist.txt`).

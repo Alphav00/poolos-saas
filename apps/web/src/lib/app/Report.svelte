@@ -1,8 +1,10 @@
 <script lang="ts">
   import { docId } from '../field/ids'
   import { untrack } from 'svelte'
-  import brand from 'virtual:brand'
+  import { brand as current } from './account.svelte'
   import { newIssueUrl } from './linear'
+
+  const brand = $derived(current())
   // "Report a problem": what a tester saw, saved on the feedback board. The
   // Worker stamps who sent it; the tester can then file it in Linear under their
   // own Linear sign-in (linear.ts).

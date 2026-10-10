@@ -29,7 +29,15 @@ export function loadBrand(id = process.env.BRAND || 'poolos') {
     if (!HEX.test(b.colors?.[k] ?? '')) throw new Error(`brands/${id}/brand.json colors.${k} must be #rrggbb`)
   }
   for (const f of FILES) if (!existsSync(join(dir, f))) throw new Error(`brands/${id}/ is missing ${f}`)
-  return { id, dir, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot === true, colors: b.colors, linear: linearTarget(id, b.linear) }
+  return { id, dir, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot === true, colors: b.colors, linear: linearTarget(id, b.linear), loader: loaderSpec(id, b.loader) }
+}
+
+/** The company's loading screen after sign-in (optional): goo ball colours and the line under the count. */
+function loaderSpec(id, l) {
+  if (l === undefined) return null
+  if (!(Array.isArray(l?.balls) && l.balls.length >= 2 && l.balls.length <= 8 && l.balls.every((c) => HEX.test(c)))) throw new Error(`brands/${id}/brand.json loader.balls must be 2 to 8 #rrggbb colours`)
+  if (typeof l.word !== 'string' || !l.word.trim() || l.word.length > 40) throw new Error(`brands/${id}/brand.json loader.word must be a short line`)
+  return { balls: l.balls, word: l.word }
 }
 
 /** Where testers file problems in Linear (optional): team key, and project and label names. */
@@ -69,7 +77,7 @@ export function brandCss(...packs) {
 /** What the app sees of a pack. With several packs, its images live under /brand/<id>/. */
 export function publicBrand(b, multi = false) {
   const at = multi ? `/brand/${b.id}/` : '/brand/'
-  return { id: b.id, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot, linear: b.linear, logo: `${at}logo.png`, mark: `${at}mark.png` }
+  return { id: b.id, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot, linear: b.linear, loader: b.loader, logo: `${at}logo.png`, mark: `${at}mark.png` }
 }
 
 export function manifest(b) {
