@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { amountWords, plan, strengthWords, waterFrom, type Product, type Targets } from './chem'
 import { compare } from './compare'
 import { DEMO_CUSTOMER_NAMES, generateCustomer, slugify } from './generator'
 import DENYLIST from '../../../../../tests/denylist.txt?raw'
-import { cleanProfile, toPool } from './pools'
+import { cleanProfile, loadPools, toPool } from './pools'
 import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
 import { cleanReading } from './readings'
 import { fmtDelta, parseTyped, scaleFor, SCALES, steps } from './scales'
@@ -284,5 +284,34 @@ describe('demo customer generator', () => {
       const re = new RegExp(`(?<![A-Za-z0-9])${esc(t)}(?![A-Za-z0-9])`, 'i')
       for (const n of DEMO_CUSTOMER_NAMES) expect(re.test(n), `${n} matches ${t}`).toBe(false)
     }
+  })
+})
+
+describe('pool list cache', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('keeps a fresh load when an older one fails', async () => {
+    let failFirst: (e: Error) => void = () => {}
+    const fetches = vi.fn()
+    fetches.mockImplementationOnce(() => new Promise((_, reject) => (failFirst = reject)))
+    fetches.mockImplementation(async () => Response.json({ docs: [{ id: 'maple-court', data: { name: 'Maple Court' } }] }))
+    vi.stubGlobal('fetch', fetches)
+
+    const old = loadPools(true)
+    const fresh = loadPools(true)
+    failFirst(new Error('offline'))
+    await expect(old).rejects.toThrow('offline')
+    expect((await fresh).map((p) => p.name)).toEqual(['Maple Court'])
+    // The failed first load must not have cleared the fresh one: no third request.
+    expect(await loadPools()).toBe(await fresh)
+    expect(fetches).toHaveBeenCalledTimes(2)
+  })
+
+  it('retries after a load fails', async () => {
+    const fetches = vi.fn(async () => new Response('', { status: 500 }))
+    vi.stubGlobal('fetch', fetches)
+    await expect(loadPools(true)).rejects.toThrow('Could not load the pools.')
+    await expect(loadPools()).rejects.toThrow()
+    expect(fetches).toHaveBeenCalledTimes(2)
   })
 })

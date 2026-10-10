@@ -38,7 +38,7 @@ let cached: Promise<Pool[]> | null = null
 /** Every pool on file, by name. One request per page load, shared by every screen. */
 export function loadPools(fresh = false): Promise<Pool[]> {
   if (!cached || fresh) {
-    cached = (async () => {
+    const p = (async () => {
       const res = await fetch(COLLECTION, { credentials: 'same-origin' })
       if (!res.ok) throw new Error(res.status === 401 ? 'Sign in again.' : 'Could not load the pools.')
       const body = (await res.json()) as { docs: { id: string; data?: unknown }[] }
@@ -48,7 +48,11 @@ export function loadPools(fresh = false): Promise<Pool[]> {
         .map(toPool)
         .sort((a, b) => a.name.localeCompare(b.name))
     })()
-    cached.catch(() => (cached = null))
+    cached = p
+    // A failed load is forgotten so the next screen retries, unless a newer load has replaced it.
+    p.catch(() => {
+      if (cached === p) cached = null
+    })
   }
   return cached
 }
