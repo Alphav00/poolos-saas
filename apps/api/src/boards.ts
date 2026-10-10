@@ -1,6 +1,7 @@
 import type { Viewer } from './auth';
 import { checkFeedbackDoc, stampFeedback } from './feedback';
 import { checkFieldDoc, stampStaff } from './field';
+import { boardKey } from './company';
 import { checkMessageDoc, stampMessage } from './messages';
 import { canEditPools, roleFor } from './roles';
 
@@ -34,7 +35,7 @@ const CHECKS: Record<string, (collection: string, id: string, data: Record<strin
 };
 
 /** Owner-only: load a board export ({collections: {name: {id: data}}}) into D1. */
-async function importBoard(request: Request, env: Env, viewer: Viewer, board: string): Promise<Response> {
+async function importBoard(request: Request, env: Env, viewer: Viewer, board: string, key: string): Promise<Response> {
 	if (!viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can import');
 	let body: { collections?: Record<string, Record<string, unknown>> };
 	try {
@@ -66,9 +67,9 @@ async function importBoard(request: Request, env: Env, viewer: Viewer, board: st
 					`INSERT INTO board_docs (board, collection, id, data, updated_at, updated_by, deleted) VALUES (?,?,?,?,?,?,0)
 					 ON CONFLICT (board, collection, id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at,
 					   updated_by = excluded.updated_by, deleted = 0`,
-				).bind(board, collection, id, data, at, viewer.email),
+				).bind(key, collection, id, data, at, viewer.email),
 				env.DB.prepare('INSERT INTO board_writes (board, collection, id, op, data, at, by) VALUES (?,?,?,?,?,?,?)').bind(
-					board, collection, id, 'set', data, at, viewer.email,
+					key, collection, id, 'set', data, at, viewer.email,
 				),
 			]),
 		);
@@ -125,8 +126,10 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	const found = boardFor(board ?? '', viewer);
 	if (extra !== undefined || !found.board || !board) return fail(404, 'not_found', 'No such board');
 	if (!found.allowed) return fail(403, 'forbidden', 'This board is for owners only');
+	// Team boards are kept per company (company.ts); owner boards are Chi's own and shared.
+	const key = found.board.access === 'team' ? boardKey(board, viewer.company) : board;
 	if (collection === '_import' && id === undefined) {
-		return request.method === 'POST' ? importBoard(request, env, viewer, board) : fail(405, 'method_not_allowed', 'Use POST to import');
+		return request.method === 'POST' ? importBoard(request, env, viewer, board, key) : fail(405, 'method_not_allowed', 'Use POST to import');
 	}
 	if (!collection || !COLLECTION.test(collection)) return fail(400, 'bad_request', 'Bad collection name');
 	if (id !== undefined && !DOC_ID.test(id)) return fail(400, 'bad_request', 'Bad document id');
@@ -135,7 +138,7 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	// The role lookup runs only on these writes.
 	if (board === 'field' && id !== undefined && request.method !== 'GET') {
 		if (collection === 'staff' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can change staff');
-		if (collection === 'pools' && !viewer.isOwner && !canEditPools(false, await roleFor(env, viewer.email))) {
+		if (collection === 'pools' && !viewer.isOwner && !canEditPools(false, await roleFor(env, viewer.email, viewer.company))) {
 			return fail(403, 'forbidden', 'Only an owner, a Lead or a Dispatcher can change pool profiles');
 		}
 	}
@@ -145,8 +148,8 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 		const since = new URL(request.url).searchParams.get('since');
 		const now = new Date().toISOString();
 		const stmt = since
-			? env.DB.prepare('SELECT id, data, updated_at, deleted FROM board_docs WHERE board = ? AND collection = ? AND updated_at > ? ORDER BY updated_at').bind(board, collection, since)
-			: env.DB.prepare('SELECT id, data, updated_at, deleted FROM board_docs WHERE board = ? AND collection = ? AND deleted = 0 ORDER BY updated_at').bind(board, collection);
+			? env.DB.prepare('SELECT id, data, updated_at, deleted FROM board_docs WHERE board = ? AND collection = ? AND updated_at > ? ORDER BY updated_at').bind(key, collection, since)
+			: env.DB.prepare('SELECT id, data, updated_at, deleted FROM board_docs WHERE board = ? AND collection = ? AND deleted = 0 ORDER BY updated_at').bind(key, collection);
 		const rows = await stmt.all<DocRow>();
 		return json({
 			now,
@@ -157,7 +160,7 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	}
 
 	const row = await env.DB.prepare('SELECT id, data, updated_at, deleted FROM board_docs WHERE board = ? AND collection = ? AND id = ?')
-		.bind(board, collection, id)
+		.bind(key, collection, id)
 		.first<DocRow>();
 	const current = row && !row.deleted ? row : null;
 
@@ -214,8 +217,8 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	// One staff record per sign-in email, so a viewer's role is never ambiguous.
 	if (board === 'field' && collection === 'staff' && op !== 'delete') {
 		const taken = await env.DB.prepare(
-			"SELECT id FROM board_docs WHERE board = 'field' AND collection = 'staff' AND deleted = 0 AND id <> ? AND json_valid(data) AND lower(json_extract(data, '$.email')) = ?",
-		).bind(id, next.email).first<{ id: string }>();
+			"SELECT id FROM board_docs WHERE board = ? AND collection = 'staff' AND deleted = 0 AND id <> ? AND json_valid(data) AND lower(json_extract(data, '$.email')) = ?",
+		).bind(key, id, next.email).first<{ id: string }>();
 		if (taken) return fail(409, 'conflict', `${next.email as string} is already on file as staff/${taken.id}`);
 	}
 	if (op === 'delete' && board === 'feedback' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can delete a report');
@@ -226,9 +229,9 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 			`INSERT INTO board_docs (board, collection, id, data, updated_at, updated_by, deleted) VALUES (?,?,?,?,?,?,?)
 			 ON CONFLICT (board, collection, id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at,
 			   updated_by = excluded.updated_by, deleted = excluded.deleted`,
-		).bind(board, collection, id, data, at, viewer.email, op === 'delete' ? 1 : 0),
+		).bind(key, collection, id, data, at, viewer.email, op === 'delete' ? 1 : 0),
 		env.DB.prepare('INSERT INTO board_writes (board, collection, id, op, data, at, by) VALUES (?,?,?,?,?,?,?)').bind(
-			board, collection, id, op, JSON.stringify(logged), at, viewer.email,
+			key, collection, id, op, JSON.stringify(logged), at, viewer.email,
 		),
 	]);
 	return op === 'delete' ? json({ id, deleted: true, updated_at: at }) : json({ id, data: next, updated_at: at });

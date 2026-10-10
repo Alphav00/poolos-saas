@@ -27,7 +27,7 @@
   .signin { margin-top: 24px; }
   .t { font-size: 22px; font-weight: 900; margin: 0 0 4px; color: var(--ink); }
   .fl { display: block; margin-top: 12px; }
-  .fl input { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; min-height: 44px; background: #fff; }
+  .fl input { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; min-height: 44px; background: var(--card); }
   .fl input:focus { outline: none; border-color: var(--brand-primary); }
   .hint { margin-top: 12px; }
   .id { white-space: nowrap; }

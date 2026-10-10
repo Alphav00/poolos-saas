@@ -156,7 +156,7 @@
   .prod { border-top: 1px solid var(--line); padding: 8px 0; }
   .prod:first-of-type { border-top: 0; }
   .f { display: block; font-size: 12px; color: var(--mute); margin-top: 6px; }
-  .f input, .f textarea, .sel { display: block; width: 100%; font: inherit; font-size: 16px; font-weight: 700; border: 2px solid var(--line); border-radius: 10px; padding: 8px; color: var(--ink); margin-top: 2px; min-height: 48px; background: #fff; }
+  .f input, .f textarea, .sel { display: block; width: 100%; font: inherit; font-size: 16px; font-weight: 700; border: 2px solid var(--line); border-radius: 10px; padding: 8px; color: var(--ink); margin-top: 2px; min-height: 48px; background: var(--card); }
   .sel { flex: 1; margin-top: 0; }
   .tr { display: grid; grid-template-columns: 44px 1fr auto 1fr 34px; gap: 6px; align-items: center; margin-top: 6px; }
   .tr input { width: 100%; font: inherit; font-size: 16px; font-weight: 800; border: 2px solid var(--line); border-radius: 10px; padding: 8px; min-height: 48px; color: var(--ink); }

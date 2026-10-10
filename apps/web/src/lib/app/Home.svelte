@@ -208,8 +208,8 @@
   .brandbar { display: flex; align-items: center; gap: 10px; padding: 0 4px 8px; }
   .brandbar .logo { width: 64px; height: 64px; object-fit: contain; flex: none; filter: drop-shadow(0 2px 3px rgba(14, 60, 95, .18)); }
   .brandbar .who { min-width: 0; }
-  .brandbar .bn { font-size: 20px; font-weight: 900; line-height: 1.1; color: var(--brand-deep); }
-  .pilot { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, #fff, var(--brand-ice)); border: 2px solid rgb(var(--brand-accent-rgb) / .8); }
+  .brandbar .bn { font-size: 20px; font-weight: 900; line-height: 1.1; color: var(--brand-title, var(--brand-deep)); }
+  .pilot { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, var(--card), var(--brand-ice)); border: 2px solid rgb(var(--brand-accent-rgb) / .8); }
   .pilot .chip { min-height: 44px; padding: 0 14px; font-weight: 900; text-decoration: none; background: var(--brand-accent); color: var(--brand-deep); }
   .hello { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding: 2px 4px 0; }
   .hello > div { min-width: 0; }
@@ -225,10 +225,10 @@
   .now { display: flex; align-items: center; gap: 10px; }
   .icon { font-size: 36px; line-height: 1; }
   .temp { font-size: 32px; font-weight: 900; line-height: 1; }
-  .alert-soft { margin-top: 8px; background: var(--warnbg); color: #7a4a06; border-radius: 12px; padding: 8px 10px; font-size: 13px; font-weight: 700; }
-  .progress { height: 10px; border-radius: 99px; background: #e3eaf0; overflow: hidden; margin-top: 10px; }
+  .alert-soft { margin-top: 8px; background: var(--warnbg); color: var(--warn); border-radius: 12px; padding: 8px 10px; font-size: 13px; font-weight: 700; }
+  .progress { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 10px; }
   .progress span { display: block; height: 100%; background: linear-gradient(90deg, #2bb673, #4fd18f); border-radius: 99px; }
-  .next { display: flex; align-items: center; gap: 8px; margin-top: 10px; background: #f5f8fb; border-radius: 16px; padding: 8px 10px; }
+  .next { display: flex; align-items: center; gap: 8px; margin-top: 10px; background: var(--soft); border-radius: 16px; padding: 8px 10px; }
   .crew { list-style: none; margin: 6px 0 0; padding: 0; }
   .crew li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 4px 0; border-top: 1px solid var(--line); }
   .crew li:first-child { border-top: 0; }

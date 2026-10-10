@@ -12,6 +12,9 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = dirname(fileURLToPath(import.meta.url))
 const COLORS = ['primary', 'primaryDark', 'deep', 'link', 'sky', 'ice', 'accent', 'ink', 'surface', 'background']
+// Optional surfaces (the app falls back to light ones): cards, muted text,
+// dividers, quiet panels, and the company name on Today.
+const SURFACES = ['card', 'mute', 'line', 'soft', 'title']
 const FILES = ['logo.png', 'mark.png', 'favicon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png']
 const HEX = /^#[0-9a-f]{6}$/i
 
@@ -28,8 +31,12 @@ export function loadBrand(id = process.env.BRAND || 'poolos') {
   for (const k of COLORS) {
     if (!HEX.test(b.colors?.[k] ?? '')) throw new Error(`brands/${id}/brand.json colors.${k} must be #rrggbb`)
   }
+  for (const k of SURFACES) {
+    if (b.colors[k] !== undefined && !HEX.test(b.colors[k])) throw new Error(`brands/${id}/brand.json colors.${k} must be #rrggbb`)
+  }
+  if (b.scheme !== undefined && b.scheme !== 'light' && b.scheme !== 'dark') throw new Error(`brands/${id}/brand.json scheme must be "light" or "dark"`)
   for (const f of FILES) if (!existsSync(join(dir, f))) throw new Error(`brands/${id}/ is missing ${f}`)
-  return { id, dir, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot === true, colors: b.colors, linear: linearTarget(id, b.linear), loader: loaderSpec(id, b.loader) }
+  return { id, dir, name: b.name, shortName: b.shortName, legalName: b.legalName, tagline: b.tagline, pilot: b.pilot === true, scheme: b.scheme ?? 'light', colors: b.colors, linear: linearTarget(id, b.linear), loader: loaderSpec(id, b.loader) }
 }
 
 /** The company's loading screen after sign-in (optional): goo ball colours and the line under the count. */
@@ -62,7 +69,14 @@ export function loadBrands(list = process.env.BRAND || 'poolos') {
   return ids.map((id) => loadBrand(id))
 }
 
-const vars = (b) => COLORS.flatMap((k) => [`--brand-${kebab(k)}:${b.colors[k]}`, `--brand-${kebab(k)}-rgb:${rgb(b.colors[k])}`]).join(';')
+// An unset surface is `initial`, so var(--brand-card, #fff) falls back even
+// when another pack's block set it before a switch.
+const vars = (b) =>
+  [
+    `color-scheme:${b.scheme ?? 'light'}`,
+    ...COLORS.flatMap((k) => [`--brand-${kebab(k)}:${b.colors[k]}`, `--brand-${kebab(k)}-rgb:${rgb(b.colors[k])}`]),
+    ...SURFACES.map((k) => `--brand-${k}:${b.colors[k] ?? 'initial'}`),
+  ].join(';')
 
 /**
  * --brand-<name> as hex, and --brand-<name>-rgb as "r g b" for Tailwind's alpha syntax.

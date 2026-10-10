@@ -125,7 +125,7 @@
   .people .pred { align-items: center; }
   .mail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .f { display: block; font-size: 12px; color: var(--mute); margin-top: 8px; }
-  .f input { display: block; width: 100%; font: inherit; font-size: 16px; font-weight: 700; border: 2px solid var(--line); border-radius: 10px; padding: 8px; color: var(--ink); margin-top: 2px; min-height: 48px; background: #fff; }
+  .f input { display: block; width: 100%; font: inherit; font-size: 16px; font-weight: 700; border: 2px solid var(--line); border-radius: 10px; padding: 8px; color: var(--ink); margin-top: 2px; min-height: 48px; background: var(--card); }
   .roles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 4px; }
   .roles .chip { justify-content: center; }
   .roles .chip[aria-pressed='true'] { background: var(--brand-primary); color: #fff; }

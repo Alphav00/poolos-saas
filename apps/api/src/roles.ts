@@ -1,3 +1,5 @@
+import { boardKey } from './company';
+
 /**
  * Staff roles. Staff are kept on the `field` board at staff/<id> (owners add
  * them; apps/api/src/field.ts checks the shape). A viewer's role comes from the
@@ -14,12 +16,12 @@ export const POOL_EDITORS: ReadonlySet<string> = new Set<Role>(['Lead', 'Dispatc
  * Writes keep one record per email (boards.ts); if two ever match (a race between two adds),
  * the viewer gets no role rather than the more powerful one.
  */
-export async function roleFor(env: Env, email: string): Promise<Role | null> {
+export async function roleFor(env: Env, email: string, company = ''): Promise<Role | null> {
 	const want = email.trim().toLowerCase();
 	if (!want) return null;
 	const rows = await env.DB.prepare(
-		"SELECT json_extract(data, '$.role') AS role FROM board_docs WHERE board = 'field' AND collection = 'staff' AND deleted = 0 AND json_valid(data) AND lower(json_extract(data, '$.email')) = ? LIMIT 2",
-	).bind(want).all<{ role: unknown }>();
+		"SELECT json_extract(data, '$.role') AS role FROM board_docs WHERE board = ? AND collection = 'staff' AND deleted = 0 AND json_valid(data) AND lower(json_extract(data, '$.email')) = ? LIMIT 2",
+	).bind(boardKey('field', company), want).all<{ role: unknown }>();
 	const only = rows.results.length === 1 ? rows.results[0]!.role : null;
 	return (ROLES as readonly unknown[]).includes(only) ? (only as Role) : null;
 }

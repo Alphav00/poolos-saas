@@ -156,9 +156,9 @@
 
 <style>
   .fl { display: block; }
-  .fl textarea { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; background: #fff; resize: vertical; }
+  .fl textarea { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; background: var(--card); resize: vertical; }
   .fl textarea:focus { outline: none; border-color: var(--brand-primary); }
-  .fl ::placeholder { color: #8a9aa8; font-weight: 600; }
+  .fl ::placeholder { color: var(--faint); font-weight: 600; }
   .cats { flex-wrap: wrap; }
   .cats button { flex: 1 1 40%; }
   .msg { padding: 10px 0; border-top: 1px solid var(--line); }

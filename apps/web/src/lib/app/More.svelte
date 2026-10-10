@@ -53,7 +53,7 @@
   <section class="card">
     <h2 class="h">Account</h2>
     <p class="xs">Signed in as <b>{brand().id}</b> ({brand().name}). A placeholder account until real sign-in arrives.</p>
-    <button class="btn ghost" onclick={() => { signOut(); location.hash = '#/' }}>Sign out</button>
+    <button class="btn ghost" onclick={() => { history.replaceState(null, '', '#/'); signOut() }}>Sign out</button>
   </section>
 {/if}
 

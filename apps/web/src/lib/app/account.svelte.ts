@@ -1,7 +1,10 @@
 // Placeholder sign-in: when the build carries more than one brand pack
 // (BRAND=a,b), each pack's id is a username, and signing in makes the app wear
-// that brand. Cloudflare Access is still what lets anyone in; this only picks
-// the company. One pack in the build means no sign-in. See brands/README.md.
+// that brand and work on that company's data: the poolos_company cookie tells
+// the Worker whose team boards to use (apps/api/src/company.ts; the default
+// pack sets none and keeps the plain boards). Cloudflare Access is still what
+// lets anyone in; this only picks the company. One pack in the build means no
+// sign-in. See brands/README.md.
 import defaultBrand, { brands, type Brand } from 'virtual:brand'
 
 const KEY = 'poolos.account'
@@ -58,21 +61,35 @@ export function signedIn(): boolean {
 export function signIn(username: string): boolean {
   const b = matchUsername(username, brands)
   if (!b) return false
-  current = b
   saveUsername(store(), b.id)
-  wear(b)
+  switchTo(b)
   return true
 }
 
 export function signOut(): void {
-  current = null
   saveUsername(store(), null)
-  wear(null)
+  switchTo(null)
 }
 
-/** Points the page's colours, title and theme colour at the brand. */
+// Screens cache pools and staff for the page's life (field/pools.ts,
+// field/staff.ts), so a change of company starts the page afresh; the saved
+// username brings the new company back, loading screen first.
+function switchTo(b: Brand | null): void {
+  wear(b)
+  if (typeof location !== 'undefined' && typeof document !== 'undefined') location.reload()
+  else current = b
+}
+
+/** The cookie value for a brand: none for the default pack, whose data is on the plain boards. */
+export function companyCookie(b: Brand | null, defaultId: string, secure: boolean): string {
+  const id = b && b.id !== defaultId ? b.id : ''
+  return `poolos_company=${id}; Path=/; SameSite=Strict; Max-Age=${id ? 31536000 : 0}${secure ? '; Secure' : ''}`
+}
+
+/** Points the page's colours, title, theme colour and company cookie at the brand. */
 function wear(b: Brand | null): void {
   if (!needsSignIn || typeof document === 'undefined') return
+  document.cookie = companyCookie(b, defaultBrand.id, location.protocol === 'https:')
   const root = document.documentElement
   if (b) root.dataset.brand = b.id
   else delete root.dataset.brand

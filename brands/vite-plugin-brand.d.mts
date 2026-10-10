@@ -7,6 +7,7 @@ export type BrandPack = {
   legalName: string
   tagline: string
   pilot: boolean
+  scheme?: 'light' | 'dark'
   colors: Record<string, string>
   linear: { team: string; project?: string; labels: string[] } | null
   loader: { balls: string[]; word: string } | null

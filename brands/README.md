@@ -24,8 +24,15 @@ username only picks the company. Each pack's images are also served at
 `/brand/<id>/<file>`. The manifest, favicon and home-screen icon are static, so
 they stay the default pack's.
 
-Both companies share the deployment's boards and D1 database, so only demo
-data goes in while two testers share it (DECISIONS d0021).
+Each company has its own team data. Signing in also sets the `poolos_company`
+cookie, and the Worker keeps the team boards (staff, pools, readings,
+messages, problem reports) per company as `<board>@<id>` in D1
+(`apps/api/src/company.ts`). The default pack sets no cookie and keeps the
+plain boards, so the data that was there before stays with it. A new company
+starts empty: an owner loads its demo pools and adds its staff. Owner boards
+and Measure jobs are still shared. The cookie is a placeholder, not access
+control: anyone Cloudflare Access lets in can pick either company
+(DECISIONS d0022).
 
 This is not a white-label product. A pack lets a company trying the app see
 it with its own name, logo and colours while it tests.
@@ -58,6 +65,20 @@ in Linear. After saving a report, the app offers **Open in Linear**: Linear's
 new-issue page, filled in, which the tester files under their own Linear
 sign-in. Without `linear` the button is not shown. Nothing here is a secret.
 
+### Colour scheme and surfaces
+
+`scheme` is `"light"` (default) or `"dark"`. It sets `color-scheme`, which picks
+the light or dark status colours (ok, warning, problem). A dark pack also sets
+its surfaces in `colors`; any it leaves out fall back to the light ones:
+
+| Key | Where it shows |
+|---|---|
+| `card` | cards, sheets, the tab bar, inputs |
+| `mute` | secondary text |
+| `line` | dividers, input borders |
+| `soft` | quiet panels inside cards |
+| `title` | the company name on Today (default: `deep`) |
+
 ### Colours (`brand.json` → CSS variable)
 
 | Key | Variable | Where it shows |
@@ -89,10 +110,13 @@ otherwise unchanged. Tests and fixtures still may not name the company
 
 From the S&M Pools design system (claude.ai Design System artifact, and the
 "S&M Pools Design System" folder on Chi's Google Drive, 2026-10-10). Colours are
-its tokens: lane-navy `#2e0997` for buttons, links and the company name
-(flat, since the system uses no gradients, so `primary` and `primaryDark`
-match), sky `#1896fa`, sun-yellow `#fade18` for the Report button, ink
-`#1c1b19`, surface-100 `#ffffff`, surface-200 `#f4f5fb`. The loader is the
+its dark ("night pool") tokens, at Chi's pick on 2026-10-10 that white
+clashed: surface-100 `#121022` for the page, surface-200 `#1c1932` for cards,
+ink `#f4f3fb`, ink-muted `#b7b4cc`, hairline `#34304f` for lines and chips,
+link `#a99bff`, lane-navy dark `#5b3fe0` for buttons (flat, since the system
+uses no gradients, so `primary` and `primaryDark` match; white text 6.5:1),
+lane-navy `#2e0997` behind the loading screen, sky `#1896fa`, and sun-yellow
+`#fade18` for the Report button. The loader is the
 design system's goo loader in the six logo-bubble colours. The logos are the design
 system's `sm-pools-logo-transparent.png` (logo, mark, favicon) and
 `sm-pools-logo.png` on white (app icons; maskable inside the middle 80%).
