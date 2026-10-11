@@ -1,6 +1,6 @@
 import type { Brand } from 'virtual:brand'
 import { describe, expect, it } from 'vitest'
-import { companyCookie, matchUsername, savedUsername, saveUsername } from './account.svelte'
+import { allowedFrom, companyCookie, matchUsername, pickCompany, savedUsername, saveUsername } from './account.svelte'
 
 const pack = (id: string, name: string): Brand => ({ id, name, shortName: name, legalName: name, tagline: '', pilot: true, linear: null, loader: null, logo: '', mark: '' })
 const PACKS = [pack('blue-lagoon', 'Blue Lagoon Pools'), pack('k-and-r', 'K&R Pools')]
@@ -53,4 +53,24 @@ describe('companyCookie', () => {
     expect(companyCookie(PACKS[0]!, 'blue-lagoon', false)).toBe('poolos_company=; Path=/; SameSite=Strict; Max-Age=0')
     expect(companyCookie(null, 'blue-lagoon', false)).toContain('Max-Age=0')
   })
+})
+
+describe('allowedFrom', () => {
+  it('maps the default company and keeps pack order', () => {
+    expect(allowedFrom(['k-and-r', ''], PACKS, 'blue-lagoon').map((b) => b.id)).toEqual(['blue-lagoon', 'k-and-r'])
+    expect(allowedFrom([''], PACKS, 'blue-lagoon').map((b) => b.id)).toEqual(['blue-lagoon'])
+    expect(allowedFrom(['gone'], PACKS, 'blue-lagoon')).toEqual([])
+  })
+  it('gives an owner every pack', () => expect(allowedFrom('all', PACKS, 'blue-lagoon')).toBe(PACKS))
+})
+
+describe('pickCompany', () => {
+  const [lagoon, kr] = PACKS as [Brand, Brand]
+  it('keeps the saved company while it is still allowed', () => expect(pickCompany('k-and-r', PACKS)).toEqual({ go: kr }))
+  it('goes straight to the only company', () => {
+    expect(pickCompany(null, [lagoon])).toEqual({ go: lagoon })
+    expect(pickCompany('k-and-r', [lagoon])).toEqual({ go: lagoon })
+  })
+  it('asks when there are several and none is saved', () => expect(pickCompany(null, PACKS)).toEqual({ ask: PACKS }))
+  it('has nowhere to go without a staff list', () => expect(pickCompany('k-and-r', [])).toEqual({ none: true }))
 })

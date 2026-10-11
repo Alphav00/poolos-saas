@@ -29,10 +29,17 @@ cookie, and the Worker keeps the team boards (staff, pools, readings,
 messages, problem reports) per company as `<board>@<id>` in D1
 (`apps/api/src/company.ts`). The default pack sets no cookie and keeps the
 plain boards, so the data that was there before stays with it. A new company
-starts empty: an owner loads its demo pools and adds its staff. Owner boards
-and Measure jobs are still shared. The cookie is a placeholder, not access
-control: anyone Cloudflare Access lets in can pick either company
-(DECISIONS d0022).
+starts empty: an owner loads its demo pools and adds its staff. Measure jobs
+are kept per company too (`measure_jobs.company`). Owner boards are shared.
+
+Who may open which company comes from the staff lists (`COMPANY_LOCK: "staff"`
+in `apps/api/wrangler.jsonc`, DECISIONS d0023). An owner (`OWNER_EMAILS`)
+may open any company. Everyone else may open only a company whose Staff screen
+lists their email, and the Worker refuses the rest with 403. On opening, the
+app asks `/api/me` which companies that is. With one, it goes straight in.
+With several, it asks which (More → Switch company changes it later). With
+none, it says to ask the owner. So before a tester's first visit, the owner
+adds their email on that company's Staff screen.
 
 This is not a white-label product. A pack lets a company trying the app see
 it with its own name, logo and colours while it tests.

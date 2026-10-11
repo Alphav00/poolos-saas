@@ -1,5 +1,6 @@
+import { env } from 'cloudflare:test';
 import { describe, beforeAll, expect, it } from 'vitest';
-import { companyFrom } from '../src/company';
+import { companiesFor, companyFrom, refusedCompany } from '../src/company';
 import { call, migrate } from './helpers';
 
 beforeAll(migrate);
@@ -34,5 +35,63 @@ describe('companies sharing one deployment', () => {
 		// Their Lead role at one company lets them change that company's pools only.
 		expect((await call('/api/boards/field/pools/p2', { method: 'PATCH', as: 'alex@example.test', company: 'blue-lagoon', body: { data: { name: 'Lagoon' } } })).status).toBe(200);
 		expect((await call('/api/boards/field/pools/p1', { method: 'PATCH', as: 'alex@example.test', body: { data: { name: 'Mine now' } } })).status).toBe(403);
+	});
+});
+
+describe('Measure jobs per company', () => {
+	const job = async (company?: string) => {
+		const f = (await (await call('/api/measure/fixtures/kidney', { as: OWNER })).json()) as Record<string, unknown>;
+		const { id: _id, created_at: _c, updated_at: _u, ...body } = f;
+		const res = await call('/api/measure/jobs', { method: 'POST', as: OWNER, company, body });
+		expect(res.status).toBe(200);
+		return ((await res.json()) as { id: string }).id;
+	};
+	const listed = async (company?: string) => ((await (await call('/api/measure/jobs', { as: OWNER, company })).json()) as { id: string }[]).map((j) => j.id);
+
+	it('lists, reads, changes and deletes a job only at the company that saved it', async () => {
+		const plain = await job();
+		const lagoon = await job('blue-lagoon');
+		expect(await listed()).toContain(plain);
+		expect(await listed()).not.toContain(lagoon);
+		expect(await listed('blue-lagoon')).toEqual([lagoon]);
+		const at = (path: string, init: Parameters<typeof call>[1] = {}) => call(`/api/measure/jobs/${lagoon}${path}`, { as: OWNER, ...init });
+		expect((await at('')).status).toBe(404);
+		expect((await at('', { method: 'PUT', body: { notes: 'x' } })).status).toBe(404);
+		expect((await at('/swap-ab', { method: 'POST' })).status).toBe(404);
+		expect((await at('/reconstruct', { method: 'POST' })).status).toBe(404);
+		expect((await at('', { method: 'DELETE' })).status).toBe(404);
+		expect((await at('', { company: 'blue-lagoon' })).status).toBe(200);
+	});
+});
+
+describe('staff-list lock', () => {
+	const locked = { ...env, COMPANY_LOCK: 'staff' } as Env;
+	const viewer = (email: string, company = '', isOwner = false) => ({ email, isOwner, company });
+	const staff = (company: string | undefined, id: string, email: string) =>
+		call(`/api/boards/field/staff/${id}`, { method: 'PUT', as: OWNER, company, body: { data: { name: id, email, role: 'Technician', route: 'Route A', demo: true } } });
+
+	it('knows which companies list an email, any case', async () => {
+		expect((await staff(undefined, 'jo', 'jo@example.test')).status).toBe(200);
+		expect((await staff('k-and-r', 'jo', 'JO@example.test')).status).toBe(200);
+		expect((await companiesFor(env, ' Jo@Example.test ')).sort()).toEqual(['', 'k-and-r']);
+		expect(await companiesFor(env, 'nobody@example.test')).toEqual([]);
+	});
+
+	it('lets staff into their own companies only, and owners anywhere', async () => {
+		expect((await staff('blue-lagoon', 'sam', 'sam@example.test')).status).toBe(200);
+		expect(await refusedCompany(locked, viewer('sam@example.test', 'blue-lagoon'))).toBeNull();
+		const refused = await refusedCompany(locked, viewer('sam@example.test'));
+		expect(refused?.status).toBe(403);
+		expect(((await refused!.json()) as { error: { code: string } }).error.code).toBe('not_staff');
+		expect((await refusedCompany(locked, viewer('stranger@example.test', 'blue-lagoon')))?.status).toBe(403);
+		expect(await refusedCompany(locked, viewer('owner@example.test', 'anything', true))).toBeNull();
+		expect(await refusedCompany(env, viewer('stranger@example.test', 'blue-lagoon'))).toBeNull();
+	});
+
+	it('tells the app where the viewer may work', async () => {
+		const me = async (as: string) => (await (await call('/api/me', { as, company: 'k-and-r' })).json()) as { company: string; companies: unknown };
+		expect(await me('jo@example.test')).toMatchObject({ company: 'k-and-r' });
+		expect(((await me('jo@example.test')).companies as string[]).sort()).toEqual(['', 'k-and-r']);
+		expect((await me(OWNER)).companies).toBe('all');
 	});
 });

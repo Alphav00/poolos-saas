@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { brand, needsSignIn, signOut } from './account.svelte'
+  import { allowedBrands, brand, needsSignIn, signOut } from './account.svelte'
 
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
 
@@ -52,8 +52,10 @@
 {#if needsSignIn}
   <section class="card">
     <h2 class="h">Account</h2>
-    <p class="xs">Signed in as <b>{brand().id}</b> ({brand().name}). A placeholder account until real sign-in arrives.</p>
-    <button class="btn ghost" onclick={() => { history.replaceState(null, '', '#/'); signOut() }}>Sign out</button>
+    <p class="xs">Working in <b>{brand().name}</b>. You see the companies whose staff list has your email.</p>
+    {#if allowedBrands().length > 1}
+      <button class="btn ghost" onclick={() => { history.replaceState(null, '', '#/'); signOut() }}>Switch company</button>
+    {/if}
   </section>
 {/if}
 

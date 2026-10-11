@@ -8,14 +8,16 @@
   import SignIn from './lib/app/SignIn.svelte'
   import Staff from './lib/app/Staff.svelte'
   import TabBar from './lib/app/TabBar.svelte'
-  import { brand, signedIn } from './lib/app/account.svelte'
+  import defaultBrand, { brands } from 'virtual:brand'
+  import { allowedFrom, brand, needsSignIn, pickCompany, setAllowed, signedIn, signIn } from './lib/app/account.svelte'
   import './lib/app/app.css'
   import Field from './lib/field/Field.svelte'
 
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
   // role comes from the staff record matching the sign-in email; canEditPools
   // is what the Worker enforces on pool writes (owners, Leads, Dispatchers).
-  type Me = { email: string; isOwner: boolean; role: string | null; canEditPools: boolean }
+  // companies: where this person may work, from their staff lists ('all' for an owner).
+  type Me = { email: string; isOwner: boolean; role: string | null; canEditPools: boolean; companies?: string[] | 'all' }
 
   let me = $state<Me | null>(null)
   let boards = $state<Board[]>([])
@@ -37,11 +39,36 @@
     }
   }
 
+  // With several packs, /api/me says which companies this person may open
+  // (DECISIONS d0023): straight into the only one, a choice between several,
+  // or a note that they are on no staff list yet.
+  let gate = $state<'checking' | 'ask' | 'none' | 'in'>(needsSignIn ? 'checking' : 'in')
+  let who = $state('')
+  async function check() {
+    try {
+      const m = await fetch('/api/me')
+      if (!m.ok) throw new Error(m.status === 401 ? 'Sign in again.' : `Could not load ${brand().shortName}.`)
+      const body = (await m.json()) as Me
+      who = body.email
+      const allowed = allowedFrom(body.companies ?? 'all', brands, defaultBrand.id)
+      setAllowed(allowed)
+      const pick = pickCompany(signedIn() ? brand().id : null, allowed)
+      if ('go' in pick) {
+        if (!signedIn() || brand().id !== pick.go.id) signIn(pick.go.id)
+        else gate = 'in'
+      } else gate = 'ask' in pick ? 'ask' : 'none'
+    } catch (e) {
+      error = e instanceof Error ? e.message : `Could not load ${brand().shortName}.`
+      gate = 'in'
+    }
+  }
+  if (needsSignIn) check()
+
   // Loads once signed in (at once when the build has a single brand), and
   // again after signing out and back in.
   let started = false
   $effect(() => {
-    if (!signedIn()) {
+    if (gate !== 'in' || !signedIn()) {
       started = false
       return
     }
@@ -82,8 +109,21 @@
 
 {#if loader}<BrandLoader balls={loader.balls} word={loader.word} done={loaded} onfinish={() => (loader = null)} />{/if}
 
-{#if !signedIn()}
-<main class="field no-tabs"><div class="wrap"><SignIn /></div></main>
+{#if gate === 'checking'}
+<main class="field no-tabs" aria-busy="true"></main>
+{:else if gate === 'none'}
+<main class="field no-tabs"><div class="wrap">
+  <section class="card nostaff">
+    <h1 class="nm">Not on a team yet</h1>
+    <p class="xs">You're signed in as <b>{who}</b>, but no company has you on its staff list. Ask the owner to add you on Staff, then open the app again.</p>
+    <a class="btn ghost" href="/cdn-cgi/access/logout">Sign out</a>
+  </section>
+</div></main>
+{:else if gate === 'ask' || !signedIn()}
+<main class="field no-tabs"><div class="wrap">
+  {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
+  <SignIn />
+</div></main>
 {:else}
 <main class={['field', entering && 'no-tabs']} bind:this={screen}>
   <div class="wrap">
@@ -107,3 +147,8 @@
   {#if !entering}<TabBar current={tab} />{/if}
 </main>
 {/if}
+
+<style>
+  .nostaff { margin-top: 24px; }
+  .nostaff .btn { text-decoration: none; }
+</style>

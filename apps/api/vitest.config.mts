@@ -17,6 +17,8 @@ export default defineConfig({
 					bindings: {
 						ACCESS_AUD: 'test-aud',
 						OWNER_EMAILS: 'owner@example.test',
+						// Unlocked, so tests sign in as anyone; company.spec.ts turns the lock on itself.
+						COMPANY_LOCK: '',
 						ACCESS_JWKS: JSON.stringify({ keys: [pub] }),
 						TEST_PRIVATE_JWK: priv,
 						TEST_MIGRATIONS: await readD1Migrations(path.join(import.meta.dirname, 'migrations')),

@@ -104,11 +104,11 @@ describe('roleFor', () => {
 describe('/api/me', () => {
 	it('names the viewer’s role and whether they can change pools', async () => {
 		expect(await (await call('/api/me', { as: 'Alex@example.test' })).json()).toEqual({
-			email: 'alex@example.test', isOwner: false, role: 'Dispatcher', canEditPools: true,
+			email: 'alex@example.test', isOwner: false, role: 'Dispatcher', canEditPools: true, company: '', companies: [''],
 		});
 		expect((await put('riley', { name: 'Riley', email: 'riley@example.test', role: 'Technician' })).status).toBe(200);
 		expect(await (await call('/api/me', { as: 'riley@example.test' })).json()).toEqual({
-			email: 'riley@example.test', isOwner: false, role: 'Technician', canEditPools: false,
+			email: 'riley@example.test', isOwner: false, role: 'Technician', canEditPools: false, company: '', companies: [''],
 		});
 	});
 });
