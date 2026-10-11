@@ -18,8 +18,10 @@ export async function token(email: string, opts: { aud?: string; iss?: string; e
 		.sign(key);
 }
 
-export async function call(path: string, init: { method?: string; body?: unknown; as?: string | null; jwt?: string } = {}) {
+export async function call(path: string, init: { method?: string; body?: unknown; as?: string | null; jwt?: string; company?: string } = {}) {
 	const headers: Record<string, string> = {};
+	// The web app's placeholder sign-in picks the company with this cookie (src/company.ts).
+	if (init.company) headers.Cookie = `poolos_company=${init.company}`;
 	const jwt = init.jwt ?? (init.as === null ? undefined : await token(init.as ?? 'tech@example.test'));
 	if (jwt) headers['Cf-Access-Jwt-Assertion'] = jwt;
 	if (init.body !== undefined) headers['Content-Type'] = 'application/json';

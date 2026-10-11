@@ -1,6 +1,8 @@
 import { createLocalJWKSet, createRemoteJWKSet, jwtVerify, type JWTVerifyGetKey } from 'jose';
 
 export interface Viewer {
+	/** The company whose team boards this request works on ('' is the default); see company.ts. */
+	company?: string;
 	email: string;
 	isOwner: boolean;
 }

@@ -193,7 +193,7 @@
     <div class="row"><h2 class="h">Chlorine decay · inferred</h2><span class="xs">last {pool.visits.length} visits</span></div>
     <DecayChart visits={pool.visits} forecast={pool.forecast.fc?.value} measured={reading?.values.fc} />
     {#each pool.decay as d (d.label)}
-      <div class="dr"><b>{d.label}</b><div class="xs">{d.detail}</div><div class="rate" style:color={d.alert ? '#b42b30' : undefined}>{d.trend}</div></div>
+      <div class="dr"><b>{d.label}</b><div class="xs">{d.detail}</div><div class="rate" style:color={d.alert ? 'var(--bad)' : undefined}>{d.trend}</div></div>
     {/each}
   </section>
 {/if}

@@ -483,6 +483,9 @@ Every agent on the board adds one suggestion. Rules:
 - 2026-10-08 · decisions are also logged in `docs/DECISIONS.md` (options, choice, why, evidence, falsifier), the format Chi uses elsewhere.
 - 2026-10-09 · §1 owner, §3 #1, §13 #3 and #10 · `DECIDED` Chi: "No plan for this to be a white label app, so we need some type of way that it could easily store their assets and design system in a folder and use CCS pools as a tester. Their boss is viewing it now, and plans to test it." CCS Pools is the first tester. Its name, logo and colours live only in `brands/ccs-pools/`, picked at build time (`BRAND=ccs-pools`, set in deploy.yml); app code names no company. §3 #1 still holds for inputs, fixtures, tests and screenshots, and still bars CCS customers, addresses, prices and service history everywhere. §1 owner is unchanged. §12 risk 1 (who owns the code) is still open. Testers report problems in the app (More → Report a problem); see `docs/TEST-DAY.md`.
 
+- 2026-10-10 · §3 #1, §13 · `DECIDED` Chi: S&M Pools is the second tester. The main site gets a sign-in with placeholder usernames, one per company (the brand pack id), and after sign-in the company's loading screen. Both packs ship in one build (`BRAND=ccs-pools,sm-pools`); the username only picks the brand, Cloudflare Access is still the real sign-in. Both testers share the same boards and D1, so §3 #1 now also bars either company's real customers from the shared data. See DECISIONS d0021 and `brands/README.md`.
+- 2026-10-10 · §3 #1 · `DECIDED` Chi: the two testers must not share staff and pools. Team boards are now kept per company (`<board>@<company>` in D1, picked by the `poolos_company` cookie the sign-in sets); the default company keeps the plain boards. Owner boards and Measure jobs are still shared. S&M wears its dark "night pool" theme. See DECISIONS d0022.
+
 ---
 
 ## 15. Sources

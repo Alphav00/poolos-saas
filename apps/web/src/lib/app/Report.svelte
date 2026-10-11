@@ -1,8 +1,10 @@
 <script lang="ts">
   import { docId } from '../field/ids'
   import { untrack } from 'svelte'
-  import brand from 'virtual:brand'
+  import { brand as current } from './account.svelte'
   import { newIssueUrl } from './linear'
+
+  const brand = $derived(current())
   // "Report a problem": what a tester saw, saved on the feedback board. The
   // Worker stamps who sent it; the tester can then file it in Linear under their
   // own Linear sign-in (linear.ts).
@@ -211,17 +213,17 @@
 
 <style>
   .pick { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
-  .pick button { font: inherit; font-weight: 800; font-size: 14px; min-height: 48px; border: 2px solid var(--line); background: #fff; color: var(--ink); border-radius: 14px; padding: 6px 8px; cursor: pointer; text-align: left; }
-  .pick button[aria-pressed='true'] { border-color: var(--brand-primary); background: var(--brand-ice); color: var(--brand-deep); }
+  .pick button { font: inherit; font-weight: 800; font-size: 14px; min-height: 48px; border: 2px solid var(--line); background: var(--card); color: var(--ink); border-radius: 14px; padding: 6px 8px; cursor: pointer; text-align: left; }
+  .pick button[aria-pressed='true'] { border-color: var(--brand-primary); background: var(--brand-ice); color: var(--brand-link); }
   .sev button { display: flex; flex-direction: column; gap: 1px; }
   .sev button span { font-size: 12px; font-weight: 700; color: var(--mute); }
-  .sev button.blocker[aria-pressed='true'] { border-color: #e5484d; background: var(--badbg); color: #9b2328; }
-  .sev button.major[aria-pressed='true'] { border-color: #f39c12; background: var(--warnbg); color: #7a4a06; }
+  .sev button.blocker[aria-pressed='true'] { border-color: #e5484d; background: var(--badbg); color: var(--bad); }
+  .sev button.major[aria-pressed='true'] { border-color: #f39c12; background: var(--warnbg); color: var(--warn); }
   .fl { display: block; margin-top: 12px; }
   .fl i { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 700; }
-  .fl input, .fl textarea { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; background: #fff; resize: vertical; }
+  .fl input, .fl textarea { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; background: var(--card); resize: vertical; }
   .fl input:focus, .fl textarea:focus { outline: none; border-color: var(--brand-primary); }
-  .fl ::placeholder { color: #8a9aa8; font-weight: 600; }
+  .fl ::placeholder { color: var(--faint); font-weight: 600; }
   .done .btn.ghost { margin-top: 8px; text-decoration: none; }
   .done a { color: var(--brand-link); font-weight: 900; }
   .done .btn.lin-open { margin-top: 10px; text-decoration: none; color: #fff; }

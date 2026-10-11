@@ -1,0 +1,36 @@
+{
+  "name": "S&M Pools",
+  "shortName": "S&M Pools",
+  "legalName": "S&M Pools",
+  "tagline": "Service & Maintenance · Sewell, NJ",
+  "pilot": true,
+  "scheme": "dark",
+  "colors": {
+    "primary": "#5b3fe0",
+    "primaryDark": "#5b3fe0",
+    "deep": "#2e0997",
+    "link": "#a99bff",
+    "sky": "#1896fa",
+    "ice": "#34304f",
+    "accent": "#fade18",
+    "ink": "#f4f3fb",
+    "surface": "#121022",
+    "background": "#121022",
+    "card": "#1c1932",
+    "mute": "#b7b4cc",
+    "line": "#34304f",
+    "soft": "#121022",
+    "title": "#f4f3fb"
+  },
+  "loader": {
+    "balls": [
+      "#f60882",
+      "#fbad15",
+      "#1896fa",
+      "#25c142",
+      "#fade18",
+      "#8435e9"
+    ],
+    "word": "Filling the pool"
+  }
+}
