@@ -5,6 +5,7 @@
  */
 import { viewerFrom } from './auth';
 import { boardFor, handleBoards } from './boards';
+import { companyFrom } from './company';
 import { handleChem } from './chem';
 import { handleMeasure } from './measure';
 import { canEditPools, roleFor } from './roles';
@@ -15,7 +16,8 @@ export default {
 		const url = new URL(request.url);
 		if (url.pathname === '/api/health') return Response.json({ ok: true });
 
-		const viewer = await viewerFrom(request, env);
+		const signedIn = await viewerFrom(request, env);
+		const viewer = signedIn && { ...signedIn, company: companyFrom(request) };
 		if (!viewer) {
 			return url.pathname.startsWith('/api/')
 				? Response.json({ error: { code: 'unauthenticated', message: 'Sign in through Cloudflare Access' } }, { status: 401 })
@@ -23,7 +25,7 @@ export default {
 		}
 
 		if (url.pathname === '/api/me') {
-			const role = await roleFor(env, viewer.email);
+			const role = await roleFor(env, viewer.email, viewer.company);
 			return Response.json({ email: viewer.email, isOwner: viewer.isOwner, role, canEditPools: canEditPools(viewer.isOwner, role) });
 		}
 		if (url.pathname === '/api/boards' || url.pathname.startsWith('/api/boards/')) {

@@ -4,7 +4,14 @@
   import JobEditor from './routes/JobEditor.svelte';
   import JobView from './routes/JobView.svelte';
   import FixturesLoader from './routes/FixturesLoader.svelte';
-  import brand from 'virtual:brand';
+  import defaultBrand, { brands } from 'virtual:brand';
+
+  // With several brand packs, the web app's placeholder sign-in picked one;
+  // wear the same here (see apps/web/src/lib/app/account.svelte.ts).
+  let saved = null;
+  try { saved = localStorage.getItem('poolos.account'); } catch { /* blocked storage */ }
+  const brand = (brands.length > 1 && brands.find((b) => b.id === saved)) || defaultBrand;
+  if (brands.length > 1) document.documentElement.dataset.brand = brand.id;
 
   let url = '';
 </script>

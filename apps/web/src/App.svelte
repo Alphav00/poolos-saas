@@ -1,12 +1,14 @@
 <script lang="ts">
   import ChemSetup from './lib/app/ChemSetup.svelte'
+  import BrandLoader from './lib/app/BrandLoader.svelte'
   import Home from './lib/app/Home.svelte'
   import Messages from './lib/app/Messages.svelte'
   import More from './lib/app/More.svelte'
   import Report from './lib/app/Report.svelte'
+  import SignIn from './lib/app/SignIn.svelte'
   import Staff from './lib/app/Staff.svelte'
   import TabBar from './lib/app/TabBar.svelte'
-  import brand from 'virtual:brand'
+  import { brand, signedIn } from './lib/app/account.svelte'
   import './lib/app/app.css'
   import Field from './lib/field/Field.svelte'
 
@@ -18,18 +20,38 @@
   let me = $state<Me | null>(null)
   let boards = $state<Board[]>([])
   let error = $state('')
+  // The company's loading screen, while the first load runs after sign-in.
+  let loader = $state<{ balls: string[]; word: string } | null>(null)
+  let loaded = $state(false)
 
   async function load() {
     try {
       const [m, b] = await Promise.all([fetch('/api/me'), fetch('/api/boards')])
-      if (!m.ok || !b.ok) throw new Error(m.status === 401 ? 'Sign in again.' : `Could not load ${brand.shortName}.`)
+      if (!m.ok || !b.ok) throw new Error(m.status === 401 ? 'Sign in again.' : `Could not load ${brand().shortName}.`)
       me = await m.json()
       boards = (await b.json()).boards
     } catch (e) {
-      error = e instanceof Error ? e.message : `Could not load ${brand.shortName}.`
+      error = e instanceof Error ? e.message : `Could not load ${brand().shortName}.`
+    } finally {
+      loaded = true
     }
   }
-  load()
+
+  // Loads once signed in (at once when the build has a single brand), and
+  // again after signing out and back in.
+  let started = false
+  $effect(() => {
+    if (!signedIn()) {
+      started = false
+      return
+    }
+    if (started) return
+    started = true
+    loaded = false
+    error = ''
+    loader = brand().loader
+    load()
+  })
 
   const KNOWN = ['field', 'messages', 'more']
   // Unknown links land on Today rather than a screen with no tab lit.
@@ -58,6 +80,11 @@
   }}
 />
 
+{#if loader}<BrandLoader balls={loader.balls} word={loader.word} done={loaded} onfinish={() => (loader = null)} />{/if}
+
+{#if !signedIn()}
+<main class="field no-tabs"><div class="wrap"><SignIn /></div></main>
+{:else}
 <main class={['field', entering && 'no-tabs']} bind:this={screen}>
   <div class="wrap">
     {#if error}<p class="alert" role="alert"><b>{error}</b>{#if error === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
@@ -79,3 +106,4 @@
   </div>
   {#if !entering}<TabBar current={tab} />{/if}
 </main>
+{/if}
