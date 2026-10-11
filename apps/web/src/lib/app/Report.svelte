@@ -153,22 +153,22 @@
   <section class="card" style="margin-top:0">
     <p class="sm">Something wrong, confusing, or missing? Say what you did and what happened. Short is fine.</p>
 
-    <h2 class="h" style="margin-top:12px">Which part of the app?</h2>
-    <div class="pick">
+    <h2 class="h" id="area-label" style="margin-top:12px">Which part of the app?</h2>
+    <div class="pick" role="group" aria-labelledby="area-label">
       {#each AREAS as [k, label] (k)}
         <button type="button" aria-pressed={area === k} onclick={() => (area = k)}>{label}</button>
       {/each}
     </div>
 
-    <h2 class="h" style="margin-top:12px">How bad is it?</h2>
-    <div class="pick sev">
+    <h2 class="h" id="sev-label" style="margin-top:12px">How bad is it?</h2>
+    <div class="pick sev" role="group" aria-labelledby="sev-label">
       {#each SEVERITIES as [k, label, hint] (k)}
         <button type="button" class={k} aria-pressed={severity === k} onclick={() => (severity = k)}><b>{label}</b><span>{hint}</span></button>
       {/each}
     </div>
 
-    <h2 class="h" style="margin-top:12px">On what?</h2>
-    <div class="seg">
+    <h2 class="h" id="device-label" style="margin-top:12px">On what?</h2>
+    <div class="seg" role="group" aria-labelledby="device-label">
       {#each DEVICES as [k, label] (k)}
         <button type="button" aria-pressed={device === k} onclick={() => (device = k)}>{label}</button>
       {/each}
