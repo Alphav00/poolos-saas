@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { draftFrom, profileFrom } from './customer'
-import { dayOf, doneOn, moveStop, nextOrder, notOnRoute, routeFor } from './route'
+import { dayOf, doneOn, moveStop, nextOrder, notOnRoute, routeFor, toDay } from './route'
 import type { Profile } from './types'
 
 const blank = (id: string): Profile => ({ id, name: '', tags: [], equipment: [] })
@@ -53,6 +53,18 @@ describe('route', () => {
     expect(notOnRoute(pools, 'mon').map((p) => p.id)).toEqual(['y', 'x'])
     expect(nextOrder(pools, 'mon')).toBe(3)
     expect(nextOrder(pools, 'wed')).toBe(1)
+  })
+
+  it('keeps one fixed order when two customers share a place, and a move clears the tie', () => {
+    const twins = [c('b', 'mon', 1), c('a', 'mon', 1), { ...c('a2', 'mon', 1), name: 'a' }]
+    expect(routeFor(twins, 'mon').map((p) => p.id)).toEqual(['a', 'a2', 'b'])
+    expect(routeFor([...twins].reverse(), 'mon').map((p) => p.id)).toEqual(['a', 'a2', 'b'])
+    expect(moveStop(routeFor(twins, 'mon'), 2, -1)).toEqual([{ id: 'b', order: 2 }, { id: 'a2', order: 3 }])
+  })
+
+  it('reads day names written another way, and nothing else', () => {
+    expect([toDay('mon'), toDay(' Monday '), toDay('MON'), toDay('sunday')]).toEqual(['mon', 'mon', 'mon', 'sun'])
+    expect([toDay('Mo'), toDay('weekday'), toDay(1), toDay(undefined)]).toEqual([undefined, undefined, undefined, undefined])
   })
 
   it('moves a stop and renumbers only what changed', () => {

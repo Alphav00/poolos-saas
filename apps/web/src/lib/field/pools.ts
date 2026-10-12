@@ -2,7 +2,7 @@
 // (apps/api/src/field.ts checks the shape; owners, Leads and Dispatchers may
 // write, see apps/api/src/roles.ts). The screens read them from here.
 import { generateCustomer, slugify } from './generator'
-import { isDay, nextOrder } from './route'
+import { nextOrder, toDay } from './route'
 import { DEMO_PROFILES } from './sample'
 import type { Day, Pool, Profile } from './types'
 
@@ -20,7 +20,8 @@ export function cleanProfile(id: string, raw: unknown): Profile | null {
   const p: Profile = { id, name: r.name, tags: texts(r.tags), equipment: texts(r.equipment) }
   if (isText(r.address)) p.address = r.address
   if (isText(r.phone)) p.phone = r.phone
-  if (isDay(r.serviceDay)) p.serviceDay = r.serviceDay
+  const day = toDay(r.serviceDay)
+  if (day) p.serviceDay = day
   if (typeof r.order === 'number' && Number.isInteger(r.order) && r.order >= 0) p.order = r.order
   if (isNum(r.gallons)) p.gallons = r.gallons
   if (isNum(r.tds)) p.tds = r.tds

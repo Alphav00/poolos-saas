@@ -14,13 +14,28 @@ export const DAYS: { key: Day; short: string; long: string }[] = [
 
 export const isDay = (v: unknown): v is Day => DAYS.some((d) => d.key === v)
 
+/**
+ * A service day from a stored value. The app writes 'mon'…'sun' (the Worker
+ * checks it), but an owner's import skips that check, so 'Mon', 'MONDAY' and
+ * 'monday' are read as the same day; anything else is no day.
+ */
+export function toDay(v: unknown): Day | undefined {
+  if (typeof v !== 'string') return undefined
+  const t = v.trim().toLowerCase()
+  return DAYS.find((d) => t === d.key || t === d.long.toLowerCase())?.key
+}
+
 /** The service day a date falls on. */
 export const dayOf = (d: Date): Day => DAYS[(d.getDay() + 6) % 7]!.key
 
 export const dayName = (day: Day) => DAYS.find((d) => d.key === day)!.long
 
-/** Stops before customers with no place yet; ties by name. */
-const byOrder = (a: Profile, b: Profile) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.name.localeCompare(b.name)
+/**
+ * Stops before customers with no place yet; ties by name, then id, so two
+ * phones adding customers to the same day at once (same order) still give one
+ * fixed order. moveStop renumbers the day 1..n, which clears such ties.
+ */
+const byOrder = (a: Profile, b: Profile) => (a.order ?? Infinity) - (b.order ?? Infinity) || a.name.localeCompare(b.name) || a.id.localeCompare(b.id)
 
 /** The customers on a day's route, in driving order. */
 export function routeFor<P extends Profile>(pools: P[], day: Day): P[] {

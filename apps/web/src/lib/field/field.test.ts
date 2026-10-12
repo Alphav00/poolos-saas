@@ -181,7 +181,9 @@ describe('pool profiles', () => {
     expect(cleanProfile('x', { name: 'Harper', address: '1 Made Up Rd', phone: '555-0100', serviceDay: 'fri', order: 2 })).toEqual({
       id: 'x', name: 'Harper', address: '1 Made Up Rd', phone: '555-0100', serviceDay: 'fri', order: 2, tags: [], equipment: [],
     })
-    expect(cleanProfile('x', { name: 'Harper', serviceDay: 'Friday', order: -1 })).toEqual({ id: 'x', name: 'Harper', tags: [], equipment: [] })
+    expect(cleanProfile('x', { name: 'Harper', serviceDay: 'someday', order: -1 })).toEqual({ id: 'x', name: 'Harper', tags: [], equipment: [] })
+    // An owner's import skips the Worker's checks; a day written out in full still counts.
+    expect(cleanProfile('x', { name: 'Harper', serviceDay: 'Friday' })?.serviceDay).toBe('fri')
   })
 
   it('keeps only what the screens can show from a stored profile', () => {

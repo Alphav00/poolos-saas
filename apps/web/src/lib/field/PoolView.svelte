@@ -97,7 +97,7 @@
     {#if canEdit}<a class="chip edit" href={`#/field/${pool.id}/edit`}>Edit</a>{/if}
   </div>
   {#if pool.address}<a class="contact" href={`https://maps.google.com/?q=${encodeURIComponent(pool.address)}`} target="_blank" rel="noopener">📍 {pool.address}</a>{/if}
-  {#if pool.phone}<a class="contact" href={`tel:${pool.phone.replace(/[^\d+]/g, '')}`}>📞 {pool.phone}</a>{/if}
+  {#if pool.phone && /\d/.test(pool.phone)}<a class="contact" href={`tel:${pool.phone.replace(/[^\d+]/g, '')}`}>📞 {pool.phone}</a>{/if}
   <p class="xs" style="margin-top:4px">{pool.serviceDay ? `Serviced ${dayName(pool.serviceDay)}s` : 'No service day set'}</p>
   {#if pool.tags.length}<div class="tags">{#each pool.tags as t (t)}<span class="tag">{t}</span>{/each}</div>{/if}
 </section>

@@ -21,6 +21,7 @@
   const doneCount = $derived(stops.filter((s) => done.has(s.id)).length)
   const next = $derived(stops.find((s) => !done.has(s.id)))
   const short = (d: Pool['serviceDay']) => DAYS.find((x) => x.key === d)?.short ?? 'No day'
+  const noDay = $derived(others.filter((p) => !p.serviceDay).length)
 
   let busy = $state(false)
   async function move(index: number, by: -1 | 1) {
@@ -86,6 +87,7 @@
 {#if others.length}
   <section class="card" aria-label="Other customers">
     <div class="row"><h2 class="h">Other days</h2><span class="xs">{others.length} customer{others.length === 1 ? '' : 's'}</span></div>
+    {#if noDay}<p class="xs" style="margin-top:2px">{noDay} with no service day {noDay === 1 ? 'is' : 'are'} on no route{canEdit ? ': open one and tap Edit to pick a day' : ''}.</p>{/if}
     {#each others as p (p.id)}
       <a class="stop" href={`#/field/${p.id}`}>
         <span class="num day">{short(p.serviceDay)}</span>
