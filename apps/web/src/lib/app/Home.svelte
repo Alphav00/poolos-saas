@@ -1,16 +1,16 @@
 <script lang="ts">
   import { brand as current } from './account.svelte'
-  import NoPools from '../field/NoPools.svelte'
+  import GetStarted from '../field/GetStarted.svelte'
   import { loadPools } from '../field/pools'
-  import RouteMap from '../field/RouteMap.svelte'
-  import { ROUTE, STOPS } from '../field/sample'
+  import { loadDone, today } from '../field/readings'
+  import { dayName, dayOf, routeFor } from '../field/route'
   import { initials, loadStaff } from '../field/staff'
   import type { Pool, StaffMember } from '../field/types'
   import { describe, hourLabel, loadWeather, locate, rainFrom, savedSpot, type Spot, type Weather } from '../field/weather'
 
   const brand = $derived(current())
 
-  let { email, isOwner }: { email: string; isOwner: boolean } = $props()
+  let { email, isOwner, canEdit }: { email: string; isOwner: boolean; canEdit: boolean } = $props()
 
   // Re-read the clock when the app comes back to the front: an installed app
   // can sit open overnight, and there is no pull-to-refresh to fix it.
@@ -33,12 +33,14 @@
   loadPools()
     .then((p) => (pools = p))
     .catch((e) => (poolsNote = e instanceof Error ? e.message : 'Could not load the pools.'))
-  const byId = $derived(new Map((pools ?? []).map((p) => [p.id, p])))
-  // Still the demo route (dispatch is not built); only stops whose pool is on file show.
-  const stops = $derived(STOPS.filter((s) => byId.has(s.poolId)))
-  const done = $derived(stops.filter((s) => s.done).length)
-  const nextStop = $derived(stops.find((s) => !s.done))
-  const nextPool = $derived(nextStop ? byId.get(nextStop.poolId) : undefined)
+  // Today's route: customers whose service day is today (field/route.ts).
+  const stops = $derived(routeFor(pools ?? [], dayOf(now)))
+  let doneIds = $state<Set<string>>(new Set())
+  loadDone(today())
+    .then((d) => (doneIds = d))
+    .catch(() => {})
+  const done = $derived(stops.filter((s) => doneIds.has(s.id)).length)
+  const nextStop = $derived(stops.find((s) => !doneIds.has(s.id)))
 
   // Staff on file. There is no clock-in yet, so this lists who is on the team, not who is on shift.
   let staff = $state<StaffMember[] | null>(null)
@@ -145,34 +147,36 @@
 {#if poolsNote}
   <p class="alert" role="alert"><b>{poolsNote}</b></p>
 {:else if pools === null}
-  <section class="card"><h2 class="h">Today's route</h2><p class="sm" style="margin-top:4px">Loading pools…</p></section>
-{:else if pools.length === 0}
-  <NoPools {isOwner} onloaded={(p) => (pools = p)} />
-{:else if stops.length === 0}
-  <section class="card"><h2 class="h">Today's route</h2><p class="sm" style="margin-top:4px">No route assigned today. {pools.length} pools on file.</p></section>
+  <section class="card"><h2 class="h">Today's route</h2><p class="sm" style="margin-top:4px">Loading customers…</p></section>
 {:else}
-<a class="card tap" href="#/field">
-  <div class="row"><h2 class="h">Today's route</h2><span class="sample">DEMO</span></div>
-  <div class="row" style="margin-top:4px">
-    <div class="big">{ROUTE.headline}</div>
-  </div>
-  <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={stops.length} aria-valuenow={done} aria-label="Stops done">
-    <span style:width={`${(done / stops.length) * 100}%`}></span>
-  </div>
-  <div class="row xs" style="margin-top:4px"><span>{done} of {stops.length} stops done</span><span>{stops.length - done} to go</span></div>
-  {#if nextStop && nextPool}
-    <div class="next">
-      <span class="num">{stops.indexOf(nextStop) + 1}</span>
-      <div style="flex:1">
-        <div class="nm">Next · {nextPool.name}</div>
-        <div class="pred">{#each nextStop.flags as f (f.text)}<span class={['pp', f.level]}>{f.text}</span>{/each}</div>
+  <GetStarted {pools} {canEdit} {isOwner} onloaded={(p) => (pools = p)} />
+  {#if stops.length}
+    <a class="card tap" href="#/field">
+      <div class="row"><h2 class="h">Today's route</h2><span class="xs">{dayName(dayOf(now))}</span></div>
+      <div class="big" style="margin-top:4px">{stops.length} stop{stops.length === 1 ? '' : 's'}</div>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={stops.length} aria-valuenow={done} aria-label="Stops done">
+        <span style:width={`${(done / stops.length) * 100}%`}></span>
       </div>
-      <span class="chip">{nextStop.eta.replace(/^next · /, '') || 'next'}</span>
-    </div>
+      <div class="row xs" style="margin-top:4px"><span>{done} of {stops.length} done</span><span>{stops.length - done} to go</span></div>
+      {#if nextStop}
+        <div class="next">
+          <span class="num">{stops.indexOf(nextStop) + 1}</span>
+          <div style="flex:1;min-width:0">
+            <div class="nm">Next · {nextStop.name}</div>
+            {#if nextStop.address}<div class="xs nextaddr">{nextStop.address}</div>{/if}
+          </div>
+          <span class="chip">Open</span>
+        </div>
+      {:else}
+        <p class="sm" style="margin-top:8px">Every stop is done. Nice work.</p>
+      {/if}
+    </a>
+  {:else if pools.length}
+    <a class="card tap" href="#/field">
+      <h2 class="h">Today's route</h2>
+      <p class="sm" style="margin-top:4px">No stops on {dayName(dayOf(now))}. {pools.length} customer{pools.length === 1 ? '' : 's'} on other days.</p>
+    </a>
   {/if}
-  <RouteMap {stops} />
-  <div class="tags">{#each ROUTE.load as l (l)}<span class="tag">{l}</span>{/each}</div>
-</a>
 {/if}
 
 <a class="card tap tool" href="/measure">
@@ -234,4 +238,5 @@
   .crew li:first-child { border-top: 0; }
   .addstaff { margin-top: 8px; min-height: 44px; padding: 0 14px; text-decoration: none; }
   .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: var(--brand-link); background: var(--brand-ice); box-shadow: 0 2px 0 rgb(var(--brand-sky-rgb) / .35); }
+  .nextaddr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

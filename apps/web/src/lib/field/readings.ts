@@ -1,3 +1,4 @@
+import { doneOn } from './route'
 import { SCALES } from './scales'
 import type { Method, Param, Reading } from './types'
 
@@ -58,4 +59,14 @@ export async function saveReading(poolId: string, date: string, reading: Reading
     body: JSON.stringify({ data: { pool: poolId, date, ...reading } }),
   })
   if (!res.ok) throw new Error(res.status === 401 ? 'Sign in again.' : 'Could not save readings.')
+}
+
+/** Pools whose readings for `date` are saved: the stops done on that day's route. */
+export async function loadDone(date: string): Promise<Set<string>> {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  // Readings saved since that day's local midnight; the document ids say which day they are for.
+  const since = new Date(y, m - 1, d).toISOString()
+  const res = await fetch(`/api/boards/field/readings?since=${encodeURIComponent(since)}`, { credentials: 'same-origin' })
+  if (!res.ok) throw new Error(res.status === 401 ? 'Sign in again.' : 'Could not load today’s readings.')
+  return doneOn(((await res.json()) as { docs: { id: string; deleted?: boolean; data?: unknown }[] }).docs, date)
 }

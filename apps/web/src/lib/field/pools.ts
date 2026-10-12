@@ -1,10 +1,10 @@
-// Pool profiles are kept in D1 at field/pools/<id>, through the Worker
+// Customers' pools are kept in D1 at field/pools/<id>, through the Worker
 // (apps/api/src/field.ts checks the shape; owners, Leads and Dispatchers may
-// write, see apps/api/src/roles.ts; only owners load the demo set). The screens
-// read them from here, never from the demo list in sample.ts.
-import { generateCustomer } from './generator'
-import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
-import type { Pool, Profile } from './types'
+// write, see apps/api/src/roles.ts). The screens read them from here.
+import { generateCustomer, slugify } from './generator'
+import { nextOrder, toDay } from './route'
+import { DEMO_PROFILES } from './sample'
+import type { Day, Pool, Profile } from './types'
 
 const COLLECTION = '/api/boards/field/pools'
 
@@ -18,6 +18,11 @@ export function cleanProfile(id: string, raw: unknown): Profile | null {
   const r = raw as Record<string, unknown>
   if (!isText(r.name)) return null
   const p: Profile = { id, name: r.name, tags: texts(r.tags), equipment: texts(r.equipment) }
+  if (isText(r.address)) p.address = r.address
+  if (isText(r.phone)) p.phone = r.phone
+  const day = toDay(r.serviceDay)
+  if (day) p.serviceDay = day
+  if (typeof r.order === 'number' && Number.isInteger(r.order) && r.order >= 0) p.order = r.order
   if (isNum(r.gallons)) p.gallons = r.gallons
   if (isNum(r.tds)) p.tds = r.tds
   const cell = r.cell as Record<string, unknown> | undefined
@@ -27,10 +32,9 @@ export function cleanProfile(id: string, raw: unknown): Profile | null {
   return p
 }
 
-/** A profile as the screens use it. Only demo pools get the demo forecasts; others show "no forecast". */
+/** A profile as the screens use it. Forecasts come from the forecasting engine once it is connected; until then there are none. */
 export function toPool(p: Profile): Pool {
-  const view = p.demo ? DEMO_FORECASTS[p.id] : undefined
-  return { ...p, forecast: view?.forecast ?? {}, ideal: view?.ideal ?? {}, visits: view?.visits ?? [], decay: view?.decay ?? [] }
+  return { ...p, forecast: {}, ideal: {}, visits: [], decay: [] }
 }
 
 let cached: Promise<Pool[]> | null = null
@@ -77,8 +81,49 @@ export function loadDemoPools(): Promise<Pool[]> {
   return saveProfiles(DEMO_PROFILES)
 }
 
-/** Owner only: adds one made-up customer (marked demo) whose id is not already on file. */
-export async function addDemoCustomer(onFile: { id: string }[]): Promise<{ name: string; pools: Pool[] }> {
+/** Owner only: adds one made-up customer (marked demo) on `day`'s route, with an id not already on file. */
+export async function addDemoCustomer(onFile: Profile[], day: Day): Promise<{ name: string; pools: Pool[] }> {
   const p = generateCustomer(Math.random, new Set(onFile.map((x) => x.id)))
-  return { name: p.name, pools: await saveProfiles([p]) }
+  return { name: p.name, pools: await saveProfiles([{ ...p, serviceDay: day, order: nextOrder(onFile, day) }]) }
+}
+
+const write = async (path: string, method: 'PUT' | 'PATCH' | 'DELETE', data?: unknown) => {
+  const res = await fetch(path, {
+    method,
+    credentials: 'same-origin',
+    headers: data === undefined ? {} : { 'Content-Type': 'application/json' },
+    body: data === undefined ? undefined : JSON.stringify({ data }),
+  })
+  if (res.ok) return
+  const why = ((await res.json().catch(() => null)) as { error?: { message?: string } } | null)?.error?.message
+  if (res.status === 401) throw new Error('Sign in again.')
+  if (res.status === 403) throw new Error('Only an owner, a Lead or a Dispatcher can change customers.')
+  throw new Error(why ?? 'Could not save the customer.')
+}
+
+/** A free id for a new customer: their name as a slug, with -2, -3… when taken. */
+export function customerId(name: string, onFile: { id: string }[]): string {
+  const base = slugify(name) || 'customer'
+  // 'new' is the add-customer screen's address (#/field/new).
+  const taken = new Set(['new', ...onFile.map((p) => p.id)])
+  if (!taken.has(base)) return base
+  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`
+}
+
+/** Owners, Leads and Dispatchers: saves a customer (same id replaces it), then reads the list back. */
+export async function saveCustomer(p: Profile): Promise<Pool[]> {
+  const { id, ...data } = p
+  await write(`${COLLECTION}/${encodeURIComponent(id)}`, 'PUT', data)
+  return loadPools(true)
+}
+
+export async function deleteCustomer(id: string): Promise<Pool[]> {
+  await write(`${COLLECTION}/${encodeURIComponent(id)}`, 'DELETE')
+  return loadPools(true)
+}
+
+/** Writes new route places, e.g. from moveStop (route.ts), then reads the list back. */
+export async function setOrders(moves: { id: string; order: number }[]): Promise<Pool[]> {
+  for (const m of moves) await write(`${COLLECTION}/${encodeURIComponent(m.id)}`, 'PATCH', { order: m.order })
+  return loadPools(true)
 }

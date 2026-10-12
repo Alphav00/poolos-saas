@@ -29,7 +29,7 @@ cookie, and the Worker keeps the team boards (staff, pools, readings,
 messages, problem reports) per company as `<board>@<id>` in D1
 (`apps/api/src/company.ts`). The default pack sets no cookie and keeps the
 plain boards, so the data that was there before stays with it. A new company
-starts empty: an owner loads its demo pools and adds its staff. Measure jobs
+starts empty: the Get started card walks its owner through adding customers. Measure jobs
 are kept per company too (`measure_jobs.company`). Owner boards are shared.
 
 Who may open which company comes from the staff lists (`COMPANY_LOCK: "staff"`

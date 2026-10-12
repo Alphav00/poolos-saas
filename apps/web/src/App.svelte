@@ -129,7 +129,7 @@
   <div class="wrap">
     {#if error}<p class="alert" role="alert"><b>{error}</b>{#if error === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
     {#if route[0] === 'field'}
-      <Field path={route} isOwner={me?.isOwner ?? false} />
+      <Field path={route} isOwner={me?.isOwner ?? false} canEdit={me?.canEditPools ?? false} />
     {:else if route[0] === 'messages'}
       <Messages email={me?.email ?? ''} isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more' && route[1] === 'report'}
@@ -141,7 +141,7 @@
     {:else if route[0] === 'more'}
       <More email={me?.email ?? ''} isOwner={me?.isOwner ?? false} role={me?.role ?? null} {boards} />
     {:else}
-      <Home email={me?.email ?? ''} isOwner={me?.isOwner ?? false} />
+      <Home email={me?.email ?? ''} isOwner={me?.isOwner ?? false} canEdit={me?.canEditPools ?? false} />
     {/if}
   </div>
   {#if !entering}<TabBar current={tab} />{/if}

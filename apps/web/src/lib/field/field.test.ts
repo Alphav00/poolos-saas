@@ -4,7 +4,7 @@ import { compare } from './compare'
 import { DEMO_CUSTOMER_NAMES, generateCustomer, slugify } from './generator'
 import DENYLIST from '../../../../../tests/denylist.txt?raw'
 import { cleanProfile, loadPools, toPool } from './pools'
-import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
+import { DEMO_PROFILES } from './sample'
 import { cleanReading } from './readings'
 import { fmtDelta, parseTyped, scaleFor, SCALES, steps } from './scales'
 import { describe as weatherWords, hourLabel, rainFrom, type Weather } from './weather'
@@ -166,18 +166,24 @@ describe('chemistry: salt by the cell manufacturer', () => {
 })
 
 describe('pool profiles', () => {
-  it('gives demo pools their demo forecasts and other pools none', () => {
-    const demo = toPool(DEMO_PROFILES[0]!)
-    expect(demo.forecast).toEqual(DEMO_FORECASTS[demo.id]!.forecast)
-    const own = toPool({ ...DEMO_PROFILES[0]!, demo: undefined })
-    expect(own.forecast).toEqual({})
-    expect(own.visits).toEqual([])
-    expect(own.decay).toEqual([])
+  it('gives every pool an empty look-ahead until the forecasting engine is connected', () => {
+    const p = toPool(DEMO_PROFILES[0]!)
+    expect(p.forecast).toEqual({})
+    expect(p.visits).toEqual([])
+    expect(p.decay).toEqual([])
   })
 
-  it('has a demo forecast for every demo pool, and nothing else', () => {
-    expect(Object.keys(DEMO_FORECASTS).sort()).toEqual(DEMO_PROFILES.map((p) => p.id).sort())
-    expect(DEMO_PROFILES.every((p) => p.demo === true)).toBe(true)
+  it('keeps the demo set marked demo and off every route', () => {
+    expect(DEMO_PROFILES.every((p) => p.demo === true && p.serviceDay === undefined)).toBe(true)
+  })
+
+  it('keeps a customer’s address, phone, service day and route place', () => {
+    expect(cleanProfile('x', { name: 'Harper', address: '1 Made Up Rd', phone: '555-0100', serviceDay: 'fri', order: 2 })).toEqual({
+      id: 'x', name: 'Harper', address: '1 Made Up Rd', phone: '555-0100', serviceDay: 'fri', order: 2, tags: [], equipment: [],
+    })
+    expect(cleanProfile('x', { name: 'Harper', serviceDay: 'someday', order: -1 })).toEqual({ id: 'x', name: 'Harper', tags: [], equipment: [] })
+    // An owner's import skips the Worker's checks; a day written out in full still counts.
+    expect(cleanProfile('x', { name: 'Harper', serviceDay: 'Friday' })?.serviceDay).toBe('fri')
   })
 
   it('keeps only what the screens can show from a stored profile', () => {
