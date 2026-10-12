@@ -28,22 +28,22 @@
 <section class="card" style="margin-top:0">
   <h2 class="h">Tools</h2>
   <a class="stop" href="#/more/report">
-    <span class="num">🐞</span>
+    <span class="num" aria-hidden="true">🐞</span>
     <div><div class="nm">Report a problem</div><div class="xs">Something wrong or missing? Tell us, and see what others reported</div></div>
     <span></span>
   </a>
   <a class="stop" href="/measure">
-    <span class="num">📏</span>
+    <span class="num" aria-hidden="true">📏</span>
     <div><div class="nm">Measure</div><div class="xs">Liners and covers: A/B walk, closure checks, order forms</div></div>
     <span></span>
   </a>
   <a class="stop" href="#/more/staff">
-    <span class="num">👥</span>
+    <span class="num" aria-hidden="true">👥</span>
     <div><div class="nm">Staff</div><div class="xs">Who's on the team, their role and route{isOwner ? '; add or remove people' : ''}</div></div>
     <span></span>
   </a>
   <a class="stop" href="#/more/chemistry">
-    <span class="num">⚗</span>
+    <span class="num" aria-hidden="true">⚗</span>
     <div><div class="nm">Chemistry setup</div><div class="xs">Products with their label strengths, and the company's target ranges</div></div>
     <span></span>
   </a>
@@ -61,7 +61,7 @@
   <h2 class="h">Boards</h2>
   {#each boards as board (board.slug)}
     <a class="stop" href={board.url}>
-      <span class="num">▸</span>
+      <span class="num" aria-hidden="true">▸</span>
       <div class="nm">{board.title}</div>
       {#if board.access === 'owner'}<span class="xs">owners only</span>{:else}<span></span>{/if}
     </a>
