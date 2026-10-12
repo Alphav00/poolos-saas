@@ -3,8 +3,9 @@
 // that brand and work on that company's data: the poolos_company cookie tells
 // the Worker whose team boards to use (apps/api/src/company.ts; the default
 // pack sets none and keeps the plain boards). Cloudflare Access is still what
-// lets anyone in; this only picks the company. One pack in the build means no
-// sign-in. See brands/README.md.
+// lets anyone in. Which companies a person may pick comes from /api/me: their
+// staff lists, or all of them for an owner (DECISIONS d0023). One pack in the
+// build means no sign-in. See brands/README.md.
 import defaultBrand, { brands, type Brand } from 'virtual:brand'
 
 const KEY = 'poolos.account'
@@ -45,6 +46,35 @@ const store = (): Storage | undefined => {
 
 export const needsSignIn = brands.length > 1
 
+/** The packs a person may open: /api/me's companies ('' is the default pack), or every pack for 'all'. */
+export function allowedFrom(companies: string[] | 'all', packs: Brand[], defaultId: string): Brand[] {
+  if (companies === 'all') return packs
+  const ids = companies.map((c) => c || defaultId)
+  return packs.filter((b) => ids.includes(b.id))
+}
+
+export type CompanyPick = { go: Brand } | { ask: Brand[] } | { none: true }
+
+/** Where sign-in goes: the saved company if still allowed, the only allowed one, a choice, or nowhere. */
+export function pickCompany(saved: string | null, allowed: Brand[]): CompanyPick {
+  const kept = allowed.find((b) => b.id === saved)
+  if (kept) return { go: kept }
+  if (allowed.length === 1) return { go: allowed[0]! }
+  if (allowed.length > 1) return { ask: allowed }
+  return { none: true }
+}
+
+let allowed = $state<Brand[]>(brands)
+
+/** Sets the packs this person may open, from /api/me. */
+export function setAllowed(packs: Brand[]): void {
+  allowed = packs
+}
+
+export function allowedBrands(): Brand[] {
+  return allowed
+}
+
 let current = $state<Brand | null>(needsSignIn ? matchUsername(savedUsername(store()) ?? '', brands) : defaultBrand)
 wear(current)
 
@@ -57,9 +87,9 @@ export function signedIn(): boolean {
   return current !== null
 }
 
-/** Signs in as the pack the username names. Returns false when no pack has that name. */
+/** Signs in as the pack the username names. Returns false when this person may not open a pack by that name. */
 export function signIn(username: string): boolean {
-  const b = matchUsername(username, brands)
+  const b = matchUsername(username, allowed)
   if (!b) return false
   saveUsername(store(), b.id)
   switchTo(b)

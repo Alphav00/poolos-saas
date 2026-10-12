@@ -79,6 +79,18 @@ async function checkSignIn() {
   log(`sign-in checked: no token → 401, ${OWNER} → owner`);
 }
 
+// COMPANY_LOCK (wrangler.jsonc) lets only staff into a company, so the tech
+// persona goes on the default company's staff list first, as an owner would.
+async function seedStaff() {
+  const res = await fetch(`${BASE}/api/boards/field/staff/e2e-tech`, {
+    method: 'PUT',
+    headers: { 'Cf-Access-Jwt-Assertion': await tokenFor(OWNER), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ data: { name: 'Tess Tech', email: 'tech@example.test', role: 'Technician', route: 'Route A', demo: true } }),
+  });
+  if (!res.ok) throw new Error(`adding tech@example.test to staff answered ${res.status} ${await res.text()}`);
+  log('staff seeded: tech@example.test, Technician');
+}
+
 async function loadJourneys() {
   const dir = join(ROOT, 'scripts', 'e2e', 'journeys');
   const mods = [];
@@ -190,6 +202,7 @@ async function main() {
     await waitForHealth(120_000);
     log('worker is up');
     await checkSignIn();
+    await seedStaff();
 
     browser = await chromium.launch({ executablePath: chromiumPath(), headless: process.env.E2E_HEADED !== '1' });
     const journeys = await loadJourneys();

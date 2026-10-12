@@ -485,6 +485,7 @@ Every agent on the board adds one suggestion. Rules:
 
 - 2026-10-10 · §3 #1, §13 · `DECIDED` Chi: S&M Pools is the second tester. The main site gets a sign-in with placeholder usernames, one per company (the brand pack id), and after sign-in the company's loading screen. Both packs ship in one build (`BRAND=ccs-pools,sm-pools`); the username only picks the brand, Cloudflare Access is still the real sign-in. Both testers share the same boards and D1, so §3 #1 now also bars either company's real customers from the shared data. See DECISIONS d0021 and `brands/README.md`.
 - 2026-10-10 · §3 #1 · `DECIDED` Chi: the two testers must not share staff and pools. Team boards are now kept per company (`<board>@<company>` in D1, picked by the `poolos_company` cookie the sign-in sets); the default company keeps the plain boards. Owner boards and Measure jobs are still shared. S&M wears its dark "night pool" theme. See DECISIONS d0022.
+- 2026-10-11 · §3 #1, #2 · `DECIDED` Chi: "Both companies should be able to log in and only see their theme, data, measures, clients." Chi OK'd the `measure_jobs.company` column (migration 0003) and the `COMPANY_LOCK` var. Measure jobs are per company. Everyone but an owner may open only a company whose staff list has their email; the Worker refuses the rest. See DECISIONS d0023.
 
 ---
 

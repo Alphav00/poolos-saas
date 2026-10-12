@@ -51,18 +51,20 @@ async function readBody<T>(request: Request, validator: Parameters<typeof parse<
   }
 }
 
-const loadRow = (env: Env, id: string) => env.DB.prepare('SELECT * FROM measure_jobs WHERE id = ?').bind(id).first<Row>()
+// Saved jobs are per company (src/company.ts): another company's id reads as missing.
+const loadRow = (env: Env, id: string, company: string) =>
+  env.DB.prepare('SELECT * FROM measure_jobs WHERE id = ? AND company = ?').bind(id, company).first<Row>()
 const toJob = (row: Row) => parse(PoolJobV, JSON.parse(row.data)) as PoolJob
 
-async function resolveJob(env: Env, id: string): Promise<PoolJob> {
-  const row = await loadRow(env, id)
+async function resolveJob(env: Env, id: string, company: string): Promise<PoolJob> {
+  const row = await loadRow(env, id, company)
   if (row) return toJob(row)
   const f = fixture(id)
   if (f) return f
   throw new HttpError(404, 'Job not found')
 }
 
-function save(env: Env, job: PoolJob, op: 'create' | 'update', by: string) {
+function save(env: Env, job: PoolJob, op: 'create' | 'update', by: string, company: string) {
   const data = JSON.stringify(job)
   const at = new Date().toISOString()
   const write = env.DB.prepare('INSERT INTO measure_job_writes (job_id, op, data, at, by) VALUES (?,?,?,?,?)').bind(job.id, op, data, at, by)
@@ -70,12 +72,12 @@ function save(env: Env, job: PoolJob, op: 'create' | 'update', by: string) {
   const upsert =
     op === 'create'
       ? env.DB.prepare(
-          `INSERT INTO measure_jobs (customer_name, dealer_name, shape_type, product_type, data, updated_at, updated_by, id, status, created_at, created_by)
-           VALUES (?,?,?,?,?,?,?,?, 'draft', ?, ?)`,
-        ).bind(...cols, job.id, job.created_at, by)
+          `INSERT INTO measure_jobs (customer_name, dealer_name, shape_type, product_type, data, updated_at, updated_by, id, status, created_at, created_by, company)
+           VALUES (?,?,?,?,?,?,?,?, 'draft', ?, ?, ?)`,
+        ).bind(...cols, job.id, job.created_at, by, company)
       : env.DB.prepare(
-          'UPDATE measure_jobs SET customer_name = ?, dealer_name = ?, shape_type = ?, product_type = ?, data = ?, updated_at = ?, updated_by = ? WHERE id = ?',
-        ).bind(...cols, job.id)
+          'UPDATE measure_jobs SET customer_name = ?, dealer_name = ?, shape_type = ?, product_type = ?, data = ?, updated_at = ?, updated_by = ? WHERE id = ? AND company = ?',
+        ).bind(...cols, job.id, company)
   return env.DB.batch([upsert, write])
 }
 
@@ -95,6 +97,7 @@ export async function handleMeasure(request: Request, env: Env, viewer: Viewer, 
 
 async function route(request: Request, env: Env, viewer: Viewer, parts: string[]): Promise<Response> {
   const method = request.method
+  const company = viewer.company ?? ''
   const [a, b, c, extra] = parts
   const only = (m: string) => {
     if (method !== m) throw new HttpError(405, 'Method Not Allowed')
@@ -116,23 +119,23 @@ async function route(request: Request, env: Env, viewer: Viewer, parts: string[]
   if (!b) {
     if (method === 'GET') {
       const rows = await env.DB.prepare(
-        'SELECT id, customer_name, dealer_name, shape_type, product_type, status, created_at, updated_at FROM measure_jobs ORDER BY updated_at DESC',
-      ).all<Omit<Row, 'data'>>()
+        'SELECT id, customer_name, dealer_name, shape_type, product_type, status, created_at, updated_at FROM measure_jobs WHERE company = ? ORDER BY updated_at DESC',
+      ).bind(company).all<Omit<Row, 'data'>>()
       return json(rows.results)
     }
     only('POST')
     const body = await readBody(request, PoolJobCreateV)
     const now = utcNow()
     const job = { id: crypto.randomUUID(), ...body, created_at: now, updated_at: now } as PoolJob
-    await save(env, job, 'create', viewer.email)
+    await save(env, job, 'create', viewer.email, company)
     return json(job)
   }
 
   const id = b
   if (!c) {
-    if (method === 'GET') return json(await resolveJobFromDb(env, id))
+    if (method === 'GET') return json(await resolveJobFromDb(env, id, company))
     if (method === 'PUT') {
-      const row = await loadRow(env, id)
+      const row = await loadRow(env, id, company)
       if (!row) throw new HttpError(404, 'Job not found')
       const job = toJob(row)
       const update = await readBody(request, PoolJobUpdateV)
@@ -140,14 +143,14 @@ async function route(request: Request, env: Env, viewer: Viewer, parts: string[]
         if (update[k] !== null) (job as unknown as Record<string, unknown>)[k] = update[k]
       }
       job.updated_at = utcNow()
-      await save(env, job, 'update', viewer.email)
+      await save(env, job, 'update', viewer.email, company)
       return json(job)
     }
     only('DELETE')
-    const row = await loadRow(env, id)
+    const row = await loadRow(env, id, company)
     if (!row) throw new HttpError(404, 'Job not found')
     await env.DB.batch([
-      env.DB.prepare('DELETE FROM measure_jobs WHERE id = ?').bind(id),
+      env.DB.prepare('DELETE FROM measure_jobs WHERE id = ? AND company = ?').bind(id, company),
       env.DB.prepare('INSERT INTO measure_job_writes (job_id, op, data, at, by) VALUES (?,?,?,?,?)').bind(id, 'delete', row.data, new Date().toISOString(), viewer.email),
     ])
     return new Response(null, { status: 204 })
@@ -155,24 +158,24 @@ async function route(request: Request, env: Env, viewer: Viewer, parts: string[]
 
   switch (c) {
     case 'reconstruct':
-      return only('POST'), json(reconstructEndpoint(await resolveJob(env, id)))
+      return only('POST'), json(reconstructEndpoint(await resolveJob(env, id, company)))
     case 'validate':
-      return only('POST'), json(validateEndpoint(await resolveJob(env, id)))
+      return only('POST'), json(validateEndpoint(await resolveJob(env, id, company)))
     case 'order-form':
-      return only('POST'), json(coverOrderForm(await resolveJob(env, id)))
+      return only('POST'), json(coverOrderForm(await resolveJob(env, id, company)))
     case 'order-form.pdf':
       only('GET')
-      return pdf(await renderPdf(coverOrderFormFlow(await resolveJob(env, id))), `order-form-${id}.pdf`)
+      return pdf(await renderPdf(coverOrderFormFlow(await resolveJob(env, id, company))), `order-form-${id}.pdf`)
     case 'liner-takeoff':
-      return only('POST'), json(linerTakeoffEndpoint(await resolveJob(env, id)))
+      return only('POST'), json(linerTakeoffEndpoint(await resolveJob(env, id, company)))
     case 'liner-order-form':
-      return only('POST'), json(linerOrderForm(requireLinerJob(await resolveJob(env, id))))
+      return only('POST'), json(linerOrderForm(requireLinerJob(await resolveJob(env, id, company))))
     case 'liner-order-form.pdf':
       only('GET')
-      return pdf(await renderPdf(linerOrderFormFlow(await resolveJob(env, id))), `liner-order-form-${id}.pdf`)
+      return pdf(await renderPdf(linerOrderFormFlow(await resolveJob(env, id, company))), `liner-order-form-${id}.pdf`)
     case 'swap-ab': {
       only('POST')
-      const row = await loadRow(env, id)
+      const row = await loadRow(env, id, company)
       if (!row) {
         if (fixture(id)) throw new HttpError(400, 'Cannot swap A/B on a fixture job — these are in-memory samples. Use a real saved job instead.')
         throw new HttpError(404, 'Job not found')
@@ -185,7 +188,7 @@ async function route(request: Request, env: Env, viewer: Viewer, parts: string[]
       data.measurement = measurement
       const text = JSON.stringify(data)
       await env.DB.batch([
-        env.DB.prepare('UPDATE measure_jobs SET data = ?, updated_by = ? WHERE id = ?').bind(text, viewer.email, id),
+        env.DB.prepare('UPDATE measure_jobs SET data = ?, updated_by = ? WHERE id = ? AND company = ?').bind(text, viewer.email, id, company),
         env.DB.prepare('INSERT INTO measure_job_writes (job_id, op, data, at, by) VALUES (?,?,?,?,?)').bind(id, 'swap_ab', text, new Date().toISOString(), viewer.email),
       ])
       return json({ swap_ab: swapped, job: data })
@@ -195,8 +198,8 @@ async function route(request: Request, env: Env, viewer: Viewer, parts: string[]
 }
 
 /** GET /jobs/{id} reads saved jobs only (fixtures are served under /fixtures). */
-async function resolveJobFromDb(env: Env, id: string): Promise<PoolJob> {
-  const row = await loadRow(env, id)
+async function resolveJobFromDb(env: Env, id: string, company: string): Promise<PoolJob> {
+  const row = await loadRow(env, id, company)
   if (!row) throw new HttpError(404, 'Job not found')
   return toJob(row)
 }

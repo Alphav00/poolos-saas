@@ -5,7 +5,7 @@
  */
 import { viewerFrom } from './auth';
 import { boardFor, handleBoards } from './boards';
-import { companyFrom } from './company';
+import { companiesFor, companyFrom, refusedCompany } from './company';
 import { handleChem } from './chem';
 import { handleMeasure } from './measure';
 import { canEditPools, roleFor } from './roles';
@@ -26,14 +26,26 @@ export default {
 
 		if (url.pathname === '/api/me') {
 			const role = await roleFor(env, viewer.email, viewer.company);
-			return Response.json({ email: viewer.email, isOwner: viewer.isOwner, role, canEditPools: canEditPools(viewer.isOwner, role) });
+			// companies: where this viewer may work ('' is the default company); 'all' for an owner.
+			const companies = viewer.isOwner ? 'all' : await companiesFor(env, viewer.email);
+			return Response.json({ email: viewer.email, isOwner: viewer.isOwner, role, canEditPools: canEditPools(viewer.isOwner, role), company: viewer.company, companies });
 		}
 		if (url.pathname === '/api/boards' || url.pathname.startsWith('/api/boards/')) {
 			const parts = url.pathname.slice('/api/boards'.length).split('/').filter(Boolean).map(decodeURIComponent);
+			// A team board's documents belong to a company; the board list and owner boards do not.
+			if (parts[0] && boardFor(parts[0], viewer).board?.access === 'team') {
+				const refused = await refusedCompany(env, viewer);
+				if (refused) return refused;
+			}
 			return handleBoards(request, env, viewer, parts);
 		}
 		if (url.pathname === '/api/measure' || url.pathname.startsWith('/api/measure/')) {
 			const parts = url.pathname.slice('/api/measure'.length).split('/').filter(Boolean).map(decodeURIComponent);
+			// Saved jobs belong to a company; shapes, fixtures and health do not.
+			if (parts[0] === 'jobs') {
+				const refused = await refusedCompany(env, viewer);
+				if (refused) return refused;
+			}
 			return handleMeasure(request, env, viewer, parts);
 		}
 		if (url.pathname.startsWith('/api/chem/')) {

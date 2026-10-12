@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { brands } from 'virtual:brand'
-  import { signIn } from './account.svelte'
+  import { allowedBrands, signIn } from './account.svelte'
 
   let username = $state('')
   let error = $state('')
@@ -20,7 +19,7 @@
     {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
     <button class="btn" type="submit">Sign in</button>
   </form>
-  <p class="xs hint">Placeholder accounts for now, one per company: {#each brands as b, i (b.id)}{i ? ', ' : ''}<b class="id">{b.id}</b>{/each}</p>
+  <p class="xs hint">Your companies: {#each allowedBrands() as b, i (b.id)}{i ? ', ' : ''}<b class="id">{b.id}</b>{/each}</p>
 </section>
 
 <style>
