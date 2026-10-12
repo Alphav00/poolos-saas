@@ -21,6 +21,9 @@ describe('several brand packs', () => {
     expect(css).toContain(':root[data-brand="k-and-r"]{color-scheme:dark;')
     expect(css).toContain('--brand-card:#1c1932')
     expect(css).toMatch(/:root\[data-brand="blue-lagoon"\]\{color-scheme:light;[^}]*--brand-card:initial/)
+    expect(css).toContain('--scheme-okbg:#12352a')
+    expect(css).toMatch(/:root\[data-brand="blue-lagoon"\]\{[^}]*--scheme-okbg:initial/)
+    expect(css).not.toContain('light-dark')
   })
   it('images move under /brand/<id>/ only when there are several', () => {
     expect(publicBrand(pack('k-and-r')).logo).toBe('/brand/logo.png')

@@ -5,9 +5,10 @@
   import { loadReading, today } from './readings'
   import { fmt, fmtDelta, SCALES, scaleFor } from './scales'
   import { loadProducts, loadTargets } from './settings'
+  import { dayName } from './route'
   import type { Pool, Reading } from './types'
 
-  let { pool }: { pool: Pool } = $props()
+  let { pool, canEdit = false }: { pool: Pool; canEdit?: boolean } = $props()
 
   let reading = $state<Reading | null>(null)
   let error = $state('')
@@ -86,24 +87,31 @@
 
 <div class="bar">
   <a class="back" href="#/field">‹ Route</a>
-  {#if off.length}<span class="chip bad">{off.length} off forecast</span>{:else if reading}<span class="chip ok">on forecast</span>{/if}
+  {#if off.length}<span class="chip bad">{off.length} off forecast</span>{:else if tested}<span class="chip ok">tested today</span>{/if}
 </div>
-{#if pool.demo}<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>{/if}
+{#if pool.demo}<span class="sample" title="A made-up customer for trying the app.">DEMO</span>{/if}
 
 <section class="card" style="margin-top:0">
-  <h1 class="big">{pool.name}</h1>
-  <div class="tags">{#each pool.tags as t (t)}<span class="tag">{t}</span>{/each}</div>
+  <div class="row" style="align-items:flex-start">
+    <h1 class="big">{pool.name}</h1>
+    {#if canEdit}<a class="chip edit" href={`#/field/${pool.id}/edit`}>Edit</a>{/if}
+  </div>
+  {#if pool.address}<a class="contact" href={`https://maps.google.com/?q=${encodeURIComponent(pool.address)}`} target="_blank" rel="noopener">📍 {pool.address}</a>{/if}
+  {#if pool.phone}<a class="contact" href={`tel:${pool.phone.replace(/[^\d+]/g, '')}`}>📞 {pool.phone}</a>{/if}
+  <p class="xs" style="margin-top:4px">{pool.serviceDay ? `Serviced ${dayName(pool.serviceDay)}s` : 'No service day set'}</p>
+  {#if pool.tags.length}<div class="tags">{#each pool.tags as t (t)}<span class="tag">{t}</span>{/each}</div>{/if}
 </section>
 
 <section class="card">
-  <div class="row"><h2 class="h">Today vs forecast</h2><span class="xs">{methodLabel}</span></div>
+  <div class="row"><h2 class="h">Today's readings</h2><span class="xs">{methodLabel}</span></div>
   {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
+  {#if !rows.length}<p class="sm" style="margin-top:4px">Not tested yet today.</p>{/if}
   <div class="rg">
     {#each rows as r (r.scale.key)}
       <div class={['r', r.status === 'ok' && 'ok', r.status === 'off' && 'off']}>
         <div class="n">{r.scale.label}</div>
         <div class="v">{fmt(r.scale.key, r.measured)}</div>
-        <div class="p">{r.forecast ? `fcst ${fmt(r.scale.key, r.forecast.value)}` : 'no forecast'}</div>
+        <div class="p">{r.forecast ? `fcst ${fmt(r.scale.key, r.forecast.value)}` : ''}</div>
         {#if r.status !== 'none'}<div class={['d', r.status]}>{fmtDelta(r.scale.key, r.delta)}</div>{/if}
       </div>
     {/each}
@@ -200,9 +208,9 @@
 
 {#if pool.equipment.length || pool.note}
   <section class="card">
-    <h2 class="h">Condition &amp; equipment</h2>
+    <h2 class="h">{pool.equipment.length ? "Equipment & notes" : "Notes"}</h2>
     <div class="tags">{#each pool.equipment as t (t)}<span class="tag">{t}</span>{/each}</div>
-    {#if pool.note}<div class="h" style="margin-top:10px">Note for the customer</div><p class="sm" style="margin-top:4px;color:var(--ink)">{pool.note}</p>{/if}
+    {#if pool.note}{#if pool.equipment.length}<div class="h" style="margin-top:10px">Notes</div>{/if}<p class="sm" style="margin-top:4px;color:var(--ink)">{pool.note}</p>{/if}
   </section>
 {/if}
 
@@ -210,5 +218,7 @@
 
 <style>
   .asks { margin: 6px 0 0 18px; font-size: 13px; color: var(--ink); }
+  .contact { display: flex; align-items: center; min-height: 44px; font-weight: 800; color: var(--brand-link); text-decoration: none; }
+  .edit { min-height: 44px; padding: 0 16px; text-decoration: none; flex: none; }
   .asks li { margin-top: 4px; }
 </style>
