@@ -43,7 +43,7 @@
 
   <!-- Pool shape -->
   <div>
-    <label class="label">Pool shape</label>
+    <div class="label">Pool shape</div>
     <div class="grid grid-cols-3 gap-2">
       {#each [['rectangular', 'Rectangular'], ['kidney', 'Kidney'], ['freeform', 'Freeform + obstacles']] as [val, lbl]}
         <button
@@ -59,8 +59,9 @@
 
   <!-- Pool length (used for AB suggestion) -->
   <div>
-    <label class="label">Estimated pool length (ft)</label>
+    <label class="label" for="ab-pool-length">Estimated pool length (ft)</label>
     <input
+      id="ab-pool-length"
       class="field"
       type="number"
       step="0.5"
@@ -76,7 +77,7 @@
 
   <!-- Visual sketch -->
   <div>
-    <label class="label">Sketch preview</label>
+    <div class="label">Sketch preview</div>
     <ABSketch
       shapeType={job.measurement.shape_type}
       poolLength={parseFloat(job.measurement.pool_length) || 40}
@@ -116,7 +117,7 @@
 
   <!-- Orientation -->
   <div>
-    <label class="label">A-B orientation (facing the pool)</label>
+    <div class="label">A-B orientation (facing the pool)</div>
     <div class="grid grid-cols-2 gap-2">
       <button
         class="btn py-3 text-sm"
@@ -137,8 +138,9 @@
 
   <!-- Note -->
   <div>
-    <label class="label">A-B note</label>
+    <label class="label" for="ab-note">A-B note</label>
     <textarea
+      id="ab-note"
       class="field min-h-20 py-2"
       bind:value={job.measurement.ab_note}
       placeholder="e.g. Standard A-B on long side, 4ft from edge, stakes in lawn"
