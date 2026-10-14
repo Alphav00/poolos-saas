@@ -34,7 +34,7 @@
   }
 </script>
 
-<section class="card">
+<section class="card" aria-busy={busy} aria-live="polite">
   <h2 class="h">No pools on file yet</h2>
   <p class="sm" style="margin-top:4px">Pools appear here once they are added. Adding real pools comes with the customer list.</p>
   {#if isOwner}
