@@ -148,7 +148,7 @@
       </div>
       <p class="tx">{m.data.text}</p>
       {#if isOwner || (email && m.data.author === email)}
-        <button type="button" class="del" onclick={() => remove(m.id)}>Delete</button>
+        <button type="button" class="del" onclick={() => remove(m.id)} aria-label={`Delete message from ${who(m.data.author)}`}>Delete</button>
       {/if}
     </article>
   {/each}
