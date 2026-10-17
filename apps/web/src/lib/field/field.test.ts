@@ -5,6 +5,7 @@ import { DEMO_CUSTOMER_NAMES, generateCustomer, slugify } from './generator'
 import DENYLIST from '../../../../../tests/denylist.txt?raw'
 import { cleanProfile, loadPools, toPool } from './pools'
 import { DEMO_FORECASTS, DEMO_PROFILES } from './sample'
+import { chartLabel } from './DecayChart.svelte'
 import { cleanReading } from './readings'
 import { fmtDelta, parseTyped, scaleFor, SCALES, steps } from './scales'
 import { describe as weatherWords, hourLabel, rainFrom, type Weather } from './weather'
@@ -48,6 +49,14 @@ describe('forecast vs measured', () => {
     expect(compare(7.8, { value: 7.7, band: 0.2 })).toEqual({ delta: 0.1, status: 'ok' })
     expect(compare(undefined, { value: 7.7, band: 0.2 }).status).toBe('none')
     expect(compare(7.7, undefined).status).toBe('none')
+  })
+})
+
+describe('decay chart accessible labels', () => {
+  it('formats accessibility summaries with visit count, forecast, and measured values', () => {
+    expect(chartLabel(4, 2.2, 2.5)).toBe('Free chlorine history (4 visits) · forecast 2.2 · today 2.5')
+    expect(chartLabel(5, 1.8)).toBe('Free chlorine history (5 visits) · forecast 1.8')
+    expect(chartLabel(4)).toBe('Free chlorine history (4 visits)')
   })
 })
 
