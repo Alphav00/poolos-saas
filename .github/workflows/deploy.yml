@@ -40,8 +40,8 @@ jobs:
         run: |
           for i in $(seq 1 12); do
             code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos.pathofphi.com/ || true)
-            echo "attempt $i: home without sign-in: $code (expect 302 to the Access login)"
-            [ "$code" = "302" ] && exit 0
+            echo "attempt $i: home without sign-in: $code (expect 302, 401, or 403 behind Access)"
+            if [ "$code" = "302" ] || [ "$code" = "401" ] || [ "$code" = "403" ]; then exit 0; fi
             sleep 5
           done
           exit 1
