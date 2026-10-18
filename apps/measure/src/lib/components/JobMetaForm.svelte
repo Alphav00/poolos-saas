@@ -40,30 +40,30 @@
   </div>
 
   <div>
-    <label class="label">Customer name *</label>
-    <input class="field" bind:value={job.meta.customer_name} placeholder="e.g. Smith family" />
+    <label class="label" for="customer-name">Customer name *</label>
+    <input id="customer-name" class="field" bind:value={job.meta.customer_name} placeholder="e.g. Smith family" />
   </div>
   <div>
-    <label class="label">Address</label>
-    <input class="field" bind:value={job.meta.customer_address} />
+    <label class="label" for="customer-address">Address</label>
+    <input id="customer-address" class="field" bind:value={job.meta.customer_address} />
   </div>
   <div class="grid grid-cols-2 gap-2">
     <div>
-      <label class="label">Phone</label>
-      <input class="field" type="tel" bind:value={job.meta.customer_phone} />
+      <label class="label" for="customer-phone">Phone</label>
+      <input id="customer-phone" class="field" type="tel" bind:value={job.meta.customer_phone} />
     </div>
     <div>
-      <label class="label">Email</label>
-      <input class="field" type="email" bind:value={job.meta.customer_email} />
+      <label class="label" for="customer-email">Email</label>
+      <input id="customer-email" class="field" type="email" bind:value={job.meta.customer_email} />
     </div>
   </div>
   <div>
-    <label class="label">Dealer name *</label>
-    <input class="field" bind:value={job.meta.dealer_name} />
+    <label class="label" for="dealer-name">Dealer name *</label>
+    <input id="dealer-name" class="field" bind:value={job.meta.dealer_name} />
   </div>
   <div>
-    <label class="label">Dealer location</label>
-    <input class="field" bind:value={job.meta.dealer_location} />
+    <label class="label" for="dealer-location">Dealer location</label>
+    <input id="dealer-location" class="field" bind:value={job.meta.dealer_location} />
   </div>
   <div class="flex items-center gap-2">
     <input id="photos" type="checkbox" bind:checked={job.meta.photos_attached} class="w-5 h-5" />
