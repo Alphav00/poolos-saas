@@ -15,6 +15,11 @@ const COLORS = ['primary', 'primaryDark', 'deep', 'link', 'sky', 'ice', 'accent'
 // Optional surfaces (the app falls back to light ones): cards, muted text,
 // dividers, quiet panels, and the company name on Today.
 const SURFACES = ['card', 'mute', 'line', 'soft', 'title']
+// Status colours (ok, warning, problem) and the quiet ones around them, for a
+// dark pack. Written as --scheme-<name>; a light pack writes `initial` and the
+// app's light defaults apply (apps/web/src/lib/app/app.css). Not light-dark():
+// the CSS minifier rewrites that into variables only it can set.
+const DARK_SCHEME = { okbg: '#12352a', warnbg: '#3b2c10', badbg: '#3f1820', ok: '#5fd69a', warn: '#f5b94a', bad: '#ff8a8f', shadow: 'rgb(0 0 0 / .35)', faint: '#8d89a6' }
 const FILES = ['logo.png', 'mark.png', 'favicon.png', 'icon-192.png', 'icon-512.png', 'icon-maskable-512.png', 'apple-touch-icon.png']
 const HEX = /^#[0-9a-f]{6}$/i
 
@@ -76,6 +81,7 @@ const vars = (b) =>
     `color-scheme:${b.scheme ?? 'light'}`,
     ...COLORS.flatMap((k) => [`--brand-${kebab(k)}:${b.colors[k]}`, `--brand-${kebab(k)}-rgb:${rgb(b.colors[k])}`]),
     ...SURFACES.map((k) => `--brand-${k}:${b.colors[k] ?? 'initial'}`),
+    ...Object.entries(DARK_SCHEME).map(([k, v]) => `--scheme-${k}:${b.scheme === 'dark' ? v : 'initial'}`),
   ].join(';')
 
 /**

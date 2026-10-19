@@ -28,6 +28,17 @@ If it fails at "Apply database migrations" with an authentication error,
 the token is missing D1 Edit. If it fails at "Deploy the Worker" mentioning
 routes or DNS, the token is missing the pathofphi.com zone.
 
+### The post-deploy check and Bot Fight Mode
+
+The last step of both workflows requests the site without signing in and expects
+`302` (Access login). Cloudflare's Bot Fight Mode is on for the `pathofphi.com`
+zone (Free plan) and challenges GitHub's runners (Azure addresses) with a `403`
+and a `cf-mitigated: challenge` header before Access sees them (seen 2026-10-18
+and 2026-10-19 in the zone's firewall events: source `botFight`). Bot Fight Mode
+cannot be skipped by custom rules on the Free plan, so the check accepts that
+one case, with a warning that Access could not be verified from CI. Any other
+`403` still fails. To verify Access for real, request the site from a browser.
+
 ## Preview: try a branch before it merges
 
 Every pull request from a branch in this repo is deployed by

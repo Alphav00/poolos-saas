@@ -5,23 +5,24 @@
 html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; background: var(--brand-background); -webkit-text-size-adjust: 100%; }
 body { position: fixed; inset: 0; }
 .field {
-  /* Surfaces a brand pack may set (brands/README.md); light defaults. The
-     status colours follow the pack's colour scheme through light-dark(). */
+  /* Surfaces a brand pack may set (brands/README.md), with light defaults. A
+     dark pack also sets the status colours (--scheme-*, brands/vite-plugin-brand.mjs).
+     No light-dark() here: the CSS minifier rewrites it into variables only it sets. */
   --card: var(--brand-card, #fff);
   --ink: var(--brand-ink);
   --mute: var(--brand-mute, #546676);
   --line: var(--brand-line, #e3eaf0);
-  --soft: var(--brand-soft, var(--soft));
+  --soft: var(--brand-soft, #f1f5f8);
   --blue: var(--brand-sky);
   --blue2: var(--brand-ice);
-  --shadow: light-dark(#dbe4eb, rgb(0 0 0 / .35));
-  --faint: light-dark(var(--faint), #8d89a6);
-  --okbg: light-dark(#e6f7ee, #12352a);
-  --warnbg: light-dark(#fff3df, #3b2c10);
-  --badbg: light-dark(#fde8e8, #3f1820);
-  --ok: light-dark(var(--ok), #5fd69a);
-  --warn: light-dark(var(--warn), #f5b94a);
-  --bad: light-dark(var(--bad), #ff8a8f);
+  --shadow: var(--scheme-shadow, #dbe4eb);
+  --faint: var(--scheme-faint, #8a9aa8);
+  --okbg: var(--scheme-okbg, #e6f7ee);
+  --warnbg: var(--scheme-warnbg, #fff3df);
+  --badbg: var(--scheme-badbg, #fde8e8);
+  --ok: var(--scheme-ok, #1b7d4e);
+  --warn: var(--scheme-warn, #a5610a);
+  --bad: var(--scheme-bad, #b42b30);
   position: fixed;
   inset: 0;
   overflow-x: hidden;

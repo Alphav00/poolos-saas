@@ -148,7 +148,7 @@
       >
         <div class="n">{s.label}</div>
         <div class="v">{fmt(s.key, v)}</div>
-        <div class="p">{f ? `fcst ${fmt(s.key, f.value)}` : 'no forecast'}</div>
+        <div class="p">{f ? `fcst ${fmt(s.key, f.value)}` : ''}</div>
       </button>
     {/each}
   </div>

@@ -1,5 +1,6 @@
-// An owner's first look: empty route, load the demo pools, open a stop,
-// start readings, then report a problem. Runs first; tech-day reads its pools.
+// An owner's first morning: the getting-started guide, add the first customer
+// on today's service day, find them on today's route, open the stop, start
+// readings, then report a problem. Runs first; tech-day reads its route.
 import { visible } from '../expect.mjs';
 
 export default {
@@ -12,25 +13,50 @@ export default {
       await visible(page.getByText(brand.name, { exact: true }).first());
     });
 
-    await step('Route is empty and offers the demo pools', async () => {
-      await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: /Route/ }).click();
-      await visible(page.getByText('No pools on file yet'));
-      await visible(page.getByRole('button', { name: 'Load the demo pools' }));
+    await step('Today offers to add the first customer', async () => {
+      await visible(page.getByRole('region', { name: 'Getting started' }));
+      await visible(page.getByRole('link', { name: 'Add a customer' }));
     });
 
-    await step('Load the demo pools', async () => {
-      await page.getByRole('button', { name: 'Load the demo pools' }).click();
-      await visible(page.getByText('Maple Court').first(), 30_000);
+    await step('Add a customer', async () => {
+      await page.getByRole('link', { name: 'Add a customer' }).click();
+      await visible(page.getByRole('heading', { name: 'Add a customer' }));
+      await page.getByLabel('Customer name').fill('Harper family');
+      await page.getByLabel('Address').fill('14 Made Up Lane');
+      await page.getByLabel('Pool size, gallons').fill('18000');
+      await page.getByRole('button', { name: 'Vinyl' }).click();
+      await page.getByRole('button', { name: 'Liquid chlorine' }).click();
+      await page.getByRole('button', { name: 'Add customer' }).click();
     });
 
-    await step('Open Maple Court', async () => {
-      await page.getByRole('link', { name: /Maple Court/ }).first().click();
-      await visible(page.getByRole('heading', { name: 'Maple Court' }));
+    await step("They are on today's route", async () => {
+      await visible(page.getByRole('region', { name: 'Stops' }).getByRole('link', { name: /Harper family/ }), 30_000);
+    });
+
+    await step('Open the stop', async () => {
+      await page.getByRole('region', { name: 'Stops' }).getByRole('link', { name: /Harper family/ }).click();
+      await visible(page.getByRole('heading', { name: 'Harper family' }));
+      await visible(page.getByText('14 Made Up Lane'));
     });
 
     await step("Enter today's readings", async () => {
       await page.getByRole('link', { name: "Enter today's readings" }).click();
       await visible(page.getByRole('heading', { name: /Today's readings/ }));
+    });
+
+    await step('Save a chlorine reading', async () => {
+      await page.locator('button.e').first().click();
+      const typed = page.getByLabel('Or type it');
+      await typed.fill('3');
+      await typed.press('Tab');
+      await page.getByRole('dialog').getByRole('button', { name: 'Done', exact: true }).first().click();
+      await page.getByRole('button', { name: 'Save readings' }).click();
+      await visible(page.getByRole('heading', { name: 'Harper family' }), 30_000);
+    });
+
+    await step('The stop is done on the route', async () => {
+      await page.getByRole('link', { name: '‹ Route' }).click();
+      await visible(page.getByText('1 / 1 done'));
     });
 
     await step('More, then Report a problem', async () => {

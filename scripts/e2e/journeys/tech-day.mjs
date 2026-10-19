@@ -1,5 +1,5 @@
-// A tech (not an owner) opens the app. If owner-day ran first the demo pools
-// are on file; otherwise the route asks for an owner.
+// A tech (on staff, not an owner) opens the app. If owner-day ran first a
+// customer is on today's route; otherwise the guide says who adds customers.
 import { visible } from '../expect.mjs';
 
 export default {
@@ -13,21 +13,22 @@ export default {
     });
 
     let hasPools = false;
-    await step('Route shows the pools, or asks for an owner', async () => {
+    await step("Route shows today's stops, or who adds customers", async () => {
       await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: /Route/ }).click();
-      const stop = page.locator('a.stop').first();
-      const ask = page.getByText('Ask an owner to load the demo pools.');
+      const stop = page.getByRole('region', { name: 'Stops' }).locator('a.stop').first();
+      const ask = page.getByText('Ask an owner, Lead or Dispatcher to add customers.');
       await visible(stop.or(ask));
       hasPools = await stop.isVisible();
-      if (await page.getByRole('button', { name: 'Load the demo pools' }).count()) {
-        throw new Error('A non-owner was offered "Load the demo pools"');
+      if (await page.getByRole('link', { name: /Add a customer/ }).count()) {
+        throw new Error('A technician was offered "Add a customer"');
       }
     });
 
     if (hasPools) {
-      await step('Open the first pool', async () => {
-        const name = (await page.locator('a.stop .nm').first().innerText()).trim();
-        await page.locator('a.stop').first().click();
+      await step('Open the first stop', async () => {
+        const first = page.getByRole('region', { name: 'Stops' }).locator('a.stop').first();
+        const name = (await first.locator('.nm').innerText()).trim();
+        await first.click();
         await visible(page.getByRole('heading', { name, exact: true }));
       });
     }
