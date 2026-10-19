@@ -47,12 +47,21 @@ jobs:
         # 401: the Worker is up but Access does not cover the hostname yet;
         #      the Worker still refuses everything. Add the hostname to the
         #      PoolOS Access application (docs/DEPLOY.md).
+        # 403 with "cf-mitigated: challenge": Cloudflare's Bot Fight Mode challenged
+        #      this runner (a datacenter address) before Access or the Worker saw
+        #      it, so Access cannot be checked from here. The zone's Free plan
+        #      cannot exempt it (docs/DEPLOY.md). Any other 403 still fails.
         run: |
+          hdr=$(mktemp)
           for i in $(seq 1 12); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos-preview.pathofphi.com/ || true)
+            code=$(curl -s -o /dev/null -D "$hdr" -w '%{http_code}' https://poolos-preview.pathofphi.com/ || true)
             echo "attempt $i: home without sign-in: $code"
             if [ "$code" = "302" ]; then echo "Preview is up and behind Access."; exit 0; fi
             if [ "$code" = "401" ]; then echo "::warning::Preview is deployed but Cloudflare Access does not cover poolos-preview.pathofphi.com yet. Add it to the PoolOS Access application (docs/DEPLOY.md)."; exit 0; fi
+            if [ "$code" = "403" ] && grep -qi '^cf-mitigated: *challenge' "$hdr"; then
+              echo "::warning::Cloudflare Bot Fight Mode challenged this runner, so Access could not be checked from CI. The deploy itself succeeded (docs/DEPLOY.md)."
+              exit 0
+            fi
             sleep 5
           done
           exit 1
