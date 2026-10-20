@@ -4,7 +4,7 @@
  *   readings/<pool>:<yyyy-mm-dd>   one pool's readings for the day
  *   settings/products              the company's chemicals, with label facts
  *   settings/targets               the company's target ranges, with a source
- *   pools/<id>                     a pool's profile (what it is; engine output is not kept here)
+ *   pools/<id>                     a customer's pool: who, where, which day, what it is (engine output is not kept here)
  *   staff/<id>                     a staff member: name, sign-in email, role, route
  * Returns a reason when the document is refused, or null when it is fine.
  */
@@ -89,10 +89,16 @@ function checkTargets(data: Record<string, unknown>): string | null {
 }
 
 const POOL_ID = /^[a-z0-9-]{1,60}$/;
-const POOL_FIELDS = new Set(['name', 'tags', 'gallons', 'tds', 'cell', 'equipment', 'note', 'demo']);
+const POOL_FIELDS = new Set(['name', 'address', 'phone', 'serviceDay', 'order', 'tags', 'gallons', 'tds', 'cell', 'equipment', 'note', 'demo']);
+/** Weekly service day: the customer is on that day's route. */
+const DAYS = new Set(['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']);
 const isTextList = (v: unknown) => Array.isArray(v) && v.length <= 20 && v.every((t) => isText(t));
 
-/** pools/<id>: { name, tags?, gallons?, tds?, cell?: {make, model}, equipment?, note?, demo? } */
+/**
+ * pools/<id>: { name, address?, phone?, serviceDay?, order?, tags?, gallons?, tds?,
+ * cell?: {make, model}, equipment?, note?, demo? }. order is the stop's place on
+ * its day's route.
+ */
 function checkPool(id: string, data: Record<string, unknown>): string | null {
 	if (!POOL_ID.test(id)) return 'Pool ids are lower-case letters, digits and dashes';
 	if (!isText(data.name, 80)) return 'a pool needs a name (at most 80 characters)';
@@ -109,6 +115,10 @@ function checkPool(id: string, data: Record<string, unknown>): string | null {
 		if (data[k] !== undefined && !isTextList(data[k])) return `"${k}" must be a list of at most 20 short texts`;
 	}
 	if (data.note !== undefined && !isText(data.note, 500)) return 'note must be text of at most 500 characters';
+	if (data.address !== undefined && !isText(data.address, 200)) return 'address must be text of at most 200 characters';
+	if (data.phone !== undefined && !isText(data.phone, 40)) return 'phone must be text of at most 40 characters';
+	if (data.serviceDay !== undefined && !DAYS.has(data.serviceDay as string)) return 'serviceDay must be one of mon, tue, wed, thu, fri, sat, sun';
+	if (data.order !== undefined && (!Number.isInteger(data.order) || (data.order as number) < 0 || (data.order as number) > 1_000_000)) return 'order must be a whole number';
 	if (data.demo !== undefined && typeof data.demo !== 'boolean') return 'demo must be true or false';
 	const extra = Object.keys(data).filter((k) => !POOL_FIELDS.has(k));
 	if (extra.length) return `Unexpected field "${extra[0]}"`;

@@ -21,10 +21,19 @@ export interface DecayRow {
   alert?: boolean
 }
 
-/** What a pool is, as kept in D1 at field/pools/<id> (apps/api/src/field.ts checks it). */
+/** Weekly service day: a customer is on that day's route. */
+export type Day = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun'
+
+/** A customer's pool, as kept in D1 at field/pools/<id> (apps/api/src/field.ts checks it). */
 export interface Profile {
   id: string
+  /** Customer name, as the route shows it. */
   name: string
+  address?: string
+  phone?: string
+  serviceDay?: Day
+  /** Place on its day's route; lower comes first. */
+  order?: number
   tags: string[]
   /** Volume, US gallons. Doses need it; without it the screen says so. */
   gallons?: number
@@ -52,17 +61,6 @@ export interface Pool extends Profile {
   ideal: Partial<Record<Param, [number, number]>>
   visits: Visit[]
   decay: DecayRow[]
-}
-
-export interface Stop {
-  poolId: string
-  /** Position on the sample route map, 0–100 across and down. */
-  x: number
-  y: number
-  eta: string
-  done: boolean
-  flags: { text: string; level?: 'warn' | 'bad' }[]
-  action?: string
 }
 
 export type Method = 'strip' | 'drop' | 'meter'

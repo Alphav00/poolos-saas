@@ -1,10 +1,27 @@
 <script lang="ts">
+  import { removeDemoData } from '../field/demo'
   import { allowedBrands, brand, needsSignIn, signOut } from './account.svelte'
 
   type Board = { slug: string; title: string; url: string; access: 'owner' | 'team' }
 
   let { email, isOwner, role, boards }: { email: string; isOwner: boolean; role: string | null; boards: Board[] } = $props()
   let importNote = $state<Record<string, string>>({})
+
+  let demoNote = $state('')
+  let demoBusy = $state(false)
+  async function clearDemo() {
+    if (!confirm('Remove every record marked DEMO for this company: made-up customers, their readings, and made-up staff? Real records are not touched.')) return
+    demoBusy = true
+    demoNote = ''
+    try {
+      const n = await removeDemoData()
+      demoNote = n.pools + n.staff + n.readings ? `Removed ${n.pools} made-up customers, ${n.readings} of their readings and ${n.staff} made-up staff.` : 'There was no demo data to remove.'
+    } catch (e) {
+      demoNote = e instanceof Error ? e.message : 'Could not remove the demo data.'
+    } finally {
+      demoBusy = false
+    }
+  }
 
   async function importFile(board: Board, input: HTMLInputElement) {
     const file = input.files?.[0]
@@ -56,6 +73,15 @@
     {#if allowedBrands().length > 1}
       <button class="btn ghost" onclick={() => { history.replaceState(null, '', '#/'); signOut() }}>Switch company</button>
     {/if}
+  </section>
+{/if}
+
+{#if isOwner}
+  <section class="card">
+    <h2 class="h">Demo data</h2>
+    <p class="xs">Removes everything marked DEMO for {brand().name}: made-up customers, their readings, and made-up staff. Real customers stay.</p>
+    <button class="btn ghost" onclick={clearDemo} disabled={demoBusy}>{demoBusy ? 'Removing…' : 'Remove demo data'}</button>
+    {#if demoNote}<p class="xs" role="status" style="margin-top:6px">{demoNote}</p>{/if}
   </section>
 {/if}
 

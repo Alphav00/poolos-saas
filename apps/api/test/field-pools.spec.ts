@@ -39,6 +39,12 @@ describe('pool profiles', () => {
 		expect((await put('quarry-lane', POOL, 'lead@example.test')).status).toBe(403);
 	});
 
+	it('keeps a customer’s address, phone, service day and route order', async () => {
+		const customer = { name: 'Wren Tolliver', address: '12 Made Up Rd', phone: '555-0100', serviceDay: 'tue', order: 3, tags: ['Vinyl'], gallons: 15000 };
+		expect((await put('wren-tolliver', customer)).status).toBe(200);
+		expect(((await (await call(doc('wren-tolliver'), { as: 'tech@example.test' })).json()) as { data: unknown }).data).toEqual(customer);
+	});
+
 	it('refuses a profile that is not a pool', async () => {
 		expect((await put('Bad_Id', POOL)).status).toBe(400);
 		expect((await put('no-name', { ...POOL, name: ' ' })).status).toBe(400);
@@ -47,6 +53,10 @@ describe('pool profiles', () => {
 		expect((await put('tags', { ...POOL, tags: 'Vinyl' })).status).toBe(400);
 		expect((await put('forecast', { ...POOL, forecast: { fc: 3 } })).status).toBe(400);
 		expect((await put('demo', { ...POOL, demo: 'yes' })).status).toBe(400);
+		expect((await put('day', { ...POOL, serviceDay: 'Monday' })).status).toBe(400);
+		expect((await put('order', { ...POOL, order: 1.5 })).status).toBe(400);
+		expect((await put('addr', { ...POOL, address: 'x'.repeat(201) })).status).toBe(400);
+		expect((await put('phone', { ...POOL, phone: 7 })).status).toBe(400);
 	});
 
 	it('lets an owner remove a pool', async () => {

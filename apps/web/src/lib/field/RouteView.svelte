@@ -1,111 +1,115 @@
 <script lang="ts">
-  import NoPools from './NoPools.svelte'
-  import { addDemoCustomer } from './pools'
-  import { ROUTE, STOPS } from './sample'
+  // Today's route: the customers whose service day is today, in route order.
+  // A stop is done once today's readings are saved for it. Owners, Leads and
+  // Dispatchers add customers and change the order.
+  import GetStarted from './GetStarted.svelte'
+  import { loadDone, today } from './readings'
+  import { setOrders } from './pools'
+  import { dayName, dayOf, DAYS, moveStop, notOnRoute, routeFor } from './route'
   import type { Pool } from './types'
 
-  let { pools, isOwner, onloaded }: { pools: Pool[]; isOwner: boolean; onloaded: (pools: Pool[]) => void } = $props()
-  const byId = $derived(new Map(pools.map((p) => [p.id, p])))
-  // The route itself is still the demo route (dispatch is not built); only stops whose pool is on file show.
-  const stops = $derived(STOPS.filter((s) => byId.has(s.poolId)))
-  // Pools on file that today's route does not visit, e.g. generated demo customers.
-  const offRoute = $derived(pools.filter((p) => !STOPS.some((s) => s.poolId === p.id)))
+  let { pools, canEdit, isOwner, onloaded }: { pools: Pool[]; canEdit: boolean; isOwner: boolean; onloaded: (pools: Pool[]) => void } = $props()
+
+  const day = dayOf(new Date())
+  const stops = $derived(routeFor(pools, day))
+  const others = $derived(notOnRoute(pools, day))
+  let done = $state<Set<string>>(new Set())
+  let note = $state('')
+  loadDone(today())
+    .then((d) => (done = d))
+    .catch((e) => (note = e instanceof Error ? e.message : 'Could not load today’s readings.'))
+  const doneCount = $derived(stops.filter((s) => done.has(s.id)).length)
+  const next = $derived(stops.find((s) => !done.has(s.id)))
+  const short = (d: Pool['serviceDay']) => DAYS.find((x) => x.key === d)?.short ?? 'No day'
+  const noDay = $derived(others.filter((p) => !p.serviceDay).length)
 
   let busy = $state(false)
-  let added = $state('')
-  let note = $state('')
-
-  function loaded(list: Pool[], name?: string) {
-    added = name ?? ''
-    onloaded(list)
-  }
-
-  async function addOne() {
+  async function move(index: number, by: -1 | 1) {
     busy = true
     note = ''
-    added = ''
     try {
-      const r = await addDemoCustomer(pools)
-      loaded(r.pools, r.name)
+      onloaded(await setOrders(moveStop(stops, index, by)))
     } catch (e) {
-      note = e instanceof Error ? e.message : 'Could not add a demo customer.'
+      note = e instanceof Error ? e.message : 'Could not change the order.'
     } finally {
       busy = false
     }
   }
 </script>
 
-{#snippet others()}
-{#if offRoute.length}
-<section class="card">
-  <div class="row"><h2 class="h">Not on today's route</h2><span class="xs">{offRoute.length} on file</span></div>
-  {#each offRoute as p (p.id)}
-    <a class="stop" href={`#/field/${p.id}`}>
-      <span class="num">·</span>
-      <div>
-        <div class="nm">{p.name}</div>
-        <div class="pred">{#each p.tags.slice(0, 3) as t (t)}<span class="pp">{t}</span>{/each}</div>
-      </div>
-      {#if p.demo}<span class="chip">DEMO</span>{/if}
-    </a>
-  {/each}
-</section>
+<div class="bar">
+  <span class="t">{dayName(day)}'s route</span>
+  {#if stops.length}<span class="chip">{doneCount} / {stops.length} done</span>{/if}
+</div>
+
+<GetStarted {pools} {canEdit} {isOwner} {onloaded} />
+
+{#if stops.length}
+  <section class="card" style="margin-top:0" aria-label="Stops">
+    <div class="row"><h2 class="h">Stops</h2>{#if canEdit && stops.length > 1}<span class="xs">▲▼ to change the order</span>{/if}</div>
+    <ol class="stops">
+      {#each stops as s, i (s.id)}
+        {@const isDone = done.has(s.id)}
+        <li>
+          <a class="stop" href={`#/field/${s.id}`}>
+            <span class={['num', isDone && 'done']}>{isDone ? '✓' : i + 1}</span>
+            <div style="min-width:0">
+              <div class="nm">{s.name}</div>
+              {#if s.address}<div class="xs addr">{s.address}</div>{/if}
+              {#if s.tags.length}<div class="pred">{#each s.tags.slice(0, 3) as t (t)}<span class="pp">{t}</span>{/each}</div>{/if}
+            </div>
+            {#if isDone}<span class="chip ok">done</span>
+            {:else if s === next}<span class="chip">next</span>
+            {:else if s.demo}<span class="chip">DEMO</span>
+            {:else}<span></span>{/if}
+          </a>
+          {#if canEdit && stops.length > 1}
+            <div class="move">
+              <button type="button" onclick={() => move(i, -1)} disabled={busy || i === 0} aria-label={`Move ${s.name} up`}>▲</button>
+              <button type="button" onclick={() => move(i, 1)} disabled={busy || i === stops.length - 1} aria-label={`Move ${s.name} down`}>▼</button>
+            </div>
+          {/if}
+        </li>
+      {/each}
+    </ol>
+  </section>
+{:else if pools.length}
+  <section class="card" style="margin-top:0">
+    <h2 class="h">No stops today</h2>
+    <p class="sm" style="margin-top:4px">Nobody on file is serviced on {dayName(day)}s. Customers show on the route on their service day.</p>
+  </section>
 {/if}
-{#if isOwner}
-<section class="card">
-  <button class="btn ghost" style="margin-top:0" onclick={addOne} disabled={busy}>{busy ? 'Adding…' : 'Add a demo customer'}</button>
-  {#if added}<p class="sm" role="status" style="margin-top:8px;text-align:center">Added <b>{added}</b>, marked DEMO.</p>{/if}
-  {#if note}<p class="alert" role="alert"><b>{note}</b></p>{/if}
-</section>
-{/if}
-{/snippet}
 
-{#if pools.length === 0}
-<div class="bar"><span class="t">Route</span></div>
-<NoPools {isOwner} onloaded={loaded} />
-{:else if stops.length === 0}
-<div class="bar"><span class="t">Route</span></div>
-<section class="card" style="margin-top:0"><h2 class="h">No route assigned today</h2><p class="sm" style="margin-top:4px">{pools.length} pools on file. Routes come with dispatch.</p></section>
-{@render others()}
-{:else}
+{#if note}<p class="alert" role="alert"><b>{note}</b></p>{/if}
 
-<div class="bar"><span class="t">{ROUTE.title}</span><span class="chip">{stops.filter((s) => s.done).length} / {stops.length} done</span></div>
-<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>
+{#if canEdit}<a class="btn" href="#/field/new">+ Add a customer</a>{/if}
 
-<section class="card" style="margin-top:0">
-  <div class="h">Predicted for today</div>
-  <div class="big">{ROUTE.headline}</div>
-  <p class="sm" style="margin-top:4px">Forecast from each pool's own decay rate since last visit, before anyone tests.</p>
-  <div class="h" style="margin-top:10px">Load on the truck</div>
-  <div class="tags">{#each ROUTE.load as l (l)}<span class="tag">{l}</span>{/each}</div>
-</section>
-
-<section class="card">
-  <div class="row"><h2 class="h">Stops</h2><span class="xs">predicted · before test</span></div>
-  {#each stops as s, i (s.poolId)}
-    {@const pool = byId.get(s.poolId)}
-    <a class="stop" href={`#/field/${s.poolId}`}>
-      <span class={['num', s.done && 'done']}>{s.done ? '✓' : i + 1}</span>
-      <div>
-        <div class="nm">{pool?.name}</div>
-        <div class="pred">{#each s.flags as f (f.text)}<span class={['pp', f.level]}>{f.text}</span>{/each}</div>
-      </div>
-      {#if s.done}<span class="chip ok">done</span>
-      {:else if s.action}<span class="chip warn">{s.action}</span>
-      {:else if s.eta.startsWith('next')}<span class="chip">{s.eta}</span>
-      {:else}<span class="xs">{s.eta}</span>{/if}
-    </a>
-  {/each}
-</section>
-
-<section class="card">
-  <div class="row"><h2 class="h">Forecast accuracy · this week</h2><span class="xs">calibration</span></div>
-  <div class="rg" style="grid-template-columns:repeat(3,1fr)">
-    {#each ROUTE.accuracy as a (a.label)}
-      <div class={['r', a.ok ? 'ok' : 'warn']}><div class="n">{a.label}</div><div class="v">{a.value}</div><div class="p">{a.note}</div></div>
+{#if others.length}
+  <section class="card" aria-label="Other customers">
+    <div class="row"><h2 class="h">Other days</h2><span class="xs">{others.length} customer{others.length === 1 ? '' : 's'}</span></div>
+    {#if noDay}<p class="xs" style="margin-top:2px">{noDay} with no service day {noDay === 1 ? 'is' : 'are'} on no route{canEdit ? ': open one and tap Edit to pick a day' : ''}.</p>{/if}
+    {#each others as p (p.id)}
+      <a class="stop" href={`#/field/${p.id}`}>
+        <span class="num day">{short(p.serviceDay)}</span>
+        <div style="min-width:0">
+          <div class="nm">{p.name}</div>
+          {#if p.address}<div class="xs addr">{p.address}</div>{/if}
+        </div>
+        {#if p.demo}<span class="chip">DEMO</span>{:else}<span></span>{/if}
+      </a>
     {/each}
-  </div>
-  <p class="xs" style="margin-top:6px">When a reading and its forecast disagree, the app asks for a retest before dosing.</p>
-</section>
-{@render others()}
+  </section>
 {/if}
+
+<style>
+  .stops { list-style: none; margin: 4px 0 0; padding: 0; }
+  .stops li { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--line); }
+  .stops li:first-child { border-top: 0; }
+  .stops .stop { flex: 1; min-width: 0; border-top: 0; }
+  .move { display: flex; flex-direction: column; gap: 2px; }
+  .move button { width: 44px; height: 30px; border: 0; border-radius: 10px; background: var(--soft); color: var(--brand-link); font-size: 13px; cursor: pointer; }
+  .move button:disabled { opacity: .35; }
+  .addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .num.day { font-size: 10px; width: 34px; border-radius: 10px; }
+  .stop:has(.num.day) { grid-template-columns: 34px 1fr auto; }
+</style>

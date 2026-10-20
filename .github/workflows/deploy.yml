@@ -37,11 +37,20 @@ jobs:
         run: pnpm exec wrangler deploy
       - name: Check it is up and behind Access
         # A new custom domain can take a few seconds to resolve, so retry.
+        # 302: Access sends visitors to sign in (ready).
+        # 403 with "cf-mitigated: challenge": Cloudflare's Bot Fight Mode challenged
+        #      this runner (a datacenter address) before Access saw it, so Access
+        #      cannot be checked from here (docs/DEPLOY.md). Any other 403 still fails.
         run: |
+          hdr=$(mktemp)
           for i in $(seq 1 12); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' https://poolos.pathofphi.com/ || true)
+            code=$(curl -s -o /dev/null -D "$hdr" -w '%{http_code}' https://poolos.pathofphi.com/ || true)
             echo "attempt $i: home without sign-in: $code (expect 302 to the Access login)"
             [ "$code" = "302" ] && exit 0
+            if [ "$code" = "403" ] && grep -qi '^cf-mitigated: *challenge' "$hdr"; then
+              echo "::warning::Cloudflare Bot Fight Mode challenged this runner, so Access could not be checked from CI. The deploy itself succeeded (docs/DEPLOY.md)."
+              exit 0
+            fi
             sleep 5
           done
           exit 1
