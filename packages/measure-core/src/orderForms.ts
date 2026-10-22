@@ -50,6 +50,31 @@ const TOTAL_ROW: StyleCmd[] = [
   ['LINEABOVE', [0, -1], [-1, -1], 0.5, GREY],
 ]
 
+/** How lengths print: 'decimal' matches the Python forms (and the goldens); 'ft-in' is what crews read off a tape. */
+export type LengthUnits = 'decimal' | 'ft-in'
+export interface FlowOptions {
+  lengths?: LengthUnits
+}
+
+const QUARTERS = ['', ' 1/4', ' 1/2', ' 3/4']
+/** Decimal feet as feet and inches to the nearest quarter inch: '9.27' -> 9' 3 1/4". Non-numbers pass through. */
+export function feetInches(ft: string | number): string {
+  const q = Math.round(Number(ft) * 48)
+  if (ft === '' || !Number.isFinite(q)) return String(ft)
+  const a = Math.abs(q)
+  return `${q < 0 ? '-' : ''}${Math.floor(a / 48)}' ${Math.floor((a % 48) / 4)}${QUARTERS[a % 4]}"`
+}
+
+/** Label and value formatters for one form: drop the "(ft)" unit from labels when the value carries ' and ". */
+function lengthFormat(opts: FlowOptions) {
+  const ftIn = opts.lengths === 'ft-in'
+  return {
+    ftIn,
+    label: (s: string) => (ftIn ? s.replace(' (ft)', '') : s),
+    len: (v: string) => (ftIn ? feetInches(v) : v),
+  }
+}
+
 /** Python str() of an optional value inside an f-string. */
 const pyStr = (v: unknown) => (v === null || v === undefined ? 'None' : typeof v === 'boolean' ? (v ? 'True' : 'False') : String(v))
 
@@ -75,13 +100,14 @@ function header(job: PoolJob): Block[] {
   ]
 }
 
-function measurementTable(job: PoolJob): Block {
+function measurementTable(job: PoolJob, opts: FlowOptions = {}): Block {
   const m = job.measurement
-  const rows = [['Pt #', 'A dist (ft)', 'B dist (ft)', 'Notes']]
+  const { label, len } = lengthFormat(opts)
+  const rows = [['Pt #', label('A dist (ft)'), label('B dist (ft)'), 'Notes']]
   for (const pt of m.perimeter_points) {
     const a = m.swap_ab ? pt.b_distance_ft : pt.a_distance_ft
     const b = m.swap_ab ? pt.a_distance_ft : pt.b_distance_ft
-    rows.push([String(pt.number), a, b, (pt.notes || '') + (pt.is_obstacle ? ' [obstacle]' : '')])
+    rows.push([String(pt.number), len(a), len(b), (pt.notes || '') + (pt.is_obstacle ? ' [obstacle]' : '')])
   }
   return tbl(rows, w(0.5, 1.1, 1.1, 4.0), [...listGrid(8), ['ALIGN', [0, 0], [2, -1], 'RIGHT']], 1)
 }
@@ -89,32 +115,33 @@ function measurementTable(job: PoolJob): Block {
 const SWAP_NOTE = ' <b>(A and B are SWAPPED from the recorded values — corrected labeling.)</b>'
 
 /** The cover order form (order_form.build_order_form_pdf). */
-export function coverOrderFormFlow(job: PoolJob): Flow {
+export function coverOrderFormFlow(job: PoolJob, opts: FlowOptions = {}): Flow {
   const rec = roundedPool(job, reconstructJob(job.measurement))
   const m = job.measurement
   const cs = job.cover_spec
   const hw = job.hardware
+  const { ftIn, label: L, len } = lengthFormat(opts)
   const flow: Block[] = [p('Heading1', 'POOL COVER ORDER &amp; MEASURING FORM'), sp(0.05), ...header(job)]
 
   flow.push(p('Heading2', 'A-B Reference Line'))
   flow.push(tbl([
-    ['A-B distance (ft)', m.ab_distance_ft, 'A-B offset from pool (ft)', m.ab_offset_from_pool_ft],
+    [L('A-B distance (ft)'), len(m.ab_distance_ft), L('A-B offset from pool (ft)'), len(m.ab_offset_from_pool_ft)],
     ['Orientation', m.ab_orientation, 'Shape', m.shape_type],
     ['A-B note', m.ab_note || '—', '', ''],
   ], COL4, grid(9)), sp(0.15))
 
   flow.push(p('Heading2', 'Pool Dimensions (Reconstructed from A/B)'))
   flow.push(tbl([
-    ['Longest length (ft)', rec.length_ft, 'Perimeter (ft)', rec.perimeter_ft],
-    ['Widest width (ft)', rec.width_ft, 'Area (sq ft)', rec.area_sqft],
-    ['Shallow depth (ft)', m.shallow_depth_ft, 'Deep depth (ft)', m.deep_depth_ft],
-    ['Avg depth (ft)', rec.depth_avg_ft, 'Cross-dims', String(m.cross_dimensions.length)],
+    [L('Longest length (ft)'), len(rec.length_ft), L('Perimeter (ft)'), len(rec.perimeter_ft)],
+    [L('Widest width (ft)'), len(rec.width_ft), 'Area (sq ft)', rec.area_sqft],
+    [L('Shallow depth (ft)'), len(m.shallow_depth_ft), L('Deep depth (ft)'), len(m.deep_depth_ft)],
+    [L('Avg depth (ft)'), len(rec.depth_avg_ft), 'Cross-dims', String(m.cross_dimensions.length)],
   ], COL4, grid(9)), sp(0.15))
 
   if (m.cross_dimensions.length) {
     flow.push(p('Heading2', 'Cross Dimensions'))
     flow.push(tbl(
-      [['From Pt#', 'To Pt#', 'Distance (ft)'], ...m.cross_dimensions.map((c) => [String(c.from_point), String(c.to_point), c.distance_ft])],
+      [['From Pt#', 'To Pt#', L('Distance (ft)')], ...m.cross_dimensions.map((c) => [String(c.from_point), String(c.to_point), len(c.distance_ft)])],
       w(1.0, 1.0, 1.5),
       [['FONT', [0, 0], [-1, -1], 'Helvetica', 9], ['FONT', [0, 0], [-1, 0], 'Helvetica-Bold', 9], ['BOX', [0, 0], [-1, -1], 0.5, GREY], ['INNERGRID', [0, 0], [-1, -1], 0.25, LIGHTGREY]],
     ), sp(0.15))
@@ -133,7 +160,8 @@ export function coverOrderFormFlow(job: PoolJob): Flow {
     flow.push(p('Heading2', 'Step &amp; Spa'))
     const rows: string[][] = []
     if (m.step) {
-      rows.push(['Step', m.step.location, `${m.step.size_length_ft} x ${m.step.size_width_ft} ft`, decTruthy(m.step.offset_ft) ? `offset ${m.step.offset_ft}` : ''])
+      const size = ftIn ? `${len(m.step.size_length_ft)} x ${len(m.step.size_width_ft)}` : `${m.step.size_length_ft} x ${m.step.size_width_ft} ft`
+      rows.push(['Step', m.step.location, size, decTruthy(m.step.offset_ft) ? `offset ${len(m.step.offset_ft!)}` : ''])
     }
     if (m.spa) {
       rows.push(['Spa', `flush: ${pyStr(m.spa.flush_with_pool)}`, `spillover: ${pyStr(m.spa.spillover)}`, `separate cover: ${pyStr(m.spa.separate_cover)}`])
@@ -155,13 +183,13 @@ export function coverOrderFormFlow(job: PoolJob): Flow {
     flow.push(tbl([
       ['Y-straps', String(hw.y_straps), 'Wood deck anchors', String(hw.wood_deck_anchors)],
       ['Beauty rings', hw.beauty_rings_entire_pool ? 'entire pool' : String(hw.beauty_rings), 'Lawn stakes', String(hw.lawn_stakes)],
-      ['Paver tubes (ft)', hw.paver_tubes_ft, 'Perimeter padding', hw.perimeter_padding_entire_pool ? 'entire pool' : `pt ${pyStr(hw.perimeter_padding_from_pt)} to ${pyStr(hw.perimeter_padding_to_pt)}`],
+      [L('Paver tubes (ft)'), len(hw.paver_tubes_ft), 'Perimeter padding', hw.perimeter_padding_entire_pool ? 'entire pool' : `pt ${pyStr(hw.perimeter_padding_from_pt)} to ${pyStr(hw.perimeter_padding_to_pt)}`],
     ], COL4, grid(9)), sp(0.15))
   }
 
   flow.push({ t: 'pb' }, p('Heading1', 'A/B Measurement Table'), sp(0.1))
-  flow.push(p('small', `A-B distance: ${m.ab_distance_ft} ft. A is on the left facing the pool.${m.swap_ab ? SWAP_NOTE : ''}`), sp(0.1))
-  flow.push(measurementTable(job))
+  flow.push(p('small', `A-B distance: ${ftIn ? len(m.ab_distance_ft) : `${m.ab_distance_ft} ft`}. A is on the left facing the pool.${m.swap_ab ? SWAP_NOTE : ''}`), sp(0.1))
+  flow.push(measurementTable(job, opts))
   if (job.notes) flow.push(sp(0.2), p('Heading2', 'Notes'), p('BodyText', job.notes))
   return { title: `Pool Cover Order Form - ${job.meta.customer_name}`, flow }
 }

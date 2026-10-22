@@ -165,7 +165,7 @@ async function route(request: Request, env: Env, viewer: Viewer, parts: string[]
       return only('POST'), json(coverOrderForm(await resolveJob(env, id, company)))
     case 'order-form.pdf':
       only('GET')
-      return pdf(await renderPdf(coverOrderFormFlow(await resolveJob(env, id, company))), `order-form-${id}.pdf`)
+      return pdf(await renderPdf(coverOrderFormFlow(await resolveJob(env, id, company), { lengths: 'ft-in' })), `order-form-${id}.pdf`)
     case 'liner-takeoff':
       return only('POST'), json(linerTakeoffEndpoint(await resolveJob(env, id, company)))
     case 'liner-order-form':
