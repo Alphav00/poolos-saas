@@ -111,7 +111,7 @@
       <div class="prod">
         <div class="row">
           <span class="chip">{PRODUCT_WORDS[p.kind]}</span>
-          <button class="chip" onclick={() => products.splice(i, 1)}>Remove</button>
+          <button class="chip" onclick={() => products.splice(i, 1)} aria-label={`Remove ${p.name || PRODUCT_WORDS[p.kind]}`}>Remove</button>
         </div>
         <label class="f">Name, as on the label <input type="text" bind:value={p.name} /></label>
         {#each FACTS[p.kind] as f (f.key)}
@@ -129,7 +129,7 @@
       <select class="sel" bind:value={newKind} aria-label="Product kind">
         {#each KINDS as k (k)}<option value={k}>{PRODUCT_WORDS[k]}</option>{/each}
       </select>
-      <button class="chip" onclick={addProduct}>Add</button>
+      <button class="chip" onclick={addProduct} aria-label={`Add ${PRODUCT_WORDS[newKind]}`}>Add</button>
     </div>
   </section>
 
