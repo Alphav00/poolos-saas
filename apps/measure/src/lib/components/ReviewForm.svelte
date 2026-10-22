@@ -36,6 +36,7 @@
   const coverTypeLabels = {
     mesh_standard:    '12-yr Standard Mesh',
     mesh_super:       '15-yr Super Mesh',
+    mesh_ultra:       '15-yr Ultra Mesh',
     mesh_commercial:  '20-yr Commercial Mesh',
     solid:            'Solid w/ Drain',
     solid_no_drain:   'Solid no Drain',
