@@ -49,6 +49,7 @@
   const coverTypeOptions = [
     ['mesh_standard',    '12-yr Standard Mesh'],
     ['mesh_super',       '15-yr Super Mesh'],
+    ['mesh_ultra',       '15-yr Ultra Mesh'],
     ['mesh_commercial',  '20-yr Commercial Mesh'],
     ['solid',            'Solid w/ Drain'],
     ['solid_no_drain',   'Solid no Drain'],
@@ -59,6 +60,7 @@
     { value: 'green',  hex: '#15803d', label: 'Green' },
     { value: 'black',  hex: '#171717', label: 'Black' },
     { value: 'gray',   hex: '#52525b', label: 'Gray'  },
+    { value: 'tan',    hex: '#b8a07a', label: 'Tan'   },
   ];
 
   const spacingOptions = [

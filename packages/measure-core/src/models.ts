@@ -12,8 +12,8 @@ import {
 export type Dec = string
 
 export const SHAPE_TYPES = ['rectangular', 'kidney', 'freeform'] as const
-export const COVER_TYPES = ['mesh_standard', 'mesh_super', 'mesh_commercial', 'solid', 'solid_no_drain'] as const
-export const COVER_COLORS = ['blue', 'green', 'black', 'gray'] as const
+export const COVER_TYPES = ['mesh_standard', 'mesh_super', 'mesh_ultra', 'mesh_commercial', 'solid', 'solid_no_drain'] as const
+export const COVER_COLORS = ['blue', 'green', 'black', 'gray', 'tan'] as const
 export const ANCHOR_SPACINGS = ['5x5', '4x4', '3x3', 'combo'] as const
 export const ANCHOR_TYPES = ['concrete', 'wood_deck', 'brass_collar', 'aluminum_pipe', 'lawn_brick'] as const
 export const AB_ORIENTATIONS = ['A_left_B_right_facing_pool', 'A_right_B_left_facing_pool'] as const

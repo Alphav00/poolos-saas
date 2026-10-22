@@ -2,7 +2,7 @@
 // normalise it the same way, and reject the same inputs at the same places.
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { parsePyJson, PoolJobCreateV, ValidationFailed, parse } from '../src'
+import { fixture, parsePyJson, PoolJobCreateV, PoolJobV, ValidationFailed, parse } from '../src'
 
 interface VCase {
   name: string
@@ -31,5 +31,21 @@ describe.each(cases.map((c) => [c.name, c] as const))('%s', (_n, c) => {
       const key = (l: (string | number)[]) => l.join('.')
       expect(issues.map((i) => key(i.loc)).sort()).toEqual(c.errors!.map((e) => key(e.loc)).sort())
     }
+  })
+})
+
+describe('cover options added after the port (d0026)', () => {
+  const body = (cover: Record<string, string>) => {
+    const job = JSON.parse(JSON.stringify(fixture('kidney'))) as Record<string, unknown>
+    job.cover_spec = { ...(job.cover_spec as object), ...cover }
+    return job
+  }
+  it('accepts Ultra Mesh and tan', () => {
+    const job = parse(PoolJobV, body({ type: 'mesh_ultra', color: 'tan' })) as { cover_spec: { type: string; color: string } }
+    expect(job.cover_spec).toMatchObject({ type: 'mesh_ultra', color: 'tan' })
+  })
+  it('still rejects a type or colour that is not on the list', () => {
+    expect(() => parse(PoolJobV, body({ color: 'beige' }))).toThrow(ValidationFailed)
+    expect(() => parse(PoolJobV, body({ type: 'mesh_mega' }))).toThrow(ValidationFailed)
   })
 })
