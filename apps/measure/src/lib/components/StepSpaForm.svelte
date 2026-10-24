@@ -138,7 +138,7 @@
       <div class="mt-3 pt-3 border-t border-ink-100/10 space-y-4">
         <!-- Location selector -->
         <div>
-          <label class="label">Location</label>
+          <div class="label">Location</div>
           <div class="grid grid-cols-4 gap-2">
             {#each STEP_LOCATIONS as [val, lbl] (val)}
               <button
@@ -155,7 +155,7 @@
 
         <!-- Step size: length × width -->
         <div>
-          <label class="label">Step size</label>
+          <div class="label">Step size</div>
           <div class="grid grid-cols-2 gap-2">
             <DistanceInput
               label="Length"
@@ -189,8 +189,9 @@
 
         <!-- Notes -->
         <div>
-          <label class="label">Step notes</label>
+          <label class="label" for="step-notes">Step notes</label>
           <textarea
+            id="step-notes"
             class="field min-h-20 py-2"
             bind:value={step.notes}
             placeholder="e.g. corner step, 3rd from shallow end, wraparound bench"
@@ -230,7 +231,7 @@
       <div class="mt-3 pt-3 border-t border-ink-100/10 space-y-4">
         <!-- Flush / spillover / separate cover toggles -->
         <div class="space-y-2">
-          <label class="label">Configuration</label>
+          <div class="label">Configuration</div>
 
           <button
             class="w-full flex items-center justify-between gap-2 py-3 px-3 rounded-lg border min-h-[44px]
@@ -292,10 +293,10 @@
 
         <!-- From / To point numbers (optional, reference perimeter points) -->
         <div>
-          <label class="label">
+          <div class="label">
             Perimeter point range
             <span class="text-xs font-normal text-ink-100/50 ml-1">(optional)</span>
-          </label>
+          </div>
           <div class="grid grid-cols-2 gap-2">
             <div>
               <input
@@ -336,8 +337,9 @@
 
         <!-- Notes -->
         <div>
-          <label class="label">Spa notes</label>
+          <label class="label" for="spa-notes">Spa notes</label>
           <textarea
+            id="spa-notes"
             class="field min-h-20 py-2"
             bind:value={spa.notes}
             placeholder="e.g. raised spa 18in, spillover 4ft weir, separate cover on top"
