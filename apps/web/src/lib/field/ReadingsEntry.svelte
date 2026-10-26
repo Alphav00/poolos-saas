@@ -1,16 +1,22 @@
 <script lang="ts">
   import { tick } from 'svelte'
   import { compare } from './compare'
+  import { visitMinutes } from './decay'
   import PickWheel from './PickWheel.svelte'
   import { loadDraft, loadReading, saveDraft, saveReading, today } from './readings'
   import { fmt, parseTyped, SCALES } from './scales'
   import type { Method, Param, Pool, Reading } from './types'
 
-  let { pool }: { pool: Pool } = $props()
+  let { pool, date = today() }: { pool: Pool; date?: string } = $props()
 
   /** Same readings, same text: fixed key order so "changed?" is a plain comparison. */
   const canon = (r: Reading) =>
-    JSON.stringify({ method: r.method, values: Object.fromEntries(SCALES.filter((s) => r.values[s.key] !== undefined).map((s) => [s.key, r.values[s.key]])) })
+    JSON.stringify({
+      method: r.method,
+      values: Object.fromEntries(SCALES.filter((s) => r.values[s.key] !== undefined).map((s) => [s.key, r.values[s.key]])),
+      arrivedAt: r.arrivedAt,
+      leftAt: r.leftAt,
+    })
 
   const METHODS: { key: Method; label: string }[] = [
     { key: 'strip', label: 'Strip' },
@@ -18,10 +24,9 @@
     { key: 'meter', label: 'Meter' },
   ]
 
-  // The parent re-creates this screen per pool ({#key}), so reading the prop once is fine.
+  // The parent re-creates this screen per pool and day ({#key}), so reading the props once is fine.
   // svelte-ignore state_referenced_locally
   const poolId = pool.id
-  const date = today()
 
   let reading = $state<Reading>({ method: 'drop', values: {} })
   let saved = $state('') // what the server holds, to know if anything changed
@@ -34,6 +39,8 @@
 
   const entered = $derived(SCALES.filter((s) => reading.values[s.key] !== undefined).length)
   const dirty = $derived(canon(reading) !== saved)
+  // Both times set but departure not after arrival: nothing saves until it reads right.
+  const timeInvalid = $derived(!!reading.arrivedAt && !!reading.leftAt && visitMinutes(reading.arrivedAt, reading.leftAt) === null)
   const openAt = $derived(SCALES.findIndex((s) => s.key === open))
   const openScale = $derived(openAt >= 0 ? SCALES[openAt]! : null)
   const nextScale = $derived(openAt >= 0 ? SCALES[openAt + 1] : undefined)
@@ -47,9 +54,12 @@
       saved = canon(server)
       // Unsaved work wins: a draft from earlier, then anything tapped while loading.
       const draft = loadDraft(poolId, date)
+      const snap = $state.snapshot(reading)
       reading = {
         method: draft?.method ?? server.method,
-        values: { ...server.values, ...draft?.values, ...$state.snapshot(reading.values) },
+        values: { ...server.values, ...draft?.values, ...snap.values },
+        arrivedAt: snap.arrivedAt ?? draft?.arrivedAt ?? server.arrivedAt,
+        leftAt: snap.leftAt ?? draft?.leftAt ?? server.leftAt,
       }
       phase = 'ready'
       status = ''
@@ -135,7 +145,7 @@
     <a class="back" href={`#/field/${poolId}`}>‹ {pool.name}</a>
     <span class="chip">{entered} / {SCALES.length}</span>
   </div>
-  <h1 class="h" style="margin:0 6px">Today's readings · {date} {#if pool.demo}<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>{/if}</h1>
+  <h1 class="h" style="margin:0 6px">{date === today() ? "Today's readings" : 'Readings'} · {date} {#if pool.demo}<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>{/if}</h1>
 
   <div class="eg">
     {#each SCALES as s (s.key)}
@@ -157,7 +167,16 @@
     <div class="alert" role="alert"><b>{status}</b><p>Readings can't be entered until today's saved readings load, so nothing gets overwritten.</p></div>
     <button class="btn ghost" onclick={load}>Try again</button>
   {:else}
-    <button class="btn" disabled={phase !== 'ready' || !dirty} onclick={save}>{phase === 'saving' ? 'Saving…' : dirty ? 'Save readings' : 'Saved'}</button>
+    <div class="times">
+      <label>Arrived
+        <input type="time" value={reading.arrivedAt ?? ''} onchange={(e) => (reading.arrivedAt = e.currentTarget.value || undefined)} aria-label="Time arrived on site" />
+      </label>
+      <label>Left
+        <input type="time" value={reading.leftAt ?? ''} onchange={(e) => (reading.leftAt = e.currentTarget.value || undefined)} aria-label="Time left the site" />
+      </label>
+    </div>
+    {#if timeInvalid}<div class="alert" role="alert"><b>Left must be after arrived.</b><p>Fix the times to save.</p></div>{/if}
+    <button class="btn" disabled={phase !== 'ready' || !dirty || timeInvalid} onclick={save}>{phase === 'saving' ? 'Saving…' : dirty ? 'Save readings' : 'Saved'}</button>
     {#if status}<p class="status" role="status">{status}{#if status === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
     {#if dirty && phase === 'ready'}<p class="xs" style="text-align:center;margin-top:6px">Not saved yet · kept on this phone until you save</p>{/if}
   {/if}
@@ -194,3 +213,9 @@
     </div>
   </div>
 {/if}
+
+<style>
+  .times { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 12px 6px 0; }
+  .times label { font-size: 13px; font-weight: 700; }
+  .times input { display: block; width: 100%; min-height: 44px; font-size: 16px; margin-top: 4px; }
+</style>

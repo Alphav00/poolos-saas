@@ -2,11 +2,12 @@
   import CustomerForm from './CustomerForm.svelte'
   import PoolView from './PoolView.svelte'
   import { loadPools } from './pools'
+  import { entryDate, today } from './readings'
   import ReadingsEntry from './ReadingsEntry.svelte'
   import RouteView from './RouteView.svelte'
   import type { Pool } from './types'
 
-  // #/field, #/field/new, #/field/<pool>, #/field/<pool>/readings, #/field/<pool>/edit
+  // #/field, #/field/new, #/field/<pool>, #/field/<pool>/readings, #/field/<pool>/readings/<yyyy-mm-dd>, #/field/<pool>/edit
   let { path, isOwner, canEdit }: { path: string[]; isOwner: boolean; canEdit: boolean } = $props()
   let pools = $state<Pool[] | null>(null)
   let error = $state('')
@@ -14,6 +15,10 @@
     .then((p) => (pools = p))
     .catch((e) => (error = e instanceof Error ? e.message : 'Could not load the customers.'))
   const pool = $derived(path[1] && pools ? pools.find((p) => p.id === path[1]) : undefined)
+  // A dated readings address edits that day; anything else edits today. The
+  // key remounts the screen when the day changes, so Back/forward can't show
+  // one day's readings under another day's address.
+  const readingsDate = $derived(entryDate(path[3], today()))
   const loaded = (p: Pool[]) => (pools = p)
 </script>
 
@@ -29,7 +34,7 @@
 {:else if !pool}
   <p class="card">No such customer. <a class="back" href="#/field">Back to the route</a></p>
 {:else if path[2] === 'readings'}
-  {#key pool.id}<ReadingsEntry {pool} />{/key}
+  {#key `${pool.id}/${readingsDate}`}<ReadingsEntry {pool} date={readingsDate} />{/key}
 {:else if path[2] === 'edit' && canEdit}
   {#key pool.id}<CustomerForm {pools} {pool} onsaved={loaded} />{/key}
 {:else}
