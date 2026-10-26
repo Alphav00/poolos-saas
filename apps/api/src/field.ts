@@ -1,7 +1,7 @@
 /**
  * Shape checks for the `field` board, where the app (not a Claude artifact)
  * keeps its own documents:
- *   readings/<pool>:<yyyy-mm-dd>   one pool's readings for the day
+ *   readings/<pool>:<yyyy-mm-dd>   one pool's readings for the day, with optional arrival and departure times
  *   settings/products              the company's chemicals, with label facts
  *   settings/targets               the company's target ranges, with a source
  *   pools/<id>                     a customer's pool: who, where, which day, what it is (engine output is not kept here)
@@ -30,6 +30,8 @@ const MAX_TEXT = 120;
 const isText = (v: unknown, max = MAX_TEXT) => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
 const isNumber = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
 
+const CLOCK = /^([01]?\d|2[0-3]):[0-5]\d$/;
+
 function checkReadings(id: string, data: Record<string, unknown>): string | null {
 	if (!ID.test(id)) return 'Reading ids look like "<pool>:<yyyy-mm-dd>"';
 	if (!METHODS.has(data.method as string)) return 'method must be strip, drop or meter';
@@ -39,7 +41,10 @@ function checkReadings(id: string, data: Record<string, unknown>): string | null
 		if (!PARAMS.has(k)) return `Unknown reading "${k}"`;
 		if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 100000) return `"${k}" must be a number`;
 	}
-	const extra = Object.keys(data).filter((k) => !['pool', 'date', 'method', 'values'].includes(k));
+	for (const k of ['arrivedAt', 'leftAt'] as const) {
+		if (data[k] !== undefined && (typeof data[k] !== 'string' || !CLOCK.test(data[k]))) return `"${k}" must be a time like "9:05"`;
+	}
+	const extra = Object.keys(data).filter((k) => !['pool', 'date', 'method', 'values', 'arrivedAt', 'leftAt'].includes(k));
 	if (extra.length) return `Unexpected field "${extra[0]}"`;
 	return null;
 }

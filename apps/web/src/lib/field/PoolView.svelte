@@ -1,17 +1,22 @@
 <script lang="ts">
   import { amountWords, analyze, cellRange, dose, plan, strengthWords, waterFrom, type Analysis, type Answer, type Ask, type CellRange, type Dose, type Product, type Targets } from './chem'
   import { compare } from './compare'
+  import { dateWords, decayRows, timeWords, visitTimeWords, type DatedReading } from './decay'
   import DecayChart from './DecayChart.svelte'
-  import { loadReading, today } from './readings'
+  import { loadHistory, loadReading, today } from './readings'
   import { fmt, fmtDelta, SCALES, scaleFor } from './scales'
   import { loadProducts, loadTargets } from './settings'
   import { dayName } from './route'
-  import type { Pool, Reading } from './types'
+  import type { Param, Pool, Reading } from './types'
 
   let { pool, canEdit = false }: { pool: Pool; canEdit?: boolean } = $props()
 
   let reading = $state<Reading | null>(null)
   let error = $state('')
+  // Past visits for the decay math and the visit list; the section waits for them.
+  let history = $state<DatedReading[]>([])
+  let historyLoaded = $state(false)
+  let historyError = $state('')
   let products = $state<Product[]>([])
   let targets = $state<Targets | null>(null)
   let setupError = $state('')
@@ -28,6 +33,15 @@
     loadReading(pool.id, today())
       .then((r) => (reading = r))
       .catch((e: Error) => (error = e.message))
+    loadHistory(pool.id)
+      .then((h) => {
+        history = h
+        historyLoaded = true
+      })
+      .catch((e: Error) => {
+        historyError = e.message
+        historyLoaded = true
+      })
     Promise.all([loadProducts(), loadTargets()])
       .then(([p, t]) => {
         products = p
@@ -80,6 +94,14 @@
       stale = true
     }
   })
+
+  // Company low targets, for flagging a projection that falls short.
+  const lowTargets = $derived(
+    targets ? (Object.fromEntries(Object.entries(targets.ranges).map(([k, r]) => [k, r[0]])) as Partial<Record<Param, number>>) : undefined,
+  )
+  // Decay from the visits already logged: the last two visits, nothing else.
+  const decay = $derived(decayRows(history, { serviceDay: pool.serviceDay, lowTargets }))
+  const visitsNewest = $derived([...history].reverse())
 
   const si = $derived(analysis?.ok ? analysis.value.saturationIndex : null)
   const siWords = $derived(si === null ? '' : si > 0.05 ? 'scale-forming' : si < -0.05 ? 'corrosive' : 'balanced')
@@ -206,6 +228,36 @@
   </section>
 {/if}
 
+{#if decay.length}
+  <section class="card">
+    <div class="row"><h2 class="h">Between visits</h2><span class="xs">last two visits</span></div>
+    <p class="xs" style="margin-top:4px">Each chemical's daily move between the last two visits, carried to the next {pool.serviceDay ? dayName(pool.serviceDay) : 'visit'}.</p>
+    {#each decay as d (d.label)}
+      <div class="dr"><b>{d.label}</b><div class="xs">{d.detail}</div><div class="rate" style:color={d.alert ? 'var(--bad)' : undefined}>{d.trend}</div></div>
+    {/each}
+  </section>
+{/if}
+
+{#if historyLoaded}
+  <section class="card">
+    <div class="row"><h2 class="h">Recent visits</h2><span class="xs">last 12 weeks</span></div>
+    {#if historyError}
+      <p class="alert" role="alert"><b>{historyError}</b></p>
+    {:else if !history.length}
+      <p class="sm" style="margin-top:4px">No past visits in the last 12 weeks.</p>
+    {:else}
+      {#each visitsNewest as v (v.date)}
+        {@const t = visitTimeWords(v)}
+        <div class="visit">
+          <div class="row"><b>{dateWords(v.date)}</b><span class="xs">{t.span}{t.minutes !== null ? ` · ${timeWords(t.minutes)}` : ''}</span></div>
+          <p class="xs" style="margin-top:2px">{SCALES.filter((s) => v.values[s.key] !== undefined).map((s) => `${s.label} ${fmt(s.key, v.values[s.key])}`).join(' · ')}</p>
+        </div>
+      {/each}
+      {#if history.length === 1}<p class="xs" style="margin-top:6px">A second visit makes the decay estimate.</p>{/if}
+    {/if}
+  </section>
+{/if}
+
 {#if pool.equipment.length || pool.note}
   <section class="card">
     <h2 class="h">{pool.equipment.length ? "Equipment & notes" : "Notes"}</h2>
@@ -217,6 +269,8 @@
 <a class="btn" href={`#/field/${pool.id}/readings`}>{reading ? "Edit today's readings" : "Enter today's readings"}</a>
 
 <style>
+  .visit { padding: 6px 0; border-top: 1px solid var(--line); }
+  .visit:first-of-type { border-top: 0; }
   .asks { margin: 6px 0 0 18px; font-size: 13px; color: var(--ink); }
   .contact { display: flex; align-items: center; min-height: 44px; font-weight: 800; color: var(--brand-link); text-decoration: none; }
   .edit { min-height: 44px; padding: 0 16px; text-decoration: none; flex: none; }

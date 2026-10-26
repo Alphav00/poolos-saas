@@ -12,6 +12,9 @@ export interface Visit {
   before: number
   /** FC after dosing, when the tech left. */
   after: number
+  /** Wall-clock time on site, HH:MM, when the tech logged it. */
+  arrivedAt?: string
+  leftAt?: string
 }
 
 export interface DecayRow {
@@ -68,6 +71,9 @@ export type Method = 'strip' | 'drop' | 'meter'
 export interface Reading {
   method: Method
   values: Partial<Record<Param, number>>
+  /** Wall-clock time on site, HH:MM, when the tech logged it. */
+  arrivedAt?: string
+  leftAt?: string
 }
 
 export type Role = 'Technician' | 'Lead' | 'Dispatcher' | 'Operator'
