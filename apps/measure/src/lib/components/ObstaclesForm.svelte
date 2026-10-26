@@ -260,8 +260,9 @@
           <div class="flex items-end gap-2 mt-2">
             {#if paired}
               <div class="flex-1 min-w-0">
-                <label class="label !mb-0.5 !text-[10px]">Front pt</label>
+                <label for="obstacle-{i}-front" class="label !mb-0.5 !text-[10px]">Front pt</label>
                 <input
+                  id="obstacle-{i}-front"
                   class="field h-10 text-center text-base px-2"
                   type="number"
                   inputmode="numeric"
@@ -276,8 +277,9 @@
               </div>
               <span class="text-ink-100/40 font-bold px-1 pb-2">|</span>
               <div class="flex-1 min-w-0">
-                <label class="label !mb-0.5 !text-[10px]">Back pt</label>
+                <label for="obstacle-{i}-back" class="label !mb-0.5 !text-[10px]">Back pt</label>
                 <input
+                  id="obstacle-{i}-back"
                   class="field h-10 text-center text-base px-2"
                   type="number"
                   inputmode="numeric"
@@ -292,8 +294,9 @@
               </div>
             {:else}
               <div class="flex-1 min-w-0">
-                <label class="label !mb-0.5 !text-[10px]">Pt #</label>
+                <label for="obstacle-{i}-single" class="label !mb-0.5 !text-[10px]">Pt #</label>
                 <input
+                  id="obstacle-{i}-single"
                   class="field h-10 text-center text-base px-2"
                   type="number"
                   inputmode="numeric"
