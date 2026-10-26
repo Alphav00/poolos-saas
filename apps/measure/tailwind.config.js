@@ -17,6 +17,10 @@ export default {
           900: '#ffffff',
           950: '#eef3f7',
         },
+        // Brand surface (page background) as a utility: the header bar uses
+        // it so a dark pack gets a dark bar with brand-ink text, while a
+        // light pack keeps the light bar it already had.
+        surface: 'rgb(var(--brand-surface-rgb) / <alpha-value>)',
         pool: {
           50: 'rgb(var(--brand-ice-rgb) / <alpha-value>)',
           500: 'rgb(var(--brand-primary-rgb) / <alpha-value>)',
