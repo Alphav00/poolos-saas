@@ -246,12 +246,13 @@
     {:else if !history.length}
       <p class="sm" style="margin-top:4px">No past visits in the last 12 weeks.</p>
     {:else}
+      <p class="xs" style="margin-top:4px">Tap a visit to correct it.</p>
       {#each visitsNewest as v (v.date)}
         {@const t = visitTimeWords(v)}
-        <div class="visit">
+        <a class="visit" href={`#/field/${pool.id}/readings/${v.date}`}>
           <div class="row"><b>{dateWords(v.date)}</b><span class="xs">{t.span}{t.minutes !== null ? ` · ${timeWords(t.minutes)}` : ''}</span></div>
           <p class="xs" style="margin-top:2px">{SCALES.filter((s) => v.values[s.key] !== undefined).map((s) => `${s.label} ${fmt(s.key, v.values[s.key])}`).join(' · ')}</p>
-        </div>
+        </a>
       {/each}
       {#if history.length === 1}<p class="xs" style="margin-top:6px">A second visit makes the decay estimate.</p>{/if}
     {/if}
@@ -269,7 +270,7 @@
 <a class="btn" href={`#/field/${pool.id}/readings`}>{reading ? "Edit today's readings" : "Enter today's readings"}</a>
 
 <style>
-  .visit { padding: 6px 0; border-top: 1px solid var(--line); }
+  .visit { display: block; padding: 6px 0; border-top: 1px solid var(--line); color: inherit; text-decoration: none; }
   .visit:first-of-type { border-top: 0; }
   .asks { margin: 6px 0 0 18px; font-size: 13px; color: var(--ink); }
   .contact { display: flex; align-items: center; min-height: 44px; font-weight: 800; color: var(--brand-link); text-decoration: none; }

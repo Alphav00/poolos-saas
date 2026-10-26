@@ -74,6 +74,19 @@ export const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+/**
+ * The date the readings screen edits: the requested day when it is a real
+ * date no later than today, otherwise today. A future day or malformed text
+ * never opens the screen, so a typed address can't invent a future visit.
+ */
+export function entryDate(requested: string | undefined, todayStr: string): string {
+  if (!requested || !/^\d{4}-\d{2}-\d{2}$/.test(requested) || requested > todayStr) return todayStr
+  const [y, m, d] = requested.split('-').map(Number) as [number, number, number]
+  const dt = new Date(y, m - 1, d)
+  if (dt.getFullYear() !== y || dt.getMonth() !== m - 1 || dt.getDate() !== d) return todayStr
+  return requested
+}
+
 export async function loadReading(poolId: string, date: string): Promise<Reading | null> {
   const res = await fetch(doc(poolId, date), { credentials: 'same-origin' })
   if (!res.ok) throw new Error(res.status === 401 ? 'Sign in again.' : 'Could not load readings.')

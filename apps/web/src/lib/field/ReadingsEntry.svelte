@@ -7,7 +7,7 @@
   import { fmt, parseTyped, SCALES } from './scales'
   import type { Method, Param, Pool, Reading } from './types'
 
-  let { pool }: { pool: Pool } = $props()
+  let { pool, date = today() }: { pool: Pool; date?: string } = $props()
 
   /** Same readings, same text: fixed key order so "changed?" is a plain comparison. */
   const canon = (r: Reading) =>
@@ -24,10 +24,9 @@
     { key: 'meter', label: 'Meter' },
   ]
 
-  // The parent re-creates this screen per pool ({#key}), so reading the prop once is fine.
+  // The parent re-creates this screen per pool and day ({#key}), so reading the props once is fine.
   // svelte-ignore state_referenced_locally
   const poolId = pool.id
-  const date = today()
 
   let reading = $state<Reading>({ method: 'drop', values: {} })
   let saved = $state('') // what the server holds, to know if anything changed
@@ -146,7 +145,7 @@
     <a class="back" href={`#/field/${poolId}`}>‹ {pool.name}</a>
     <span class="chip">{entered} / {SCALES.length}</span>
   </div>
-  <h1 class="h" style="margin:0 6px">Today's readings · {date} {#if pool.demo}<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>{/if}</h1>
+  <h1 class="h" style="margin:0 6px">{date === today() ? "Today's readings" : 'Readings'} · {date} {#if pool.demo}<span class="sample" title="Made-up pools so the screens can be tried. Real customers come with the customer list.">DEMO DATA</span>{/if}</h1>
 
   <div class="eg">
     {#each SCALES as s (s.key)}
