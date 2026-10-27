@@ -730,6 +730,22 @@ await guarded('39', async () => {
   store.destroy();
 });
 
+// ---------- 40. leaving while the check is pending, server has moved on: nothing is sent ----------
+await guarded('40', async () => {
+  reset();
+  staleDraft('job-41', 'phone edit');
+  let release;
+  respond = async (c) => (c.method === 'GET'
+    ? new Promise((r) => { release = () => r(jsonRes(serverJob('job-41', 'server moved on', 't2'))); })
+    : jsonRes({ ...c.body, id: 'job-41', updated_at: 't9' }));
+  const store = createJobStore({ initialId: 'job-41' });
+  store.markDirty();
+  store.destroy();
+  release();
+  await sleep(300);
+  eq(puts().length, 0, '40: the flushed save is not sent over a newer server copy');
+});
+
 console.log(`jobStore: ${pass} passed, ${fail} failed`);
 if (fail) {
   for (const f of fails) console.log('  FAIL', f);
