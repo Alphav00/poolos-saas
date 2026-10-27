@@ -1,37 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { fakeBoard } from './fake-board'
 import { addDemoCustomer, customerId, newCustomerId, setOrders, takenIds } from './pools'
-import { loadDemoStaff } from './staff'
-
-/**
- * A stand-in for the boards API on one collection: GET lists, PUT replaces,
- * PATCH merges and then checks serviceDay the way the Worker's checkPool does.
- */
-function fakeBoard(collection: string, docs: Record<string, Record<string, unknown>>) {
-  const calls: { method: string; id?: string; data?: Record<string, unknown> }[] = []
-  const fetches = vi.fn(async (url: string, init?: RequestInit) => {
-    const method = init?.method ?? 'GET'
-    const id = url.startsWith(`${collection}/`) ? decodeURIComponent(url.slice(collection.length + 1)) : undefined
-    const data = init?.body ? (JSON.parse(init.body as string) as { data: Record<string, unknown> }).data : undefined
-    calls.push({ method, id, data })
-    if (method === 'GET') return Response.json({ docs: Object.entries(docs).map(([id, data]) => ({ id, data })) })
-    if (!id) return new Response('', { status: 404 })
-    if (method === 'PUT') docs[id] = data!
-    if (method === 'PATCH') {
-      const next = { ...docs[id], ...data }
-      if (next.serviceDay !== undefined && !['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].includes(next.serviceDay as string)) {
-        return Response.json({ error: { message: 'serviceDay must be one of mon, tue, wed, thu, fri, sat, sun' } }, { status: 400 })
-      }
-      if (id === 'broken') return Response.json({ error: { message: 'Could not save broken' } }, { status: 400 })
-      docs[id] = next
-    }
-    return Response.json({ id })
-  })
-  vi.stubGlobal('fetch', fetches)
-  return { docs, calls }
-}
 
 const POOLS = '/api/boards/field/pools'
-const STAFF = '/api/boards/field/staff'
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -92,22 +63,8 @@ describe('new customer ids', () => {
     const r = await addDemoCustomer('wed')
     const put = board.calls.find((c) => c.method === 'PUT')!
     expect(before).not.toContain(put.id)
+    expect(put.id).toMatch(/-[a-z0-9]{4}$/)
     expect(put.data).toMatchObject({ demo: true, serviceDay: 'wed' })
     expect(r.pools).toHaveLength(before.length + 1)
-  })
-})
-
-describe('loadDemoStaff', () => {
-  it('replaces earlier demo records but never someone else holding a demo id', async () => {
-    const board = fakeBoard(STAFF, {
-      alex: { name: 'Alex Mora', email: 'alex.mora@example.test', role: 'Technician' },
-      jordan: { name: 'Jordan', email: 'jordan@example.test', role: 'Technician', demo: true },
-      riley: { half: 'a record the screens hide' },
-    })
-    await loadDemoStaff()
-    const puts = board.calls.filter((c) => c.method === 'PUT').map((c) => c.id)
-    expect(puts).toEqual(['jordan', 'casey', 'morgan'])
-    expect(board.docs.alex).toMatchObject({ name: 'Alex Mora' })
-    expect(board.docs.riley).toEqual({ half: 'a record the screens hide' })
   })
 })

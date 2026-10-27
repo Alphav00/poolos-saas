@@ -1,6 +1,6 @@
 import type { Brand } from 'virtual:brand'
 import { describe, expect, it } from 'vitest'
-import { allowedFrom, companyCookie, matchUsername, pickCompany, savedUsername, saveUsername, signInBy } from './account.svelte'
+import { allowedFrom, companyCookie, cookieNames, matchUsername, pickCompany, savedUsername, saveUsername, signInBy } from './account.svelte'
 
 const pack = (id: string, name: string): Brand => ({ id, name, shortName: name, legalName: name, tagline: '', pilot: true, linear: null, loader: null, logo: '', mark: '' })
 const PACKS = [pack('blue-lagoon', 'Blue Lagoon Pools'), pack('k-and-r', 'K&R Pools')]
@@ -48,9 +48,24 @@ describe('saved username', () => {
 })
 
 describe('signInBy', () => {
-  it('reloads once the username is saved', () => expect(signInBy(true, null)).toBe('reload'))
-  it('signs in without a reload when storage is blocked, so the reload cannot loop', () => expect(signInBy(false, null)).toBe('in place'))
-  it('still reloads to leave a company already open, which comes back signed out', () => expect(signInBy(false, PACKS[0]!)).toBe('reload'))
+  it('reloads once the username is saved', () => expect(signInBy(true, null, true)).toBe('reload'))
+  it('signs in without a reload when storage is blocked, so the reload cannot loop', () => expect(signInBy(false, null, true)).toBe('in place'))
+  it('still reloads to leave a company already open, which comes back signed out', () => expect(signInBy(false, PACKS[0]!, true)).toBe('reload'))
+  it('opens nothing when the company cookie did not stick, or the Worker would use the default company', () => {
+    expect(signInBy(false, null, false)).toBe('blocked')
+    expect(signInBy(true, PACKS[0]!, false)).toBe('blocked')
+  })
+})
+
+describe('cookieNames', () => {
+  it('finds the company cookie among others', () => {
+    expect(cookieNames('a=1; poolos_company=k-and-r; b=2', PACKS[1]!, 'blue-lagoon')).toBe(true)
+  })
+  it('is false when the cookie is missing or names another company', () => {
+    expect(cookieNames('', PACKS[1]!, 'blue-lagoon')).toBe(false)
+    expect(cookieNames('poolos_company=k-and-r-2', PACKS[1]!, 'blue-lagoon')).toBe(false)
+  })
+  it('needs no cookie for the default company', () => expect(cookieNames('', PACKS[0]!, 'blue-lagoon')).toBe(true))
 })
 
 describe('companyCookie', () => {

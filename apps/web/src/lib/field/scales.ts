@@ -34,11 +34,12 @@ export const SCALES: Scale[] = [
  * Commas in a typed number: groups of exactly three digits after the first
  * ('3,200', '12,000', '1,000.5') are thousands and are dropped; a single comma
  * with one or two digits after it and no point ('7,5', '0,25') is a decimal
- * point, as phones in many countries type one. Anything else is left for the
- * number check to refuse.
+ * point, as phones in many countries type one. A first group with a leading
+ * zero ('0,500') is neither and is left, like anything else, for the number
+ * check to refuse.
  */
 function uncomma(t: string): string {
-  if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(t)) return t.replaceAll(',', '')
+  if (/^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(t)) return t.replaceAll(',', '')
   if (/^\d+,\d{1,2}$/.test(t)) return t.replace(',', '.')
   return t
 }

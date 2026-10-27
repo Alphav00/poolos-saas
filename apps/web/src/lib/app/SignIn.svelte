@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { allowedBrands, signIn } from './account.svelte'
+  import { allowedBrands, BLOCKED, signIn } from './account.svelte'
 
   // onin: signed in without a reload (storage blocked), so the app opens now.
   let { onin }: { onin?: () => void } = $props()
@@ -9,7 +9,7 @@
   function submit(e: SubmitEvent) {
     e.preventDefault()
     const how = signIn(username)
-    error = how ? '' : `No account called "${username.trim()}".`
+    error = how === 'blocked' ? BLOCKED : how ? '' : `No account called "${username.trim()}".`
     if (how === 'in place') onin?.()
   }
 </script>

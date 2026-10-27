@@ -89,12 +89,15 @@ export function loadDemoPools(): Promise<Pool[]> {
 /**
  * Owner only: adds one made-up customer (marked demo) on `day`'s route, with an
  * id not on file. The list is read again first, so a customer added from
- * another phone, or one the screens hide, is not replaced.
+ * another phone, or one the screens hide, is not replaced; the id gets a
+ * random tail like a real customer's, so it never picks up the readings of
+ * one removed earlier.
  */
 export async function addDemoCustomer(day: Day): Promise<{ name: string; pools: Pool[] }> {
   const onFile = await loadPools(true)
   const p = generateCustomer(Math.random, new Set(takenIds))
-  return { name: p.name, pools: await saveProfiles([{ ...p, serviceDay: day, order: nextOrder(onFile, day) }]) }
+  const id = customerId(p.name, takenIds)
+  return { name: p.name, pools: await saveProfiles([{ ...p, id, serviceDay: day, order: nextOrder(onFile, day) }]) }
 }
 
 const write = async (path: string, method: 'PUT' | 'PATCH' | 'DELETE', data?: unknown) => {

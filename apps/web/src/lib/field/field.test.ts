@@ -73,6 +73,8 @@ describe('typed readings', () => {
     const salt = scaleFor('salt')
     expect(parseTyped(salt, '3,2000')).toHaveProperty('error')
     expect(parseTyped(salt, '1,000,5')).toHaveProperty('error')
+    expect(parseTyped(scaleFor('ch'), '0,500')).toHaveProperty('error') // 0.5 or a typo, never 500
+    expect(parseTyped(scaleFor('ch'), '00,500')).toHaveProperty('error')
     expect(parseTyped(salt, '3,200,')).toHaveProperty('error')
     expect(parseTyped(fc, '1,5.0')).toHaveProperty('error')
   })
