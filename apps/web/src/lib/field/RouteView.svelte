@@ -28,7 +28,9 @@
     busy = true
     note = ''
     try {
-      onloaded(await setOrders(moveStop(stops, index, by)))
+      const r = await setOrders(moveStop(stops, index, by), day)
+      onloaded(r.pools)
+      if (r.error) note = r.error
     } catch (e) {
       note = e instanceof Error ? e.message : 'Could not change the order.'
     } finally {
@@ -106,8 +108,8 @@
   .stops li { display: flex; align-items: center; gap: 6px; border-top: 1px solid var(--line); }
   .stops li:first-child { border-top: 0; }
   .stops .stop { flex: 1; min-width: 0; border-top: 0; }
-  .move { display: flex; flex-direction: column; gap: 2px; }
-  .move button { width: 44px; height: 30px; border: 0; border-radius: 10px; background: var(--soft); color: var(--brand-link); font-size: 13px; cursor: pointer; }
+  .move { display: flex; gap: 4px; flex: none; }
+  .move button { width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--soft); color: var(--brand-link); font-size: 13px; cursor: pointer; }
   .move button:disabled { opacity: .35; }
   .addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .num.day { font-size: 10px; width: 34px; border-radius: 10px; }

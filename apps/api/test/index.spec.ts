@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:test';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { call, migrate, token } from './helpers';
+import { call, migrate, ORIGIN, token } from './helpers';
 
 beforeAll(migrate);
 
@@ -74,7 +74,7 @@ describe('board access', () => {
 	});
 
 	it('keeps the chemistry setup as settings/products and settings/targets, checked', async () => {
-		const put = (id: string, data: unknown) => call(`/api/boards/field/settings/${id}`, { method: 'PUT', body: { data } });
+		const put = (id: string, data: unknown) => call(`/api/boards/field/settings/${id}`, { method: 'PUT', as: 'owner@example.test', body: { data } });
 		const acid = { id: 'acid', kind: 'acid', name: 'Muriatic acid 31.45%', hclPercent: 31.45, densityGPerMl: 1.16 };
 		expect((await put('products', { products: [acid] })).status).toBe(200);
 		// a label fact missing, a stray field, an unknown kind, a bad id
@@ -93,6 +93,38 @@ describe('board access', () => {
 		expect((await put('other', { x: 1 })).status).toBe(400);
 		const got = (await (await call('/api/boards/field/settings/targets', { as: 'other@example.test' })).json()) as { data: { source: string } };
 		expect(got.data.source).toBe('Sample Pool Co. house policy');
+	});
+
+	it('lets only an owner change the chemistry setup', async () => {
+		const doc = '/api/boards/field/settings/targets';
+		const targets = { source: 'Sample Pool Co. house policy', ranges: { ph: [7.4, 7.6] } };
+		expect((await call(doc, { method: 'PUT', as: 'owner@example.test', body: { data: targets } })).status).toBe(200);
+		// tech@example.test is not on file; a Technician on the staff list is refused the same way.
+		const staff = await call('/api/boards/field/staff/sam-settings', {
+			method: 'PUT', as: 'owner@example.test', body: { data: { name: 'Sam Settings', email: 'sam.settings@example.test', role: 'Technician' } },
+		});
+		expect(staff.status).toBe(200);
+		for (const as of ['tech@example.test', 'sam.settings@example.test']) {
+			expect((await call(doc, { method: 'PUT', as, body: { data: { ...targets, ranges: { ph: [6, 9] } } } })).status, as).toBe(403);
+			expect((await call(doc, { method: 'PATCH', as, body: { data: { ranges: { ph: [6, 9] } } } })).status, as).toBe(403);
+			expect((await call(doc, { method: 'DELETE', as })).status, as).toBe(403);
+			expect((await call('/api/boards/field/settings/products', { method: 'PUT', as, body: { data: { products: [] } } })).status, as).toBe(403);
+		}
+		const got = (await (await call(doc)).json()) as { data: { ranges: unknown } };
+		expect(got.data.ranges).toEqual({ ph: [7.4, 7.6] });
+	});
+
+	it('stamps who set the chemistry setup and when, whatever the form says', async () => {
+		const doc = '/api/boards/field/settings/products';
+		const forged = { products: [], setBy: 'someone@example.test', setAt: '2000-01-01T00:00:00.000Z' };
+		const before = Date.now();
+		const put = (await (await call(doc, { method: 'PUT', as: 'owner@example.test', body: { data: forged } })).json()) as { data: { setBy: string; setAt: string } };
+		expect(put.data.setBy).toBe('owner@example.test');
+		expect(Date.parse(put.data.setAt)).toBeGreaterThanOrEqual(before - 1000);
+		const patch = await call(doc, { method: 'PATCH', as: 'Owner@Example.test', body: { data: { setBy: 'x@example.test' } } });
+		expect(((await patch.json()) as { data: { setBy: string } }).data.setBy).toBe('owner@example.test');
+		const got = (await (await call(doc)).json()) as { data: { setBy: string; products: unknown[] } };
+		expect(got.data).toMatchObject({ setBy: 'owner@example.test', products: [] });
 	});
 
 	it('refuses owner-only boards to the team, page and data alike', async () => {
@@ -204,5 +236,63 @@ describe('boards', () => {
 		expect((await call(`${base}/missing`, { as, method: 'PATCH', body: { data: { a: 1 } } })).status).toBe(404);
 		expect((await call(`${base}/big`, { as, method: 'PUT', body: { data: { s: 'x'.repeat(600 * 1024) } } })).status).toBe(413);
 		expect((await call(base, { as, method: 'POST', body: { data: {} } })).status).toBe(405);
+	});
+});
+
+describe('request guards', () => {
+	it('answers a malformed escape in the address with 400, not a crash', async () => {
+		for (const path of ['/api/boards/field/readings/%E0%A4%A', '/api/boards/%']) {
+			const res = await call(path);
+			expect(res.status, path).toBe(400);
+			expect(((await res.json()) as { error: { code: string } }).error.code).toBe('bad_request');
+		}
+		const measure = await call('/api/measure/jobs/%E0%A4%A');
+		expect(measure.status).toBe(400);
+		expect(((await measure.json()) as { detail: string }).detail).toBe('Bad escape in the address');
+	});
+
+	it('refuses writes from another site, and lets this site write', async () => {
+		const doc = '/api/boards/agent-board/cards/c-site';
+		const as = 'owner@example.test';
+		const body = { data: { title: 'From where?' } };
+		for (const headers of [
+			{ 'Sec-Fetch-Site': 'cross-site' },
+			{ 'Sec-Fetch-Site': 'same-site', Origin: 'https://other.pathofphi.com' },
+			{ Origin: 'https://evil.example' },
+			{ Origin: 'null' },
+		]) {
+			const res = await call(doc, { method: 'PUT', as, body, headers });
+			expect(res.status, JSON.stringify(headers)).toBe(403);
+		}
+		// A text/plain import from another site, the form-post shape, is refused before it is read.
+		const plain = await call('/api/boards/agent-board/_import', {
+			method: 'POST', as, body: JSON.stringify({ collections: { cards: { evil: { title: 'x' } } } }), headers: { Origin: 'https://evil.example', 'Content-Type': 'text/plain' },
+		});
+		expect(plain.status).toBe(403);
+		expect((await call(doc, { as })).status).toBe(200);
+		expect(((await (await call(doc, { as })).json()) as { exists: boolean }).exists).toBe(false);
+		// Reads from anywhere still answer (Access decides who reads).
+		expect((await call(doc, { as, headers: { 'Sec-Fetch-Site': 'cross-site' } })).status).toBe(200);
+		// Same origin, by either header, and tools that send neither, may write.
+		expect((await call(doc, { method: 'PUT', as, body, headers: { 'Sec-Fetch-Site': 'same-origin', Origin: ORIGIN } })).status).toBe(200);
+		expect((await call(doc, { method: 'PUT', as, body, headers: { Origin: ORIGIN } })).status).toBe(200);
+		expect((await call(doc, { method: 'PUT', as, body })).status).toBe(200);
+	});
+});
+
+describe('concurrent edits', () => {
+	it('keeps every acknowledged PATCH when several land at once, and logs each write once', async () => {
+		const doc = '/api/boards/agent-board/cards/c-race';
+		const as = 'owner@example.test';
+		expect((await call(doc, { method: 'PUT', as, body: { data: { title: 'Race' } } })).status).toBe(200);
+		const fields = Array.from({ length: 8 }, (_, i) => `f${i}`);
+		const results = await Promise.all(fields.map((f) => call(doc, { method: 'PATCH', as, body: { data: { [f]: true } } })));
+		for (const r of results) expect([200, 409]).toContain(r.status);
+		const kept = fields.filter((_, i) => results[i]!.status === 200);
+		expect(kept.length).toBeGreaterThan(0);
+		const got = (await (await call(doc, { as })).json()) as { data: Record<string, unknown> };
+		for (const f of kept) expect(got.data[f], f).toBe(true);
+		const log = await env.DB.prepare("SELECT count(*) AS n FROM board_writes WHERE board = 'agent-board' AND collection = 'cards' AND id = 'c-race'").first<{ n: number }>();
+		expect(log?.n).toBe(1 + kept.length);
 	});
 });

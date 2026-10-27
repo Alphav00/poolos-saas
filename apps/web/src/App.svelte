@@ -9,7 +9,7 @@
   import Staff from './lib/app/Staff.svelte'
   import TabBar from './lib/app/TabBar.svelte'
   import defaultBrand, { brands } from 'virtual:brand'
-  import { allowedFrom, brand, needsSignIn, pickCompany, setAllowed, signedIn, signIn } from './lib/app/account.svelte'
+  import { allowedFrom, BLOCKED, brand, companyCookieHolds, needsSignIn, pickCompany, setAllowed, signedIn, signIn } from './lib/app/account.svelte'
   import './lib/app/app.css'
   import Field from './lib/field/Field.svelte'
 
@@ -54,13 +54,23 @@
       setAllowed(allowed)
       const pick = pickCompany(signedIn() ? brand().id : null, allowed)
       if ('go' in pick) {
-        if (!signedIn() || brand().id !== pick.go.id) signIn(pick.go.id)
-        else gate = 'in'
+        if (!signedIn() || brand().id !== pick.go.id) {
+          // Blocked storage signs in without a reload; open the app now.
+          // A company cookie that did not stick keeps the app shut.
+          const how = signIn(pick.go.id)
+          if (how === 'in place') gate = 'in'
+          else if (how === 'blocked') blocked()
+        } else if (companyCookieHolds()) gate = 'in'
+        else blocked()
       } else gate = 'ask' in pick ? 'ask' : 'none'
     } catch (e) {
       error = e instanceof Error ? e.message : `Could not load ${brand().shortName}.`
       gate = 'in'
     }
+  }
+  function blocked() {
+    error = BLOCKED
+    gate = 'ask'
   }
   if (needsSignIn) check()
 
@@ -122,7 +132,7 @@
 {:else if gate === 'ask' || !signedIn()}
 <main class="field no-tabs"><div class="wrap">
   {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
-  <SignIn />
+  <SignIn onin={() => (gate = 'in')} />
 </div></main>
 {:else}
 <main class={['field', entering && 'no-tabs']} bind:this={screen}>
@@ -137,7 +147,7 @@
     {:else if route[0] === 'more' && route[1] === 'staff'}
       <Staff isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more' && route[1] === 'chemistry'}
-      <ChemSetup />
+      <ChemSetup isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more'}
       <More email={me?.email ?? ''} isOwner={me?.isOwner ?? false} role={me?.role ?? null} {boards} />
     {:else}

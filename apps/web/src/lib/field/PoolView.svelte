@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { amountWords, analyze, cellRange, dose, plan, strengthWords, waterFrom, type Analysis, type Answer, type Ask, type CellRange, type Dose, type Product, type Targets } from './chem'
+  import { amountWords, analyze, cellRange, dose, planWithCell, strengthWords, waterFrom, type Analysis, type Answer, type Ask, type CellState, type Dose, type Product, type Targets } from './chem'
   import { compare } from './compare'
   import { dateWords, decayRows, timeWords, visitTimeWords, type DatedReading } from './decay'
   import DecayChart from './DecayChart.svelte'
@@ -21,7 +21,7 @@
   let targets = $state<Targets | null>(null)
   let setupError = $state('')
   // The salt range for this pool's cell, from its manufacturer, or the question why not.
-  let cell = $state<Answer<CellRange> | null>(null)
+  let cell = $state<CellState>({ status: 'none' })
 
   // Everything the engine said about today's water, or why it could not say.
   let analysis = $state<Answer<Analysis> | null>(null)
@@ -48,7 +48,20 @@
         targets = t
       })
       .catch((e: Error) => (setupError = e.message))
-    if (pool.cell) cellRange(pool.cell).then((r) => (cell = r)).catch(() => (cell = null))
+    let stale = false
+    cell = pool.cell ? { status: 'loading' } : { status: 'none' }
+    if (pool.cell) {
+      cellRange(pool.cell)
+        .then((answer) => {
+          if (!stale) cell = { status: 'answered', answer }
+        })
+        .catch(() => {
+          if (!stale) cell = { status: 'failed' }
+        })
+    }
+    return () => {
+      stale = true
+    }
   })
 
   const rows = $derived(
@@ -62,7 +75,7 @@
   const off = $derived(rows.filter((r) => r.status === 'off'))
   const methodLabel = $derived(reading ? { strip: 'strip', drop: 'drop kit', meter: 'meter' }[reading.method] : 'not tested yet')
   const water = $derived(waterFrom(reading, pool))
-  const planned = $derived(plan(reading, targets, products, cell?.ok ? cell.value : null))
+  const planned = $derived(planWithCell(reading, targets, products, cell))
   const tested = $derived(!!reading && Object.keys(reading.values).length > 0)
 
   // Ask the engine whenever the readings or the setup change.
@@ -103,8 +116,6 @@
   const decay = $derived(decayRows(history, { serviceDay: pool.serviceDay, lowTargets }))
   const visitsNewest = $derived([...history].reverse())
 
-  const si = $derived(analysis?.ok ? analysis.value.saturationIndex : null)
-  const siWords = $derived(si === null ? '' : si > 0.05 ? 'scale-forming' : si < -0.05 ? 'corrosive' : 'balanced')
 </script>
 
 <div class="bar">
@@ -157,8 +168,9 @@
     <ul class="asks">{#each analysis.questions as q (q.field)}<li>{q.ask}</li>{/each}</ul>
   {:else if analysis?.ok}
     {@const a = analysis.value}
+    {@const si = a.saturationIndex}
     <div class="rg" style="grid-template-columns:repeat(3,1fr)">
-      <div class={['r', siWords === 'balanced' ? 'ok' : 'warn']}><div class="n">SI</div><div class="v">{(si! >= 0 ? '+' : '−') + Math.abs(si!).toFixed(2)}</div><div class="p">{siWords}</div></div>
+      <div class="r"><div class="n">SI</div><div class="v">{(si >= 0 ? '+' : '−') + Math.abs(si).toFixed(2)}</div><div class="p">calcite</div></div>
       <div class="r"><div class="n">Carb. alk</div><div class="v">{Math.round(a.alkalinity.carbonate)}</div><div class="p">of TA {Math.round(a.alkalinity.total)}</div></div>
       {#if a.chlorine}
         <div class="r"><div class="n">HOCl</div><div class="v">{a.chlorine.hocl.toFixed(2)}</div><div class="p">{a.chlorine.hoclPercentOfFree.toFixed(0)}% of FC</div></div>
@@ -167,9 +179,12 @@
       {/if}
     </div>
     <p class="xs" style="margin-top:6px">
-      SI 0 is balanced; above 0 tends to scale, below 0 tends to etch. Cyanurate carries {Math.round(a.alkalinity.cyanurate)} ppm of the alkalinity.
+      SI is the calcite saturation index: 0 is saturated with calcium carbonate, above 0 oversaturated, below 0 undersaturated. Cyanurate carries {Math.round(a.alkalinity.cyanurate)} ppm of the alkalinity.
       {#if pool.tds !== undefined && water.salt === undefined}TDS {pool.tds.toLocaleString('en-US')} from the pool record.{/if}
     </p>
+    {#if a.assumptions.length}
+      <ul class="assume xs">{#each a.assumptions as t (t)}<li>{t}</li>{/each}</ul>
+    {/if}
   {/if}
 </section>
 
@@ -208,8 +223,10 @@
     {#each planned.notes as n (n.param)}
       <div class="dose"><div class="a">—</div><div><div class="w">{scaleFor(n.param).label}</div><div class="xs">{n.text}</div></div></div>
     {/each}
-    {#if pool.cell && cell && !cell.ok}
-      <div class="dose"><div class="a">?</div><div><div class="w">Salt cell · {pool.cell.make} {pool.cell.model}</div><div class="xs">{cell.questions.map((q) => q.ask).join(' ')} Until then salt is judged against the company's range.</div></div></div>
+    {#if pool.cell && cell.status === 'answered' && !cell.answer.ok}
+      <div class="dose"><div class="a">?</div><div><div class="w">Salt cell · {pool.cell.make} {pool.cell.model}</div><div class="xs">{cell.answer.questions.map((q) => q.ask).join(' ')} Until then salt is judged against the company's range.</div></div></div>
+    {:else if pool.cell && cell.status === 'failed'}
+      <div class="dose"><div class="a">?</div><div><div class="w">Salt cell · {pool.cell.make} {pool.cell.model}</div><div class="xs">The cell's range could not be loaded. Until then salt is judged against the company's range.</div></div></div>
     {/if}
     {#if !doses.length && !planned.notes.length && !chemBusy}
       <p class="sm" style="margin-top:4px">Everything is inside the target ranges. Nothing to add.</p>
@@ -276,4 +293,6 @@
   .contact { display: flex; align-items: center; min-height: 44px; font-weight: 800; color: var(--brand-link); text-decoration: none; }
   .edit { min-height: 44px; padding: 0 16px; text-decoration: none; flex: none; }
   .asks li { margin-top: 4px; }
+  .assume { margin: 6px 0 0 18px; }
+  .assume li { margin-top: 2px; }
 </style>

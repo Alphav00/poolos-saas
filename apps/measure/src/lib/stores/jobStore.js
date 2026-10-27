@@ -5,22 +5,64 @@
  * Responsibilities:
  *   - Hold the current in-memory job (job, id, status, lastSaved, error)
  *   - Persist every change to the server via SaveQueue
- *   - Mirror the latest to localStorage so a browser refresh recovers
+ *   - Mirror every edit to localStorage so a refresh (or a server that is
+ *     not taking the job yet) loses nothing
  *   - Update the URL after the first save so /jobs/{id}/edit is bookmarkable
+ *
+ * Local drafts are kept per company and per job: /measure/new only recovers
+ * an unsaved new draft, and /jobs/{id}/edit only that job's own draft.
+ * A new job stays on the phone until it has the minimum the server takes
+ * (four perimeter points); half-finished rows stay in the draft but are left
+ * out of what is sent (utils/serverPayload.js).
+ *
+ * An edit route's unsent draft is only sent if the server copy has not moved
+ * since the draft was based on it (same updated_at); otherwise the server copy
+ * is shown and the draft is set aside. A draft the server rejected is shown
+ * but not sent again until the next edit.
  *
  * Components use:
  *   $job.job.meta.customer_name      // read
  *   $job.job.meta.customer_name = X  // write (mutation is fine, Svelte triggers reactivity)
- *   $job.markDirty()                 // explicit save trigger
- *   $job.saveNow()                   // immediate save (bypass debounce)
+ *   store.markDirty()                // explicit save trigger
+ *   store.saveNow()                  // immediate save (bypass debounce)
  *   $job.status, $job.lastSaved, $job.error
  */
 import { writable, get } from 'svelte/store';
 import { SaveQueue } from './saveQueue.js';
 import { api } from '../api.js';
+import { canCreate, serverPayload } from '../utils/serverPayload.js';
 
-const LS_KEY = 'pool-cover-current-job';
+// One unscoped key held "the current job" before drafts were kept per job;
+// it is removed on sight so it can never reopen over another job.
+const LEGACY_LS_KEY = 'pool-cover-current-job';
+const LS_PREFIX = 'pool-cover-job';
 const DEBOUNCE_MS = 500;
+const LS_DEBOUNCE_MS = 200;
+
+// What the server sets on a job. Only these are taken from a save's answer;
+// everything else stays as the tech has it now.
+const SERVER_FIELDS = ['id', 'created_at', 'updated_at'];
+
+/** The company this browser works for: the poolos_company cookie, '' for the default. */
+export function currentCompany() {
+  try {
+    for (const part of String(document.cookie || '').split(';')) {
+      const [name, ...rest] = part.trim().split('=');
+      if (name === 'poolos_company') return decodeURIComponent(rest.join('=').trim());
+    }
+  } catch { /* no document */ }
+  return '';
+}
+
+/** The localStorage key for a job's draft; a job not yet saved is 'new'. */
+export function draftKey(company, id) {
+  return `${LS_PREFIX}:${company || 'default'}:${id || 'new'}`;
+}
+
+/** Answers the same body will get again. 401/403 are not: signing in again fixes them. */
+const PERMANENT = new Set([400, 404, 409, 413, 422]);
+const isPermanent = (e) => PERMANENT.has(e?.status);
+const isSignedOut = (e) => e?.status === 401 || e?.status === 403;
 
 /**
  * The liner-only measurement block.
@@ -56,7 +98,7 @@ export function emptyJob() {
       customer_address: '',
       customer_phone: '',
       customer_email: '',
-      dealer_name: 'Merlin Dealer',
+      dealer_name: '',
       dealer_location: '',
       date: new Date().toISOString(),
       photos_attached: false,
@@ -111,9 +153,9 @@ export function emptyJob() {
   };
 }
 
-function readLS() {
+function readLS(key) {
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     return JSON.parse(raw);
   } catch {
@@ -121,28 +163,39 @@ function readLS() {
   }
 }
 
-function writeLS(snapshot) {
+function writeLS(key, snapshot) {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(snapshot));
+    localStorage.setItem(key, JSON.stringify(snapshot));
   } catch {
     // quota or private mode -- not fatal
   }
 }
 
-function clearLS() {
-  try { localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+function clearLS(key) {
+  try { localStorage.removeItem(key); } catch { /* ignore */ }
 }
 
 export function createJobStore({ initialId = null, fetchFromServer = true } = {}) {
-  // Hydrate initial state from URL param or localStorage
+  const company = currentCompany();
+  clearLS(LEGACY_LS_KEY);
+
+  // Hydrate from this job's own draft: on /new only a draft never saved,
+  // on /jobs/{id}/edit only a draft with that id.
+  const id = initialId;
   let initialJob = null;
-  let id = initialId;
-  if (!id) {
-    const cached = readLS();
-    if (cached) {
-      initialJob = cached.job;
-      id = cached.id;
-    }
+  let recovered = false;
+  // The server's updated_at the draft was edited from.
+  let draftBase = null;
+  // The server's answer when it last refused this draft; null once edited.
+  let rejectedError = null;
+  const cached = readLS(draftKey(company, id));
+  if (cached && cached.job && (id ? cached.id === id : !cached.id)) {
+    initialJob = cached.job;
+    // An edit route's draft only wins over the server copy when it holds
+    // edits the server has not taken; a new draft is unsaved by definition.
+    recovered = id ? cached.unsynced === true : true;
+    draftBase = cached.job.updated_at ?? null;
+    if (recovered && cached.rejected) rejectedError = String(cached.rejected);
   }
   if (!initialJob) {
     initialJob = emptyJob();
@@ -151,32 +204,71 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
   const state = writable({
     job: initialJob,
     id,
-    status: 'idle',           // 'idle'|'dirty'|'saving'|'saved'|'error'|'fatal'
+    // 'idle'|'dirty'|'saving'|'saved'|'local'|'error'|'fatal'|'rejected'|'conflict'
+    status: rejectedError ? 'rejected' : 'idle',
     lastSaved: null,
-    error: null,
+    error: rejectedError,
     retryInMs: null,
   });
 
   let queue = null;
+  // Counts edits, so a save knows whether anything changed while it was out.
+  let edits = 0;
+  // The edit count the server last took; a recovered draft starts behind.
+  let acked = recovered ? -1 : 0;
+  // The edit count last sent on the way out, so pagehide after
+  // visibilitychange does not send it twice.
+  let sentOnExit = null;
+  let lsTimer = null;
+
+  function writeDraft(unsynced) {
+    if (lsTimer) { clearTimeout(lsTimer); lsTimer = null; }
+    const s = get(state);
+    const draft = { id: s.id, job: s.job, unsynced };
+    if (unsynced && rejectedError) draft.rejected = rejectedError;
+    writeLS(draftKey(company, s.id), draft);
+  }
+
+  // Debounced: Svelte passes a bound value up to the job a tick after the
+  // input event that calls markDirty.
+  function scheduleDraftWrite() {
+    if (lsTimer) clearTimeout(lsTimer);
+    lsTimer = setTimeout(() => writeDraft(true), LS_DEBOUNCE_MS);
+  }
+
+  function markDirty() {
+    edits += 1;
+    rejectedError = null;
+    scheduleDraftWrite();
+    queue.schedule();
+  }
+
+  /** Take the server-set fields from a save's answer; keep the tech's edits. */
+  function adopt(server) {
+    state.update(cur => {
+      const job = cur.job;
+      for (const k of SERVER_FIELDS) {
+        if (server && k in server) job[k] = server[k];
+      }
+      return { ...cur, id: server?.id ?? cur.id, job };
+    });
+  }
 
   async function performSave() {
     const s = get(state);
+    const seen = edits;
+    const payload = serverPayload(s.job);
     if (!s.id) {
-      const created = await api.createJob({
-        meta: s.job.meta,
-        product_type: s.job.product_type,
-        measurement: s.job.measurement,
-        cover_spec: s.job.cover_spec,
-        liner_spec: s.job.liner_spec,
-        hardware: s.job.hardware,
-        notes: s.job.notes,
-      });
-      state.update(cur => ({
-        ...cur,
-        id: created.id,
-        job: created,
-      }));
-      writeLS({ id: created.id, job: created });
+      if (!canCreate(payload)) {
+        // Not enough for the server yet; the phone holds it.
+        writeDraft(true);
+        return 'local';
+      }
+      const created = await api.createJob(payload);
+      acked = seen;
+      adopt(created);
+      clearLS(draftKey(company, null));
+      writeDraft(edits !== seen);
       if (typeof history !== 'undefined' && history.replaceState) {
         const newUrl = `/measure/jobs/${created.id}/edit`;
         if (window.location.pathname !== newUrl) {
@@ -184,78 +276,125 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
         }
       }
     } else {
-      const updated = await api.updateJob(s.id, {
-        meta: s.job.meta,
-        product_type: s.job.product_type,
-        measurement: s.job.measurement,
-        cover_spec: s.job.cover_spec,
-        liner_spec: s.job.liner_spec,
-        hardware: s.job.hardware,
-        notes: s.job.notes,
-      });
-      state.update(cur => ({ ...cur, job: updated }));
-      writeLS({ id: s.id, job: updated });
+      const updated = await api.updateJob(s.id, payload);
+      acked = seen;
+      adopt(updated);
+      writeDraft(edits !== seen);
     }
+    return 'server';
   }
 
-  queue = new SaveQueue({ save: performSave, debounceMs: DEBOUNCE_MS });
+  queue = new SaveQueue({ save: performSave, debounceMs: DEBOUNCE_MS, isPermanent });
 
   queue.on('dirty', () => state.update(s => ({ ...s, status: 'dirty' })));
   queue.on('saving', () => state.update(s => ({ ...s, status: 'saving', error: null })));
-  queue.on('saved', () => state.update(s => ({ ...s, status: 'saved', lastSaved: new Date(), error: null })));
+  queue.on('saved', (e) => state.update(s => (
+    e?.result === 'local'
+      ? { ...s, status: 'local', error: null, retryInMs: null }
+      : { ...s, status: 'saved', lastSaved: new Date(), error: null, retryInMs: null }
+  )));
   queue.on('error', (e) => {
+    const message = isSignedOut(e.error)
+      ? 'Signed out or not allowed: sign in again, then Retry'
+      : e.error?.message || String(e.error);
+    if (e.permanent) {
+      // Remember the refusal with the draft, so reopening the job does not
+      // send the same body again.
+      rejectedError = message;
+      writeDraft(true);
+    }
     state.update(s => ({
       ...s,
-      status: e.fatal ? 'fatal' : 'error',
-      error: e.error?.message || String(e.error),
+      status: e.permanent ? 'rejected' : e.fatal ? 'fatal' : 'error',
+      error: message,
       retryInMs: e.retryInMs ?? null,
     }));
   });
+
+  // A recovered draft has edits the server has not seen: send them, unless
+  // the server already refused it (the next edit tries again).
+  function resendRecovered() {
+    if (recovered && !rejectedError) queue.schedule();
+  }
 
   if (fetchFromServer && id) {
     api.getJob(id).then(server => {
       const cur = get(state);
       // Adopt the server copy unless the tech has typed something since mount.
       //
-      // `status` is the reliable signal for that: it starts 'idle' and only
-      // leaves it when markDirty fires. Comparing serialised job objects is
-      // not — the store holds a job while the server returns a job, and any
-      // field the API normalises (Decimals to strings, defaults filled in)
-      // makes the two differ even when nothing was edited.
-      const hasUnsavedEdits = cur.status === 'dirty' || cur.status === 'saving';
+      // The edit counter and `status` are the reliable signals for that.
+      // Comparing serialised job objects is not — the store holds a job while
+      // the server returns a job, and any field the API normalises (Decimals
+      // to strings, defaults filled in) makes the two differ even when
+      // nothing was edited.
+      const hasUnsavedEdits = edits > 0 || cur.status === 'dirty' || cur.status === 'saving';
       if (hasUnsavedEdits) return;
 
-      writeLS({ id: server.id, job: server });
+      // The draft on the phone wins only over the copy it was edited from.
+      // If the job changed since (another device, the swap-A/B button on the
+      // job view), sending the draft would overwrite that change.
+      let conflict = false;
+      if (recovered) {
+        if (draftBase && server.updated_at === draftBase) {
+          resendRecovered();
+          return;
+        }
+        conflict = true;
+        writeLS(`${draftKey(company, id)}:set-aside`, { id, job: cur.job, set_aside_at: new Date().toISOString() });
+        recovered = false;
+        rejectedError = null;
+        acked = edits;
+      }
+
+      writeLS(draftKey(company, server.id), { id: server.id, job: server, unsynced: false });
       state.set({
         job: server,
         id: server.id,
-        status: 'idle',
+        status: conflict ? 'conflict' : 'idle',
         lastSaved: new Date(),
-        error: null,
+        error: conflict
+          ? 'This job changed on the server since the edits on this phone. The server copy is shown; the phone edits were set aside, not sent.'
+          : null,
         retryInMs: null,
       });
     }).catch(err => {
       console.warn('Could not refresh from server:', err);
+      resendRecovered();
     });
+  } else {
+    resendRecovered();
   }
 
-  function onBeforeUnload() {
+  // Leaving the page: beforeunload on desktop; pagehide and
+  // visibilitychange=hidden are what phones fire reliably.
+  function onLeave(ev) {
+    if (ev?.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
     const s = get(state);
-    if (s.status === 'dirty' && s.id && typeof navigator !== 'undefined' && navigator.sendBeacon) {
-      // sendBeacon is fire-and-forget; survives page unload
-      const payload = JSON.stringify({
-        meta: s.job.meta, product_type: s.job.product_type,
-        measurement: s.job.measurement,
-        cover_spec: s.job.cover_spec, liner_spec: s.job.liner_spec,
-        hardware: s.job.hardware, notes: s.job.notes,
-      });
+    // Anything the server has not taken, whether waiting, in flight or failed.
+    if (edits === acked && !lsTimer) return;
+    // The draft on the phone first: that write cannot fail on the network.
+    writeDraft(true);
+    if (s.id && !rejectedError && sentOnExit !== edits && typeof fetch !== 'undefined') {
+      sentOnExit = edits;
+      // keepalive lets the request outlive the page. The Worker takes PUT
+      // for a job (sendBeacon can only POST).
       try {
-        navigator.sendBeacon(`/api/measure/jobs/${s.id}`, new Blob([payload], { type: 'application/json' }));
+        fetch(`/api/measure/jobs/${s.id}`, {
+          method: 'PUT',
+          keepalive: true,
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(serverPayload(s.job)),
+        }).catch(() => { /* the draft is on the phone */ });
       } catch { /* ignore */ }
     }
   }
   if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('beforeunload', onLeave);
+    window.addEventListener('pagehide', onLeave);
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('visibilitychange', onLeave);
   }
 
   /**
@@ -275,7 +414,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
       }
       return { ...cur, job };
     });
-    queue.schedule();
+    markDirty();
   }
 
   return {
@@ -283,12 +422,24 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
     set: state.set,
     update: state.update,
     setProductType,
-    markDirty: () => queue.schedule(),
-    saveNow: () => queue.flush(),
+    markDirty,
+    // Resolves once the save (and any follow-up) is done, so a caller can
+    // leave the page knowing the server has the edits.
+    saveNow: async () => {
+      const r = await queue.flush();
+      await queue.idle();
+      return r;
+    },
     cancelPending: () => queue.cancel(),
     discard: () => {
       queue.cancel();
-      clearLS();
+      // Nothing left that the server has not taken.
+      acked = edits;
+      recovered = false;
+      rejectedError = null;
+      if (lsTimer) { clearTimeout(lsTimer); lsTimer = null; }
+      clearLS(draftKey(company, get(state).id));
+      clearLS(draftKey(company, null));
       state.set({
         job: emptyJob(),
         id: null,
@@ -299,9 +450,20 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
       });
     },
     destroy: () => {
-      queue.cancel();
+      // Leaving the editor (Finish on the last step, the back button) must
+      // not drop an edit still waiting on the debounce: send it now. The
+      // save finishes after unmount and updates the draft as usual.
+      if (queue.status.scheduled || get(state).status === 'dirty') {
+        queue.flush();
+      }
+      // Keep whatever was typed in the last moment before leaving.
+      if (lsTimer) writeDraft(true);
       if (typeof window !== 'undefined') {
-        window.removeEventListener('beforeunload', onBeforeUnload);
+        window.removeEventListener('beforeunload', onLeave);
+        window.removeEventListener('pagehide', onLeave);
+      }
+      if (typeof document !== 'undefined' && document.removeEventListener) {
+        document.removeEventListener('visibilitychange', onLeave);
       }
     },
   };

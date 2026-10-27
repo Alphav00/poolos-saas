@@ -92,8 +92,14 @@ export async function deleteStaff(id: string): Promise<void> {
   if (!res.ok) throw await failure(res, 'Could not remove.')
 }
 
-/** Owner only: writes the made-up demo staff to D1. Records with the same id are replaced. */
+/**
+ * Owner only: writes the made-up demo staff to D1. The list is read again
+ * first; an earlier demo record with the same id is replaced, but an id held
+ * by anyone else (a real person, or a record the screens hide) is left alone
+ * and that demo person is skipped.
+ */
 export async function loadDemoStaff(): Promise<StaffMember[]> {
-  for (const s of DEMO_STAFF) await saveStaff(s)
+  const demoOnFile = new Set((await loadStaff(true)).filter((s) => s.demo).map((s) => s.id))
+  for (const s of DEMO_STAFF) if (!takenIds.has(s.id) || demoOnFile.has(s.id)) await saveStaff(s)
   return loadStaff(true)
 }

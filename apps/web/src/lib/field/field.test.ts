@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { amountWords, plan, strengthWords, waterFrom, type Product, type Targets } from './chem'
+import { amountWords, plan, planWithCell, strengthWords, waterFrom, type Product, type Targets } from './chem'
 import { compare } from './compare'
 import { DEMO_CUSTOMER_NAMES, generateCustomer, slugify } from './generator'
 import DENYLIST from '../../../../../tests/denylist.txt?raw'
@@ -57,6 +57,26 @@ describe('typed readings', () => {
   it('reads a comma as a decimal point', () => {
     expect(parseTyped(fc, '2,5')).toEqual({ value: 2.5 })
     expect(parseTyped(ph, ' 7.4 ')).toEqual({ value: 7.4 })
+    expect(parseTyped(ph, '7,5')).toEqual({ value: 7.5 })
+    expect(parseTyped(fc, '0,5')).toEqual({ value: 0.5 })
+  })
+  it('reads a comma before three digits as a thousands separator, not a decimal point', () => {
+    const salt = scaleFor('salt')
+    const ch = scaleFor('ch')
+    expect(parseTyped(salt, '3,200')).toEqual({ value: 3200 })
+    expect(parseTyped(ch, '1,000')).toEqual({ value: 1000 })
+    expect(parseTyped(salt, '1,000.5')).toEqual({ value: 1000.5 })
+    expect(parseTyped(salt, '12,000')).toHaveProperty('error') // above the salt limit, not 12
+    expect(parseTyped(scaleFor('ta'), '1,200')).toHaveProperty('error') // above the TA limit, not 1.2
+  })
+  it('refuses commas that are neither a decimal point nor thousands', () => {
+    const salt = scaleFor('salt')
+    expect(parseTyped(salt, '3,2000')).toHaveProperty('error')
+    expect(parseTyped(salt, '1,000,5')).toHaveProperty('error')
+    expect(parseTyped(scaleFor('ch'), '0,500')).toHaveProperty('error') // 0.5 or a typo, never 500
+    expect(parseTyped(scaleFor('ch'), '00,500')).toHaveProperty('error')
+    expect(parseTyped(salt, '3,200,')).toHaveProperty('error')
+    expect(parseTyped(fc, '1,5.0')).toHaveProperty('error')
   })
   it('clears on empty and refuses junk or impossible numbers', () => {
     expect(parseTyped(fc, '')).toEqual({ value: undefined })
@@ -162,6 +182,25 @@ describe('chemistry: salt by the cell manufacturer', () => {
   it('falls back to the company range without a cell', () => {
     expect(plan(reading, targets, [salt], null).asks[0]).toMatchObject({ target: 3200 })
     expect(plan(reading, targets, [salt], null).asks[0]!.cell).toBeUndefined()
+  })
+
+  it('holds salt back while the cell range loads, and says so', () => {
+    const p = planWithCell({ method: 'drop', values: { salt: 2700, ph: 8.2 } }, { ...targets, ranges: { ...targets.ranges, ph: [7.4, 7.6] } }, [salt], { status: 'loading' })
+    expect(p.asks).toEqual([])
+    expect(p.notes).toEqual([
+      { param: 'ph', text: 'above target · no muriatic acid set up' },
+      { param: 'salt', text: 'Salt dose waits for the cell’s range' },
+    ])
+    // no salt reading: nothing to wait for
+    expect(planWithCell({ method: 'drop', values: { ph: 7.5 } }, targets, [salt], { status: 'loading' }).notes).toEqual([])
+  })
+
+  it('uses the manufacturer range once answered, and the company range when the ask failed or had no range', () => {
+    expect(planWithCell(reading, targets, [salt], { status: 'answered', answer: { ok: true, value: cell } }).asks[0]).toMatchObject({ target: 3400 })
+    const noRange = { status: 'answered' as const, answer: { ok: false as const, questions: [{ field: 'cell', ask: 'Which cell?' }] } }
+    expect(planWithCell(reading, targets, [salt], noRange).asks[0]).toMatchObject({ target: 3200 })
+    expect(planWithCell(reading, targets, [salt], { status: 'failed' }).asks[0]).toMatchObject({ target: 3200 })
+    expect(planWithCell(reading, targets, [salt], { status: 'none' }).asks[0]).toMatchObject({ target: 3200 })
   })
 })
 
