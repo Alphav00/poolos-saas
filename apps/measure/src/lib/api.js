@@ -4,6 +4,28 @@
 
 const BASE = '/api/measure';  // same origin
 
+/**
+ * A readable message from an error body. The Worker answers a rejected body
+ * with 422 {detail: [{loc, msg}, ...]} (pydantic's shape); other errors carry
+ * a string detail.
+ */
+export function errorMessage(body, status) {
+  const d = body && typeof body === 'object' && 'detail' in body ? body.detail : body;
+  if (typeof d === 'string' && d) return d;
+  if (Array.isArray(d)) {
+    return d
+      .map((i) => {
+        if (!i || typeof i !== 'object') return String(i);
+        const loc = Array.isArray(i.loc) ? i.loc.join('.') : '';
+        const msg = i.msg ?? JSON.stringify(i);
+        return loc ? `${loc}: ${msg}` : msg;
+      })
+      .join('; ');
+  }
+  if (d && typeof d === 'object') return JSON.stringify(d);
+  return `HTTP ${status}`;
+}
+
 async function req(path, opts = {}) {
   const r = await fetch(BASE + path.replace(/^\/api/, ''), {
     credentials: 'same-origin',
@@ -13,10 +35,11 @@ async function req(path, opts = {}) {
   if (!r.ok) {
     let msg = `HTTP ${r.status}`;
     try {
-      const j = await r.json();
-      msg = j.detail || JSON.stringify(j);
-    } catch {}
-    throw new Error(msg);
+      msg = errorMessage(await r.json(), r.status);
+    } catch { /* not JSON */ }
+    const err = new Error(msg);
+    err.status = r.status;
+    throw err;
   }
   if (r.status === 204) return null;
   const ct = r.headers.get('content-type') || '';

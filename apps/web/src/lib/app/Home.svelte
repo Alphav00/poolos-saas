@@ -132,7 +132,7 @@
           {#if weather.source === 'nws'}<span class="xs">via NWS</span>{/if}
         </div>
       </div>
-      <button class="chip refresh" onclick={askLocation} disabled={busy} aria-label="Refresh weather for where I am">↻</button>
+      <button class="chip refresh" onclick={askLocation} disabled={busy} aria-busy={busy} aria-label={busy ? "Refreshing weather..." : "Refresh weather for where I am"}>{busy ? '⌛' : '↻'}</button>
     </div>
     {#if rainAt !== null}<p class="alert-soft">Rain likely from {hourLabel(rainAt)}. Plan outdoor work and dosing before then.</p>{/if}
     {#if weatherNote}<p class="xs" role="status" style="margin-top:6px">{weatherNote}{#if weatherNote === 'Sign in again.'}<a class="signin" href="/">Sign in</a>{/if}</p>{/if}

@@ -1,9 +1,9 @@
 /**
  * Shape checks for the `field` board, where the app (not a Claude artifact)
  * keeps its own documents:
- *   readings/<pool>:<yyyy-mm-dd>   one pool's readings for the day
- *   settings/products              the company's chemicals, with label facts
- *   settings/targets               the company's target ranges, with a source
+ *   readings/<pool>:<yyyy-mm-dd>   one pool's readings for the day, with optional arrival and departure times
+ *   settings/products              the company's chemicals, with label facts (owner only)
+ *   settings/targets               the company's target ranges, with a source (owner only)
  *   pools/<id>                     a customer's pool: who, where, which day, what it is (engine output is not kept here)
  *   staff/<id>                     a staff member: name, sign-in email, role, route
  * Returns a reason when the document is refused, or null when it is fine.
@@ -30,6 +30,8 @@ const MAX_TEXT = 120;
 const isText = (v: unknown, max = MAX_TEXT) => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
 const isNumber = (v: unknown) => typeof v === 'number' && Number.isFinite(v);
 
+const CLOCK = /^([01]?\d|2[0-3]):[0-5]\d$/;
+
 function checkReadings(id: string, data: Record<string, unknown>): string | null {
 	if (!ID.test(id)) return 'Reading ids look like "<pool>:<yyyy-mm-dd>"';
 	if (!METHODS.has(data.method as string)) return 'method must be strip, drop or meter';
@@ -39,12 +41,23 @@ function checkReadings(id: string, data: Record<string, unknown>): string | null
 		if (!PARAMS.has(k)) return `Unknown reading "${k}"`;
 		if (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 100000) return `"${k}" must be a number`;
 	}
-	const extra = Object.keys(data).filter((k) => !['pool', 'date', 'method', 'values'].includes(k));
+	for (const k of ['arrivedAt', 'leftAt'] as const) {
+		if (data[k] !== undefined && (typeof data[k] !== 'string' || !CLOCK.test(data[k]))) return `"${k}" must be a time like "9:05"`;
+	}
+	const extra = Object.keys(data).filter((k) => !['pool', 'date', 'method', 'values', 'arrivedAt', 'leftAt'].includes(k));
 	if (extra.length) return `Unexpected field "${extra[0]}"`;
 	return null;
 }
 
-/** settings/products: { products: [{ id, kind, name, ...facts }] }. Facts are numbers from the label. */
+/** setBy and setAt on a settings document are stamped by the Worker (stampSettings), not the form. */
+const SETTINGS_STAMPS = ['setBy', 'setAt'];
+function checkStamps(data: Record<string, unknown>): string | null {
+	if (data.setBy !== undefined && typeof data.setBy !== 'string') return 'setBy is set by the server';
+	if (data.setAt !== undefined && (typeof data.setAt !== 'string' || Number.isNaN(Date.parse(data.setAt)))) return 'setAt is set by the server';
+	return null;
+}
+
+/** settings/products: { products: [{ id, kind, name, ...facts }], setBy, setAt }. Facts are numbers from the label. */
 function checkProducts(data: Record<string, unknown>): string | null {
 	const list = data.products;
 	if (!Array.isArray(list) || list.length > 50) return 'products must be a list of at most 50';
@@ -67,12 +80,12 @@ function checkProducts(data: Record<string, unknown>): string | null {
 		const extra = Object.keys(o).filter((k) => !allowed.has(k));
 		if (extra.length) return `Unexpected product field "${extra[0]}"`;
 	}
-	const extra = Object.keys(data).filter((k) => k !== 'products');
+	const extra = Object.keys(data).filter((k) => k !== 'products' && !SETTINGS_STAMPS.includes(k));
 	if (extra.length) return `Unexpected field "${extra[0]}"`;
-	return null;
+	return checkStamps(data);
 }
 
-/** settings/targets: { source, ranges: { fc: [low, high], ... } }. The source says who set them. */
+/** settings/targets: { source, ranges: { fc: [low, high], ... }, setBy, setAt }. The source says who set them. */
 function checkTargets(data: Record<string, unknown>): string | null {
 	if (!isText(data.source, 200)) return 'targets need a source: who set them, and from what';
 	const ranges = data.ranges;
@@ -83,9 +96,9 @@ function checkTargets(data: Record<string, unknown>): string | null {
 			return `"${k}" target must be [low, high] with low ≤ high`;
 		}
 	}
-	const extra = Object.keys(data).filter((k) => !['source', 'ranges'].includes(k));
+	const extra = Object.keys(data).filter((k) => !['source', 'ranges', ...SETTINGS_STAMPS].includes(k));
 	if (extra.length) return `Unexpected field "${extra[0]}"`;
-	return null;
+	return checkStamps(data);
 }
 
 const POOL_ID = /^[a-z0-9-]{1,60}$/;
@@ -154,6 +167,11 @@ function checkStaff(id: string, data: Record<string, unknown>): string | null {
 export function stampStaff(data: Record<string, unknown>, previous: Record<string, unknown> | null, by: string, at: string) {
 	const email = typeof data.email === 'string' ? data.email.trim().toLowerCase() : data.email;
 	return { ...data, email, createdAt: previous?.createdAt ?? at, createdBy: previous?.createdBy ?? by };
+}
+
+/** Who last changed the chemistry setup and when come from the sign-in and the server, whatever the form sends. */
+export function stampSettings(data: Record<string, unknown>, by: string, at: string) {
+	return { ...data, setBy: by, setAt: at };
 }
 
 export function checkFieldDoc(collection: string, id: string, data: Record<string, unknown>): string | null {

@@ -17,6 +17,7 @@
   import PerimeterMap from './PerimeterMap.svelte';
   import { reconstructPool, suspectPoints } from '../utils/reconstruct.js';
   import { formatDistance } from '../utils/distance.js';
+  import { removePoint, undoDeletePoint } from '../utils/pointRefs.js';
 
   export let job;
   export let store;
@@ -33,14 +34,18 @@
   $: sus = suspectPoints(pts, parseFloat(job.measurement.ab_distance_ft) || 0);
 
   let lastAddedNumber = null;
-  let undoStack = [];   // snapshots for undo (max 20)
+  // What each change did, so undo can reverse just that change (max 20).
+  // Entries hold the inverse, not a copy of the job, so undo never reverts
+  // other lists edited since (a fitting re-pointed, a cross dimension added).
+  let undoStack = [];
+  // References that pointed at a deleted point and were cleared.
+  let clearedRefs = [];
 
-  function snapshot() {
-    undoStack = [...undoStack, JSON.parse(JSON.stringify(pts))].slice(-20);
+  function pushUndo(entry) {
+    undoStack = [...undoStack, entry].slice(-20);
   }
 
   function addPoint() {
-    snapshot();
     const next = (pts.length || 0) + 1;
     job.measurement.perimeter_points = [
       ...pts,
@@ -53,15 +58,17 @@
         obstacle_kind: null,
       },
     ];
+    pushUndo({ kind: 'add', number: next });
     lastAddedNumber = next;
+    clearedRefs = [];
     store.markDirty();
   }
 
   function deletePoint(num) {
-    snapshot();
-    job.measurement.perimeter_points = pts
-      .filter(p => p.number !== num)
-      .map((p, i) => ({ ...p, number: i + 1 }));
+    const { cleared, undo: inverse } = removePoint(job, num);
+    pushUndo({ kind: 'delete', inverse });
+    job = job;
+    clearedRefs = cleared;
     if (lastAddedNumber === num) lastAddedNumber = null;
     store.markDirty();
   }
@@ -70,14 +77,23 @@
     if (undoStack.length === 0) return;
     const prev = undoStack[undoStack.length - 1];
     undoStack = undoStack.slice(0, -1);
-    job.measurement.perimeter_points = prev;
+    clearedRefs = [];
+    if (prev.kind === 'delete') {
+      undoDeletePoint(job, prev.inverse);
+    } else if (prev.kind === 'add') {
+      // Taking the added point off again is a delete of it.
+      clearedRefs = removePoint(job, prev.number).cleared;
+    } else if (prev.kind === 'clear') {
+      job.measurement.perimeter_points = prev.points;
+    }
+    job = job;
     lastAddedNumber = null;
     store.markDirty();
   }
 
   function clearAll() {
     if (!confirm(`Delete all ${pts.length} perimeter points?`)) return;
-    snapshot();
+    pushUndo({ kind: 'clear', points: JSON.parse(JSON.stringify(pts)) });
     job.measurement.perimeter_points = [];
     lastAddedNumber = null;
     store.markDirty();
@@ -152,6 +168,12 @@
       {/if}
     </div>
   </div>
+
+  {#if clearedRefs.length}
+    <div class="border border-yellow-500/40 bg-yellow-500/5 rounded-lg p-3 space-y-1" role="status">
+      <p class="text-sm text-yellow-300">⚠ The deleted point was used by: {clearedRefs.join(', ')}. Pick a new point there.</p>
+    </div>
+  {/if}
 
   <!-- Mini-map -->
   <PerimeterMap

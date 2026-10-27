@@ -1,10 +1,18 @@
 # Strings that must never appear in tests or fixtures (DESIGN.md section 3,
 # constraint 1). One per line, matched case-insensitively as whole words.
 # Lines starting with # are comments. Add real customer names, street
-# addresses and company names here.
+# addresses and company names here. Bare "S&M" is left out on purpose: three
+# characters match by chance inside binary files (a gzip golden in
+# packages/measure-core/test does).
 CCS
 CCS Pools
 Jacobs
 S&M Pools
+SM Pools
+sm-pools
 Sewell
+Cherry Hill
 Meechie
+Blue Devil Pools
+Blue Devil
+blue-devil-pools

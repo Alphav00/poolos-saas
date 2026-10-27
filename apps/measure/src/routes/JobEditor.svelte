@@ -26,13 +26,18 @@
     initialStep = firstIncompleteStep($store.job);
   }
 
-  function onFinish() {
-    // After the last step, take the tech to the read-only view.
+  async function onFinish() {
+    // After the last step, take the tech to the read-only view. Save first:
+    // the view, the order form and reconstruct all read the server copy, and
+    // an edit typed in the last moment may still be waiting on the debounce.
+    await store.saveNow();
     navigate(`/measure/jobs/${$store.id || ''}`);
   }
 
   onDestroy(() => {
-    $store.cancelPending?.();
+    // The methods live on the store, not on its value. destroy() sends a
+    // pending save rather than dropping it.
+    store.destroy();
   });
 </script>
 

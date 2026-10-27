@@ -51,9 +51,20 @@
     const h = Math.max(...ys) - Math.min(...ys);
     const maxDim = Math.max(w, h, abN);
 
+    // Brand-aware canvas colours: the brand pack writes --brand-* on :root.
+    // A dark pack sets card/line/ink; a light pack leaves card/line unset,
+    // so fall back to the previous light values and the look is unchanged.
+    const brandColor = (name, fallback) => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return !v || v === 'initial' ? fallback : new THREE.Color(v).getHex();
+    };
+    const canvasBg = brandColor('--brand-card', 0xf5f8fb);
+    const canvasLine = brandColor('--brand-line', null);
+    const canvasInk = brandColor('--brand-ink', 0x1d2a36);
+
     // Three.js scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf5f8fb);
+    scene.background = new THREE.Color(canvasBg);
 
     camera = new THREE.PerspectiveCamera(
       45, container.clientWidth / container.clientHeight, 0.1, 1000
@@ -94,7 +105,7 @@
     const linePts = centered.map(([x, y]) => new THREE.Vector3(x, 0.05, y));
     linePts.push(linePts[0]);
     const lineGeom = new THREE.BufferGeometry().setFromPoints(linePts);
-    const lineMat = new THREE.LineBasicMaterial({ color: 0x1d2a36, linewidth: 2 });
+    const lineMat = new THREE.LineBasicMaterial({ color: canvasInk, linewidth: 2 });
     const line = new THREE.Line(lineGeom, lineMat);
     scene.add(line);
 
@@ -116,7 +127,7 @@
     scene.add(aStake);
     // A label sprite
     const stakeLabelScale = Math.max(1.6, stakeR * 4);
-    const aLabel = makeLabelSprite('A', 0x3b82f6, aX, stakeH + 1.2, aY, stakeLabelScale);
+    const aLabel = makeLabelSprite('A', 0x3b82f6, aX, stakeH + 1.2, aY, stakeLabelScale, canvasBg);
     aLabel.userData = { number: 'A' };
     scene.add(aLabel);
 
@@ -127,7 +138,7 @@
     );
     bStake.position.set(bX, stakeH / 2, bY);
     scene.add(bStake);
-    const bLabel = makeLabelSprite('B', 0xef4444, bX, stakeH + 1.2, bY, stakeLabelScale);
+    const bLabel = makeLabelSprite('B', 0xef4444, bX, stakeH + 1.2, bY, stakeLabelScale, canvasBg);
     bLabel.userData = { number: 'B' };
     scene.add(bLabel);
 
@@ -168,13 +179,13 @@
 
       // Number label sprite above each marker (much bigger so it tappable on phone)
       const labelScale = Math.max(2.0, markerR * 5);
-      const labelSprite = makeLabelSprite(String(p.number), 0x1d2a36, x, markerR + 1.6, y, labelScale);
+      const labelSprite = makeLabelSprite(String(p.number), canvasInk, x, markerR + 1.6, y, labelScale, canvasBg);
       labelSprite.userData = { number: p.number };
       scene.add(labelSprite);
     }
 
     // Grid floor
-    const grid = new THREE.GridHelper(maxDim * 3, 30, 0xc9d6e0, 0xe3eaf0);
+    const grid = new THREE.GridHelper(maxDim * 3, 30, canvasLine ?? 0xc9d6e0, canvasLine ?? 0xe3eaf0);
     grid.position.y = -0.1;
     scene.add(grid);
 
@@ -266,14 +277,22 @@
   }
 
   // Build a 2D text label that always faces the camera.
-  function makeLabelSprite(text, color, x, y, z, scale = 1.0) {
+  function makeLabelSprite(text, color, x, y, z, scale = 1.0, halo = null) {
     const canvas = document.createElement('canvas');
     canvas.width = 128; canvas.height = 128;
     const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
     ctx.font = 'bold 96px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    // Halo in the canvas background colour so the label reads over grid
+    // lines and the pool outline instead of dissolving into them.
+    if (halo != null) {
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 14;
+      ctx.strokeStyle = '#' + halo.toString(16).padStart(6, '0');
+      ctx.strokeText(text, 64, 64);
+    }
+    ctx.fillStyle = '#' + color.toString(16).padStart(6, '0');
     ctx.fillText(text, 64, 64);
     const tex = new THREE.CanvasTexture(canvas);
     tex.needsUpdate = true;
@@ -374,6 +393,6 @@
   </div>
 {/if}
 
-<p class="text-sm text-ink-100/70 mt-2">
+<p class="text-sm text-ink-50/70 mt-2">
   Drag to rotate · scroll/pinch to zoom · tap a point to inspect. {points.length} points reconstructed.
 </p>

@@ -52,7 +52,7 @@ The live site is not touched.
 | D1 database | `poolos` | `poolos-preview` (own data, starts empty) |
 | R2 bucket | `poolos-files` | `poolos-files` (shared; the app does not use it yet) |
 | Deployed by | push to `main` (deploy.yml) | pull request push (preview.yml) |
-| Brand pack | `ccs-pools` | `ccs-pools` |
+| Brand pack | `ccs-pools,sm-pools,blue-devil-pools` (default `ccs-pools`) | `ccs-pools,sm-pools,blue-devil-pools` (default `ccs-pools`) |
 
 The settings are `env.preview` in `apps/api/wrangler.jsonc`. There is one
 preview: the last pushed pull request wins.

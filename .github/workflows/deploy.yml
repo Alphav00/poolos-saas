@@ -27,7 +27,7 @@ jobs:
       - name: Build the web app and Measure
         # The brand pack the live site wears (brands/README.md).
         env:
-          BRAND: ccs-pools,sm-pools
+          BRAND: ccs-pools,sm-pools,blue-devil-pools
         run: pnpm build
       - name: Apply database migrations
         working-directory: apps/api

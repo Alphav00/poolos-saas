@@ -111,7 +111,7 @@
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold">{job.meta.customer_name}</h1>
-        <p class="text-sm text-ink-100/70">
+        <p class="text-sm text-ink-50/70">
           {job.measurement.shape_type} · {job.meta.dealer_name}
         </p>
       </div>
@@ -147,12 +147,12 @@
       </div>
     {/if}
 
-    <div class="flex gap-2 border-b border-ink-100/20">
+    <div class="flex gap-2 border-b border-ink-50/20">
       <button type="button"
-              class="px-4 py-2 font-semibold border-b-2 cursor-pointer {activeTab === 'model' ? 'border-pool-500 text-pool-500' : 'border-transparent text-ink-100/80 hover:text-ink-100'}"
+              class="px-4 py-2 font-semibold border-b-2 cursor-pointer {activeTab === 'model' ? 'border-pool-500 text-pool-500' : 'border-transparent text-ink-50/80 hover:text-ink-50'}"
               on:click={() => { activeTab = 'model'; console.log('tab -> model'); }}>3D Model</button>
       <button type="button"
-              class="px-4 py-2 font-semibold border-b-2 cursor-pointer {activeTab === 'dims' ? 'border-pool-500 text-pool-500' : 'border-transparent text-ink-100/80 hover:text-ink-100'}"
+              class="px-4 py-2 font-semibold border-b-2 cursor-pointer {activeTab === 'dims' ? 'border-pool-500 text-pool-500' : 'border-transparent text-ink-50/80 hover:text-ink-50'}"
               on:click={() => { activeTab = 'dims'; console.log('tab -> dims'); }}>Dimensions</button>
     </div>
 
@@ -163,7 +163,7 @@
                     deep={job.measurement.deep_depth_ft}
                     abDistanceFt={job.measurement.ab_distance_ft} />
       {:else}
-        <p class="text-ink-100/70">No perimeter points to render.</p>
+        <p class="text-ink-50/70">No perimeter points to render.</p>
       {/if}
     {:else}
       <div class="card">
@@ -179,7 +179,7 @@
   </div>
 {:else}
   <div class="space-y-3">
-    <p class="text-ink-100/70">Loading…</p>
-    <p class="text-xs text-ink-100/40">id={id}</p>
+    <p class="text-ink-50/70">Loading…</p>
+    <p class="text-xs text-ink-50/40">id={id}</p>
   </div>
 {/if}

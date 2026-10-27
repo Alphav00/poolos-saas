@@ -23,7 +23,7 @@
     busy = true
     note = ''
     try {
-      const r = await addDemoCustomer(pools, today)
+      const r = await addDemoCustomer(today)
       onloaded(r.pools)
       note = `${r.name} (made up, marked DEMO) is on today's route.`
     } catch (e) {

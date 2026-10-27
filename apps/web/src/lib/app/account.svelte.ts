@@ -26,14 +26,43 @@ export function savedUsername(storage: Pick<Storage, 'getItem'> | undefined): st
   }
 }
 
-/** Saves (or with null, forgets) the username. Blocked storage only costs the next visit a sign-in. */
-export function saveUsername(storage: Pick<Storage, 'setItem' | 'removeItem'> | undefined, id: string | null): void {
+/**
+ * Saves (or with null, forgets) the username. False when it could not be
+ * kept: no storage, or a private window or blocked site data.
+ */
+export function saveUsername(storage: Pick<Storage, 'setItem' | 'removeItem'> | undefined, id: string | null): boolean {
+  if (!storage) return false
   try {
-    if (id) storage?.setItem(KEY, id)
-    else storage?.removeItem(KEY)
+    if (id) storage.setItem(KEY, id)
+    else storage.removeItem(KEY)
+    return true
   } catch {
-    // Private window or blocked site data.
+    return false
   }
+}
+
+/**
+ * How signing in takes effect. 'blocked' when the company cookie did not
+ * stick (site data blocked): the Worker would then read and write the
+ * default company's boards under the new brand's colours, so nothing opens.
+ * A reload starts the page afresh on the new company, but only a saved
+ * username survives it; when saving failed and no company's data is loaded
+ * yet, the page switches in place instead, or the reload would come back
+ * signed out and sign in again forever. When a company is already open, the
+ * reload still goes ahead (its cached pools and staff must go) and the page
+ * comes back signed out, ready to switch in place.
+ */
+export function signInBy(saved: boolean, open: Brand | null, cookieOk: boolean): 'reload' | 'in place' | 'blocked' {
+  if (!cookieOk) return 'blocked'
+  return saved || open ? 'reload' : 'in place'
+}
+
+/** What to tell someone whose browser keeps no site data, so sign-in cannot hold. */
+export const BLOCKED = 'Allow site data for this site to sign in.'
+
+/** Whether a cookie string carries the company cookie for the brand; the default pack needs none. */
+export function cookieNames(cookie: string, b: Brand, defaultId: string): boolean {
+  return b.id === defaultId || cookie.split(/;\s*/).includes(`poolos_company=${b.id}`)
 }
 
 const store = (): Storage | undefined => {
@@ -87,13 +116,28 @@ export function signedIn(): boolean {
   return current !== null
 }
 
-/** Signs in as the pack the username names. Returns false when this person may not open a pack by that name. */
-export function signIn(username: string): boolean {
+/**
+ * Signs in as the pack the username names: false when this person may not
+ * open a pack by that name, else how it took effect (see signInBy). After
+ * 'in place' the caller shows the app; after 'reload' the page is restarting;
+ * after 'blocked' nothing changed and the caller shows BLOCKED.
+ */
+export function signIn(username: string): false | 'reload' | 'in place' | 'blocked' {
   const b = matchUsername(username, allowed)
   if (!b) return false
-  saveUsername(store(), b.id)
-  switchTo(b)
-  return true
+  wear(b)
+  const cookieOk = companyCookieHolds(b)
+  const how = signInBy(cookieOk && saveUsername(store(), b.id), current, cookieOk)
+  if (how === 'reload') switchTo(b)
+  else if (how === 'in place') current = b
+  else wear(current)
+  return how
+}
+
+/** Whether the company cookie for the brand (the signed-in one by default) is set; true outside a browser. */
+export function companyCookieHolds(b: Brand = brand()): boolean {
+  if (!needsSignIn || typeof document === 'undefined') return true
+  return cookieNames(document.cookie, b, defaultBrand.id)
 }
 
 export function signOut(): void {

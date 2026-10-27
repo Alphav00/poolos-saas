@@ -31,6 +31,10 @@ jobs:
         run: pnpm exec playwright-core install --with-deps chromium
       - name: Run the user journeys
         run: pnpm e2e
+        env:
+          # Unbranded pack: the screenshots are uploaded as an artifact, so no
+          # company name or logo goes in them (DESIGN.md §3 #1).
+          BRAND: poolos
       - name: Summary
         if: always()
         run: test -f e2e-output/report.md && cat e2e-output/report.md >> "$GITHUB_STEP_SUMMARY" || echo "No report was written." >> "$GITHUB_STEP_SUMMARY"

@@ -102,7 +102,9 @@ E2E_SKIP_BUILD=1 pnpm e2e   # reuse the last build (same BRAND; pnpm test rebuil
 
 What it does (`scripts/e2e/run.mjs`):
 
-1. `BRAND=ccs-pools pnpm build` (set `BRAND` for another brand).
+1. `BRAND=poolos pnpm build`, the unbranded pack, so no company name or logo
+   lands in the screenshots (DESIGN.md §3 #1). Set `BRAND` for another brand
+   when trying it locally; CI always runs `poolos`.
 2. Makes a throwaway RS256 key and writes its public half to
    `apps/api/.dev.vars` (`scripts/e2e/dev-auth.mjs`). The Worker checks the
    Access token exactly as in production, against this key instead of
