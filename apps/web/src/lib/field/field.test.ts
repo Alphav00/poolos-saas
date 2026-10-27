@@ -57,6 +57,24 @@ describe('typed readings', () => {
   it('reads a comma as a decimal point', () => {
     expect(parseTyped(fc, '2,5')).toEqual({ value: 2.5 })
     expect(parseTyped(ph, ' 7.4 ')).toEqual({ value: 7.4 })
+    expect(parseTyped(ph, '7,5')).toEqual({ value: 7.5 })
+    expect(parseTyped(fc, '0,5')).toEqual({ value: 0.5 })
+  })
+  it('reads a comma before three digits as a thousands separator, not a decimal point', () => {
+    const salt = scaleFor('salt')
+    const ch = scaleFor('ch')
+    expect(parseTyped(salt, '3,200')).toEqual({ value: 3200 })
+    expect(parseTyped(ch, '1,000')).toEqual({ value: 1000 })
+    expect(parseTyped(salt, '1,000.5')).toEqual({ value: 1000.5 })
+    expect(parseTyped(salt, '12,000')).toHaveProperty('error') // above the salt limit, not 12
+    expect(parseTyped(scaleFor('ta'), '1,200')).toHaveProperty('error') // above the TA limit, not 1.2
+  })
+  it('refuses commas that are neither a decimal point nor thousands', () => {
+    const salt = scaleFor('salt')
+    expect(parseTyped(salt, '3,2000')).toHaveProperty('error')
+    expect(parseTyped(salt, '1,000,5')).toHaveProperty('error')
+    expect(parseTyped(salt, '3,200,')).toHaveProperty('error')
+    expect(parseTyped(fc, '1,5.0')).toHaveProperty('error')
   })
   it('clears on empty and refuses junk or impossible numbers', () => {
     expect(parseTyped(fc, '')).toEqual({ value: undefined })

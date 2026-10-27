@@ -54,8 +54,10 @@
       setAllowed(allowed)
       const pick = pickCompany(signedIn() ? brand().id : null, allowed)
       if ('go' in pick) {
-        if (!signedIn() || brand().id !== pick.go.id) signIn(pick.go.id)
-        else gate = 'in'
+        if (!signedIn() || brand().id !== pick.go.id) {
+          // Blocked storage signs in without a reload; open the app now.
+          if (signIn(pick.go.id) === 'in place') gate = 'in'
+        } else gate = 'in'
       } else gate = 'ask' in pick ? 'ask' : 'none'
     } catch (e) {
       error = e instanceof Error ? e.message : `Could not load ${brand().shortName}.`
@@ -122,7 +124,7 @@
 {:else if gate === 'ask' || !signedIn()}
 <main class="field no-tabs"><div class="wrap">
   {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
-  <SignIn />
+  <SignIn onin={() => (gate = 'in')} />
 </div></main>
 {:else}
 <main class={['field', entering && 'no-tabs']} bind:this={screen}>

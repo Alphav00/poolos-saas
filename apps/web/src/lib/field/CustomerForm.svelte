@@ -2,7 +2,7 @@
   // Add a customer (#/field/new) or change one (#/field/<id>/edit). Owners,
   // Leads and Dispatchers may; the Worker checks it again (apps/api/src/roles.ts).
   import { draftFrom, profileFrom, SANITIZERS, SURFACES } from './customer'
-  import { customerId, deleteCustomer, saveCustomer } from './pools'
+  import { deleteCustomer, newCustomerId, saveCustomer } from './pools'
   import { DAYS, dayOf, nextOrder } from './route'
   import type { Pool, Profile } from './types'
 
@@ -16,21 +16,25 @@
 
   async function save(e: SubmitEvent) {
     e.preventDefault()
-    const base: Profile = pool
-      ? { ...($state.snapshot(pool) as Profile) }
-      : { id: customerId(d.name, pools), name: '', tags: [], equipment: [] }
-    // A new customer, or one moved to another day, goes to the end of that day's route.
-    if (!pool || pool.serviceDay !== d.serviceDay) base.order = nextOrder(pools, d.serviceDay)
-    const p = profileFrom($state.snapshot(d), base)
-    if (typeof p === 'string') {
-      error = p
+    // Checked before anything is fetched; the id is filled in below for a new customer.
+    const checked = profileFrom($state.snapshot(d), pool ? { ...($state.snapshot(pool) as Profile) } : { id: 'new', name: '', tags: [], equipment: [] })
+    if (typeof checked === 'string') {
+      error = checked
       return
     }
-    // The pool's look-ahead (forecast, visits) is not part of the record.
-    const { forecast: _f, ideal: _i, visits: _v, decay: _d, ...record } = p as Pool
     busy = true
     error = ''
     try {
+      // A new customer's id is picked from the list as it is now, not as this screen last saw it.
+      const fresh = pool ? null : await newCustomerId(d.name)
+      const onFile = fresh?.pools ?? pools
+      const base: Profile = pool ? { ...($state.snapshot(pool) as Profile) } : { id: fresh!.id, name: '', tags: [], equipment: [] }
+      // A new customer, or one moved to another day, goes to the end of that day's route.
+      if (!pool || pool.serviceDay !== d.serviceDay) base.order = nextOrder(onFile, d.serviceDay)
+      const p = profileFrom($state.snapshot(d), base)
+      if (typeof p === 'string') throw new Error(p)
+      // The pool's look-ahead (forecast, visits) is not part of the record.
+      const { forecast: _f, ideal: _i, visits: _v, decay: _d, ...record } = p as Pool
       onsaved(await saveCustomer(record))
       location.hash = pool ? `#/field/${p.id}` : '#/field'
     } catch (err) {

@@ -2,6 +2,7 @@
 // (apps/api/src/field.ts checks the shape; owners, Leads and Dispatchers may
 // write, see apps/api/src/roles.ts). The screens read them from here.
 import { generateCustomer, slugify } from './generator'
+import { randomTail } from './ids'
 import { nextOrder, toDay } from './route'
 import { DEMO_PROFILES } from './sample'
 import type { Day, Pool, Profile } from './types'
@@ -38,6 +39,8 @@ export function toPool(p: Profile): Pool {
 }
 
 let cached: Promise<Pool[]> | null = null
+/** Every id on file, shown or not, so a new customer never replaces one the screens hide. */
+export const takenIds = new Set<string>()
 
 /** Every pool on file, by name. One request per page load, shared by every screen. */
 export function loadPools(fresh = false): Promise<Pool[]> {
@@ -46,6 +49,8 @@ export function loadPools(fresh = false): Promise<Pool[]> {
       const res = await fetch(COLLECTION, { credentials: 'same-origin' })
       if (!res.ok) throw new Error(res.status === 401 ? 'Sign in again.' : 'Could not load the pools.')
       const body = (await res.json()) as { docs: { id: string; data?: unknown }[] }
+      takenIds.clear()
+      for (const d of body.docs) takenIds.add(d.id)
       return body.docs
         .map((d) => cleanProfile(d.id, d.data))
         .filter((p): p is Profile => p !== null)
@@ -81,9 +86,14 @@ export function loadDemoPools(): Promise<Pool[]> {
   return saveProfiles(DEMO_PROFILES)
 }
 
-/** Owner only: adds one made-up customer (marked demo) on `day`'s route, with an id not already on file. */
-export async function addDemoCustomer(onFile: Profile[], day: Day): Promise<{ name: string; pools: Pool[] }> {
-  const p = generateCustomer(Math.random, new Set(onFile.map((x) => x.id)))
+/**
+ * Owner only: adds one made-up customer (marked demo) on `day`'s route, with an
+ * id not on file. The list is read again first, so a customer added from
+ * another phone, or one the screens hide, is not replaced.
+ */
+export async function addDemoCustomer(day: Day): Promise<{ name: string; pools: Pool[] }> {
+  const onFile = await loadPools(true)
+  const p = generateCustomer(Math.random, new Set(takenIds))
   return { name: p.name, pools: await saveProfiles([{ ...p, serviceDay: day, order: nextOrder(onFile, day) }]) }
 }
 
@@ -101,13 +111,24 @@ const write = async (path: string, method: 'PUT' | 'PATCH' | 'DELETE', data?: un
   throw new Error(why ?? 'Could not save the customer.')
 }
 
-/** A free id for a new customer: their name as a slug, with -2, -3… when taken. */
-export function customerId(name: string, onFile: { id: string }[]): string {
+/**
+ * A free id for a new customer: their name as a slug and a random 4-character
+ * tail ("jo-reyes-k3x9"). The tail keeps a new customer from taking the id of
+ * one removed earlier, whose readings (<id>:<date>) stay on file.
+ */
+export function customerId(name: string, taken: Iterable<string>, tail: () => string = randomTail): string {
   const base = slugify(name) || 'customer'
-  // 'new' is the add-customer screen's address (#/field/new).
-  const taken = new Set(['new', ...onFile.map((p) => p.id)])
-  if (!taken.has(base)) return base
-  for (let n = 2; ; n++) if (!taken.has(`${base}-${n}`)) return `${base}-${n}`
+  const used = new Set(taken)
+  for (;;) {
+    const id = `${base}-${tail()}`
+    if (!used.has(id)) return id
+  }
+}
+
+/** Reads the list again, then gives a new customer a free id and the pools as they are now. */
+export async function newCustomerId(name: string): Promise<{ id: string; pools: Pool[] }> {
+  const pools = await loadPools(true)
+  return { id: customerId(name, takenIds), pools }
 }
 
 /** Owners, Leads and Dispatchers: saves a customer (same id replaces it), then reads the list back. */
@@ -122,8 +143,22 @@ export async function deleteCustomer(id: string): Promise<Pool[]> {
   return loadPools(true)
 }
 
-/** Writes new route places, e.g. from moveStop (route.ts), then reads the list back. */
-export async function setOrders(moves: { id: string; order: number }[]): Promise<Pool[]> {
-  for (const m of moves) await write(`${COLLECTION}/${encodeURIComponent(m.id)}`, 'PATCH', { order: m.order })
-  return loadPools(true)
+/**
+ * Writes new places on `day`'s route, e.g. from moveStop (route.ts), then reads
+ * the list back. The day goes with each place: an imported record may hold
+ * 'Monday' or 'MON', which the Worker refuses once it checks the merged record.
+ * Every move is tried and the list is read back even when one fails, so the
+ * screen shows what was saved; the first failure comes back as `error`.
+ */
+export async function setOrders(moves: { id: string; order: number }[], day: Day): Promise<{ pools: Pool[]; error?: string }> {
+  let error: string | undefined
+  for (const m of moves) {
+    try {
+      await write(`${COLLECTION}/${encodeURIComponent(m.id)}`, 'PATCH', { order: m.order, serviceDay: day })
+    } catch (e) {
+      error ??= e instanceof Error ? e.message : 'Could not change the order.'
+    }
+  }
+  const pools = await loadPools(true)
+  return error ? { pools, error } : { pools }
 }

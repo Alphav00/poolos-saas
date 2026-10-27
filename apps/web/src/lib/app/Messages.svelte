@@ -52,17 +52,25 @@
     now = Date.now()
   }
 
+  // alive goes false when the screen closes, so a poll still in flight then
+  // does not arm another timer and keep polling with nobody looking.
   let timer: ReturnType<typeof setTimeout> | undefined
+  let alive = true
   function schedule() {
     clearTimeout(timer)
+    if (!alive) return
     timer = setTimeout(async () => {
       await poll()
       schedule()
     }, hidden ? 15_000 : 3_000)
   }
   $effect(() => {
+    alive = true
     untrack(() => poll().then(schedule))
-    return () => clearTimeout(timer)
+    return () => {
+      alive = false
+      clearTimeout(timer)
+    }
   })
 
   async function post() {

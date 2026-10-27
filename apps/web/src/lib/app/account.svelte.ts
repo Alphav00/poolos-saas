@@ -26,14 +26,31 @@ export function savedUsername(storage: Pick<Storage, 'getItem'> | undefined): st
   }
 }
 
-/** Saves (or with null, forgets) the username. Blocked storage only costs the next visit a sign-in. */
-export function saveUsername(storage: Pick<Storage, 'setItem' | 'removeItem'> | undefined, id: string | null): void {
+/**
+ * Saves (or with null, forgets) the username. False when it could not be
+ * kept: no storage, or a private window or blocked site data.
+ */
+export function saveUsername(storage: Pick<Storage, 'setItem' | 'removeItem'> | undefined, id: string | null): boolean {
+  if (!storage) return false
   try {
-    if (id) storage?.setItem(KEY, id)
-    else storage?.removeItem(KEY)
+    if (id) storage.setItem(KEY, id)
+    else storage.removeItem(KEY)
+    return true
   } catch {
-    // Private window or blocked site data.
+    return false
   }
+}
+
+/**
+ * How signing in takes effect. A reload starts the page afresh on the new
+ * company, but only a saved username survives it; when saving failed and no
+ * company's data is loaded yet, the page switches in place instead, or the
+ * reload would come back signed out and sign in again forever. When a
+ * company is already open, the reload still goes ahead (its cached pools and
+ * staff must go) and the page comes back signed out, ready to switch in place.
+ */
+export function signInBy(saved: boolean, open: Brand | null): 'reload' | 'in place' {
+  return saved || open ? 'reload' : 'in place'
 }
 
 const store = (): Storage | undefined => {
@@ -87,13 +104,21 @@ export function signedIn(): boolean {
   return current !== null
 }
 
-/** Signs in as the pack the username names. Returns false when this person may not open a pack by that name. */
-export function signIn(username: string): boolean {
+/**
+ * Signs in as the pack the username names: false when this person may not
+ * open a pack by that name, else how it took effect (see signInBy). After
+ * 'in place' the caller shows the app; after 'reload' the page is restarting.
+ */
+export function signIn(username: string): false | 'reload' | 'in place' {
   const b = matchUsername(username, allowed)
   if (!b) return false
-  saveUsername(store(), b.id)
-  switchTo(b)
-  return true
+  const how = signInBy(saveUsername(store(), b.id), current)
+  if (how === 'reload') switchTo(b)
+  else {
+    wear(b)
+    current = b
+  }
+  return how
 }
 
 export function signOut(): void {

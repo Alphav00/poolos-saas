@@ -28,7 +28,9 @@
     busy = true
     note = ''
     try {
-      onloaded(await setOrders(moveStop(stops, index, by)))
+      const r = await setOrders(moveStop(stops, index, by), day)
+      onloaded(r.pools)
+      if (r.error) note = r.error
     } catch (e) {
       note = e instanceof Error ? e.message : 'Could not change the order.'
     } finally {
