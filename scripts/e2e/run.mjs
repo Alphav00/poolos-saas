@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // User journeys against a real local Worker (docs/TESTING.md, "Run the user journeys").
 //
-// 1. builds the web app (BRAND, default ccs-pools)
+// 1. builds the web app (BRAND, default poolos: unbranded, so no company
+//    name or logo lands in the screenshots, DESIGN.md §3 #1)
 // 2. writes a local Access key to apps/api/.dev.vars (dev-auth.mjs)
 // 3. applies the D1 migrations to a fresh local database
 // 4. starts `wrangler dev --local` on 127.0.0.1:8787
@@ -19,7 +20,7 @@ import { pathToFileURL } from 'node:url';
 import { chromium } from 'playwright-core';
 import { OWNER, removeDevAuth, ROOT, setupDevAuth, tokenFor } from './dev-auth.mjs';
 
-const BRAND = process.env.BRAND || 'ccs-pools';
+const BRAND = process.env.BRAND || 'poolos';
 const PORT = Number(process.env.E2E_PORT || 8787);
 const BASE = `http://127.0.0.1:${PORT}`;
 const OUT = join(ROOT, 'e2e-output');
