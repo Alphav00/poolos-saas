@@ -7,14 +7,17 @@
  * Events emitted:
  *   - 'dirty'      data changed, save scheduled
  *   - 'saving'     a save is in flight
- *   - 'saved'      save succeeded
- *   - 'error'      save failed; includes { error, retryInMs, fatal }
+ *   - 'saved'      save succeeded; includes { at, result } (what save() returned)
+ *   - 'error'      save failed; includes { error, retryInMs, fatal, permanent }
  *     - fatal=true means retries exhausted; user must intervene
+ *     - permanent=true means `isPermanent(error)` said retrying cannot help
+ *       (e.g. the server rejected the body); it is fatal at once
  *
  * Behavior:
  *   - schedule() debounces by `debounceMs`; rapid edits coalesce to one save
  *   - On error, retries with exponential backoff (1s, 2s, 4s, 8s, ... capped at 30s)
  *   - Up to `maxRetries` retries before giving up
+ *   - An error `isPermanent` accepts is not retried; the next edit tries again
  *   - If edits come in during retry, the retry is canceled and a fresh save
  *     is run with the latest snapshot
  *   - run() is safe to call from anywhere; concurrent calls are coalesced
@@ -26,6 +29,7 @@ export class SaveQueue {
     maxRetries = 5,
     retryBaseMs = 1000,
     retryCapMs = 30000,
+    isPermanent = () => false,
     now = () => Date.now(),
   }) {
     if (typeof save !== 'function') {
@@ -36,6 +40,7 @@ export class SaveQueue {
     this.maxRetries = maxRetries;
     this.retryBaseMs = retryBaseMs;
     this.retryCapMs = retryCapMs;
+    this.isPermanent = isPermanent;
     this._now = now;
 
     this._timer = null;
@@ -96,13 +101,19 @@ export class SaveQueue {
     this._emit('saving', { at: this._now() });
 
     try {
-      await this.save();
+      const result = await this.save();
       this._retries = 0;
       this._lastError = null;
-      this._emit('saved', { at: this._now() });
-      return { status: 'ok' };
+      this._emit('saved', { at: this._now(), result });
+      return { status: 'ok', result };
     } catch (err) {
       this._lastError = err;
+      if (this.isPermanent(err)) {
+        // Sending the same body again gets the same answer; wait for an edit.
+        this._retries = 0;
+        this._emit('error', { error: err, fatal: true, permanent: true, retries: 0 });
+        return { status: 'fatal', error: err };
+      }
       this._retries += 1;
       if (this._retries > this.maxRetries) {
         this._emit('error', {

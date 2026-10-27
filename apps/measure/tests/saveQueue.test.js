@@ -221,10 +221,49 @@ async function test9() {
   assert(s.lastError instanceof Error, 'test9: last error stored');
 }
 
+// ---------- 10. permanent errors are fatal at once, not retried ----------
+
+async function test10() {
+  let saveCount = 0;
+  const errors = [];
+  const q = new SaveQueue({
+    save: async () => {
+      saveCount++;
+      const e = new Error('rejected');
+      e.status = 422;
+      throw e;
+    },
+    debounceMs: 10,
+    retryBaseMs: 10,
+    isPermanent: (e) => e.status === 422,
+  });
+  q.on('error', (e) => errors.push(e));
+  q.schedule();
+  await sleep(120);
+  assertEq(saveCount, 1, 'test10: a 422 is sent once');
+  assertEq(errors.length, 1, 'test10: one error event');
+  assert(errors[0]?.fatal === true && errors[0]?.permanent === true, 'test10: error is fatal and permanent');
+  // The next edit tries again.
+  q.schedule();
+  await sleep(40);
+  assertEq(saveCount, 2, 'test10: next edit sends again');
+}
+
+// ---------- 11. saved carries what save() returned ----------
+
+async function test11() {
+  let got;
+  const q = new SaveQueue({ save: async () => 'local', debounceMs: 10 });
+  q.on('saved', (e) => { got = e.result; });
+  q.schedule();
+  await sleep(40);
+  assertEq(got, 'local', 'test11: saved event carries the result');
+}
+
 // ---------- run all ----------
 
 (async () => {
-  const tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9];
+  const tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11];
   for (const t of tests) {
     try {
       await t();

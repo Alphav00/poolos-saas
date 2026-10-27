@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
 
-  export let status = 'idle';     // 'idle'|'dirty'|'saving'|'saved'|'error'|'fatal'
+  export let status = 'idle';     // 'idle'|'dirty'|'saving'|'saved'|'local'|'error'|'fatal'|'rejected'
   export let lastSaved = null;
   export let error = null;
   export let retryInMs = null;
@@ -51,12 +51,16 @@
     <span class="text-pool-500 animate-pulse">● Saving…</span>
   {:else if status === 'saved'}
     <span class="text-green-400">✓ Saved {relTime(lastSaved)}</span>
+  {:else if status === 'local'}
+    <span class="text-yellow-300" title="A new job goes to the server once it has four perimeter points">● On this phone only</span>
   {:else if status === 'error'}
     <span class="text-red-400">⚠ Save failed{countdown !== null ? ` (retry in ${countdown}s)` : ''}</span>
     <button class="text-pool-500 underline" on:click={onSaveNow}>Retry</button>
   {:else if status === 'fatal'}
     <span class="text-red-500 font-bold">⚠ Save failed (retries exhausted)</span>
     <button class="text-pool-500 underline" on:click={onSaveNow}>Retry now</button>
+  {:else if status === 'rejected'}
+    <span class="text-red-500 font-bold">⚠ Server would not take this save (kept on this phone)</span>
   {/if}
 
   {#if status !== 'saving' && status !== 'idle'}
@@ -65,7 +69,7 @@
 
   <button class="text-red-400/70 underline" on:click={onDiscard} title="Discard this job and start over">Discard</button>
 
-  {#if error && (status === 'error' || status === 'fatal')}
+  {#if error && (status === 'error' || status === 'fatal' || status === 'rejected')}
     <details class="text-xs text-ink-100/50">
       <summary class="cursor-pointer">details</summary>
       <pre class="mt-1 p-2 bg-ink-900 rounded text-xs overflow-x-auto">{error}</pre>

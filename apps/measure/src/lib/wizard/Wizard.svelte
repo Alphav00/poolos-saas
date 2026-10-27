@@ -116,11 +116,11 @@
         lastSaved={$store.lastSaved}
         error={$store.error}
         retryInMs={$store.retryInMs}
-        onRetry={() => $store.saveNow()}
-        onSaveNow={() => $store.saveNow()}
+        onRetry={() => store.saveNow()}
+        onSaveNow={() => store.saveNow()}
         onDiscard={() => {
           if (confirm('Discard this job and start over?')) {
-            $store.discard();
+            store.discard();
             window.location.href = '/measure/new';
           }
         }}

@@ -17,6 +17,7 @@
   import PerimeterMap from './PerimeterMap.svelte';
   import { reconstructPool, suspectPoints } from '../utils/reconstruct.js';
   import { formatDistance } from '../utils/distance.js';
+  import { deletePerimeterPoint, pointRefsSnapshot, restorePointRefs } from '../utils/pointRefs.js';
 
   export let job;
   export let store;
@@ -34,9 +35,13 @@
 
   let lastAddedNumber = null;
   let undoStack = [];   // snapshots for undo (max 20)
+  // References that pointed at a deleted point and were cleared.
+  let clearedRefs = [];
 
+  // A snapshot holds the points and everything that names them by number,
+  // so undoing a delete also restores the renumbered references.
   function snapshot() {
-    undoStack = [...undoStack, JSON.parse(JSON.stringify(pts))].slice(-20);
+    undoStack = [...undoStack, pointRefsSnapshot(job)].slice(-20);
   }
 
   function addPoint() {
@@ -54,14 +59,16 @@
       },
     ];
     lastAddedNumber = next;
+    clearedRefs = [];
     store.markDirty();
   }
 
   function deletePoint(num) {
     snapshot();
-    job.measurement.perimeter_points = pts
-      .filter(p => p.number !== num)
-      .map((p, i) => ({ ...p, number: i + 1 }));
+    const { job: next, cleared } = deletePerimeterPoint(job, num);
+    job.measurement = next.measurement;
+    if (next.hardware) job.hardware = next.hardware;
+    clearedRefs = cleared;
     if (lastAddedNumber === num) lastAddedNumber = null;
     store.markDirty();
   }
@@ -70,8 +77,10 @@
     if (undoStack.length === 0) return;
     const prev = undoStack[undoStack.length - 1];
     undoStack = undoStack.slice(0, -1);
-    job.measurement.perimeter_points = prev;
+    restorePointRefs(job, prev);
+    job = job;
     lastAddedNumber = null;
+    clearedRefs = [];
     store.markDirty();
   }
 
@@ -152,6 +161,12 @@
       {/if}
     </div>
   </div>
+
+  {#if clearedRefs.length}
+    <div class="border border-yellow-500/40 bg-yellow-500/5 rounded-lg p-3 space-y-1" role="status">
+      <p class="text-sm text-yellow-300">⚠ The deleted point was used by: {clearedRefs.join(', ')}. Pick a new point there.</p>
+    </div>
+  {/if}
 
   <!-- Mini-map -->
   <PerimeterMap

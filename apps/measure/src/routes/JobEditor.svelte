@@ -32,7 +32,9 @@
   }
 
   onDestroy(() => {
-    $store.cancelPending?.();
+    // The methods live on the store, not on its value.
+    store.cancelPending();
+    store.destroy();
   });
 </script>
 
