@@ -280,10 +280,30 @@ async function test12() {
   q.cancel();
 }
 
+// ---------- 13. close() lets the save in flight finish but stops retries and new saves ----------
+
+async function test13() {
+  let attempts = 0;
+  const q = new SaveQueue({ save: async () => { attempts++; throw new Error('down'); }, debounceMs: 10, retryBaseMs: 10, retryCapMs: 20 });
+  const events = [];
+  q.on('error', (e) => events.push({ fatal: e.fatal, closed: !!e.closed }));
+  const run = q.flush();
+  q.close();
+  await run;
+  await sleep(150);
+  assertEq(attempts, 1, 'test13: the attempt in flight ran, no retry after close');
+  assertEq(events.length, 1, 'test13: one error event');
+  assertEq(events[0].closed, true, 'test13: says it was closed');
+  q.schedule();
+  assertEq(q.status.scheduled, false, 'test13: schedule() after close sets no timer');
+  await sleep(50);
+  assertEq(attempts, 1, 'test13: and nothing runs');
+}
+
 // ---------- run all ----------
 
 (async () => {
-  const tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12];
+  const tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12, test13];
   for (const t of tests) {
     try {
       await t();

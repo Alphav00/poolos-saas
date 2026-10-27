@@ -8,6 +8,8 @@
   export let onRetry = () => {};
   export let onSaveNow = () => {};
   export let onDiscard = () => {};
+  export let canRestore = false;   // a phone copy was set aside by a conflict
+  export let onRestore = () => {};
 
   let countdown = null;
   let timer = null;
@@ -65,14 +67,18 @@
     <span class="text-yellow-300 font-bold">⚠ Changed elsewhere: showing the server copy</span>
   {/if}
 
+  {#if canRestore}
+    <button class="text-pool-500 underline" on:click={onRestore} title="Replace what is on screen with the edits kept on this phone from an earlier conflict">Use my phone edits instead</button>
+  {/if}
+
   {#if status !== 'saving' && status !== 'idle'}
     <button class="text-ink-100/50 underline" on:click={onSaveNow}>Save now</button>
   {/if}
 
   <button class="text-red-400/70 underline" on:click={onDiscard} title="Discard this job and start over">Discard</button>
 
-  {#if error && (status === 'error' || status === 'fatal' || status === 'rejected' || status === 'conflict')}
-    <details class="text-xs text-ink-100/50">
+  {#if error && (status === 'error' || status === 'fatal' || status === 'rejected' || status === 'conflict' || status === 'local')}
+    <details class="text-xs text-ink-100/50" open={status === 'rejected'}>
       <summary class="cursor-pointer">details</summary>
       <pre class="mt-1 p-2 bg-ink-900 rounded text-xs overflow-x-auto">{error}</pre>
     </details>

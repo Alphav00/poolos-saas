@@ -22,6 +22,8 @@
  *     is run with the latest snapshot
  *   - run() is safe to call from anywhere; concurrent calls are coalesced
  *   - idle() waits out the save in flight, so a caller can leave after it
+ *   - close() ends the queue's life: no new debounce, and a failed save in flight
+ *     is not retried (a store that was left must not keep saving old edits)
  */
 export class SaveQueue {
   constructor({
@@ -51,6 +53,7 @@ export class SaveQueue {
     this._listeners = new Map();
     this._lastError = null;
     this._idleWaiters = [];
+    this._closed = false;
   }
 
   on(event, fn) {
@@ -70,6 +73,7 @@ export class SaveQueue {
 
   /** Mark data as dirty; debounce a save. */
   schedule() {
+    if (this._closed) return;
     this._emit('dirty', { at: this._now() });
     if (this._timer) clearTimeout(this._timer);
     this._timer = setTimeout(() => this.run(), this.debounceMs);
@@ -84,6 +88,12 @@ export class SaveQueue {
   /** Cancel any pending save (e.g. on unmount or after fatal error). */
   cancel() {
     if (this._timer) { clearTimeout(this._timer); this._timer = null; }
+  }
+
+  /** Stop for good: clear the timer; a save in flight may finish but is not retried. */
+  close() {
+    this._closed = true;
+    this.cancel();
   }
 
   /** Resolves once no save is in flight (a follow-up save included). */
@@ -121,6 +131,12 @@ export class SaveQueue {
         // Sending the same body again gets the same answer; wait for an edit.
         this._retries = 0;
         this._emit('error', { error: err, fatal: true, permanent: true, retries: 0 });
+        return { status: 'fatal', error: err };
+      }
+      if (this._closed) {
+        // Left the page: the draft stays on the phone; no timers outlive the editor.
+        this._retries = 0;
+        this._emit('error', { error: err, fatal: true, closed: true, retries: 0 });
         return { status: 'fatal', error: err };
       }
       this._retries += 1;

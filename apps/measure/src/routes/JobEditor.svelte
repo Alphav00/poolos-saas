@@ -1,7 +1,7 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { navigate } from 'svelte-routing';
-  import { createJobStore } from '../lib/stores/jobStore.js';
+  import { createJobStore, canLeave } from '../lib/stores/jobStore.js';
   import Wizard from '../lib/wizard/Wizard.svelte';
   import { firstIncompleteStep } from '../lib/wizard/steps.js';
 
@@ -31,7 +31,9 @@
     // the view, the order form and reconstruct all read the server copy, and
     // an edit typed in the last moment may still be waiting on the debounce.
     await store.saveNow();
-    navigate(`/measure/jobs/${$store.id || ''}`);
+    // Leave only once the server has the job; otherwise the status chip says why
+    // (on this phone only, refused, could not be checked) and the edits stay here.
+    if (canLeave($store)) navigate(`/measure/jobs/${$store.id}`);
   }
 
   onDestroy(() => {
