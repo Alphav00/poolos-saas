@@ -61,11 +61,16 @@ export class Phreeqc {
   ) {}
 
   static async create(wasm: WebAssembly.Module, database = combinedDatabase()): Promise<Phreeqc> {
-    const m = await factory({
-      instantiateWasm(imports, done) {
-        void WebAssembly.instantiate(wasm, imports).then((instance) => done(instance, wasm));
-        return {};
-      },
+    // Emscripten waits for done() and has no failure callback, so a failed
+    // instantiate would leave its promise pending forever. Reject instead, so
+    // a caller that caches this promise can drop it and try again.
+    const m = await new Promise<PhreeqcModule>((resolve, reject) => {
+      factory({
+        instantiateWasm(imports, done) {
+          WebAssembly.instantiate(wasm, imports).then((instance) => done(instance, wasm), reject);
+          return {};
+        },
+      }).then(resolve, reject);
     });
     const id = m._CreateIPhreeqc();
     if (id < 0) throw new Error('PHREEQC: could not create an instance');
