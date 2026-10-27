@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node tests/distance.test.js && node tests/saveQueue.test.js && node tests/wizard.test.js && node tests/crossDimValidation.test.js && node tests/linerValidation.test.js && node tests/pointRefs.test.js && node tests/serverPayload.test.js && node tests/jobStore.test.js",
+    "test": "node tests/distance.test.js && node tests/saveQueue.test.js && node tests/wizard.test.js && node tests/crossDimValidation.test.js && node tests/linerValidation.test.js && node tests/pointRefs.test.js && node tests/serverPayload.test.js && node tests/jobStore.test.js && node tests/jobStoreAuth.test.js",
     "test:parity": "API_BASE=${API_BASE:-http://127.0.0.1:8787} node tests/reconstruct_parity.test.js && API_BASE=${API_BASE:-http://127.0.0.1:8787} node tests/liner_parity.test.js"
   },
   "devDependencies": {
