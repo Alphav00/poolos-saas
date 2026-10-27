@@ -1,0 +1,29 @@
+{
+  "name": "Blue Devil Pools",
+  "shortName": "Blue Devil",
+  "legalName": "Blue Devil Pools",
+  "tagline": "Put the Devil to Work",
+  "pilot": true,
+  "scheme": "dark",
+  "colors": {
+    "primary": "#2f6fd6",
+    "primaryDark": "#2f6fd6",
+    "deep": "#123a7a",
+    "link": "#ffc34f",
+    "sky": "#3fd2da",
+    "ice": "#0f3a70",
+    "accent": "#ffc34f",
+    "ink": "#f1f4fb",
+    "surface": "#04163a",
+    "background": "#04163a",
+    "card": "#082a57",
+    "mute": "#a9b8d6",
+    "line": "#2a5a9a",
+    "soft": "#04163a",
+    "title": "#ffc34f"
+  },
+  "loader": {
+    "balls": ["#2f6fd6", "#3fd2da", "#ffc34f", "#318eca", "#ff7a3d", "#7fb0ff"],
+    "word": "Testing the water"
+  }
+}

@@ -130,3 +130,21 @@ system's `sm-pools-logo-transparent.png` (logo, mark, favicon) and
 Both are rasters cut from the 2026 flyer: swap in the owners' originals when
 they arrive, without redrawing. Tests and fixtures may not name the company
 (`tests/denylist.txt`).
+
+## blue-devil-pools
+
+From the Blue Devil Pools design system (claude.ai Design System artifact,
+2026-10-27). Colours are its Pine Night tokens: surface-100 `#04163a` for the
+page, surface-200 `#082a57` for cards, surface-300 `#0f3a70` for chips and the
+selected tab, ink `#f1f4fb`, ink-muted `#a9b8d6`, line `#2a5a9a`, water
+`#3fd2da` for the route line and charts, and the gold (lure / horn-ink
+`#ffc34f`) for links, numbers, the company name and the Report button. Buttons
+are Leeds blue (devil `#2f6fd6`, flat like the system; white text 4.8:1), not
+the system's gold: the app sets white button text and white on gold is 1.6:1.
+Making gold the button needs a per-pack button text colour, which is app work,
+not pack work. The loader is the system's six brand hues with "Testing the
+water" from its lexicon. Logo, mark and icons are Leeds's painted face
+(`leeds-face-blue.webp`, the system's LeedsMark art) in a gold ring; no art
+with the old phone number painted in is used. The name is not a cleared mark
+yet (the design system's "Open before launch" list). Tests and fixtures may
+not name the company (`tests/denylist.txt`).
