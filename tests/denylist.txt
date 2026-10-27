@@ -13,3 +13,6 @@ sm-pools
 Sewell
 Cherry Hill
 Meechie
+Blue Devil Pools
+Blue Devil
+blue-devil-pools
