@@ -28,10 +28,8 @@ data marked **DEMO**.
   `user-journeys` artifact. Read the latest run's artifacts if you cannot run
   a browser.
 - **Never test against production** (poolos.pathofphi.com): it is a real
-  company's test drive. The pull-request preview (poolos-preview.pathofphi.com,
-  see [`docs/DEPLOY.md`](../docs/DEPLOY.md)) sits behind Cloudflare Access, so
-  an agent without an Access login cannot reach it. Use the local run or the
-  artifacts.
+  company's test drive. It sits behind Cloudflare Access, so an agent without
+  an Access login cannot reach it. Use the local run or the artifacts.
 
 ## What to do
 
