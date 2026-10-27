@@ -58,6 +58,24 @@ export function canLeave(state) {
   return !!state && state.status === 'saved' && !!state.id;
 }
 
+/** What to tell the tech when Finish is refused; empty when it can leave. */
+export function whyNotLeave(state) {
+  if (!state || canLeave(state)) return '';
+  if (state.status === 'local' && !state.id && !state.error) {
+    return 'This job is only on this phone. The server takes a new job once it has four perimeter points with A and B. Add them, then tap Finish.';
+  }
+  if (state.error) return `Not saved to the server yet: ${state.error}`;
+  return 'This job is not saved to the server yet. Check the status at the top, then tap Finish again.';
+}
+
+/** Rejects when `p` has not settled after `ms`; the late answer is ignored. */
+function withTimeout(p, ms) {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error('The server did not answer in time')), ms);
+    p.then((v) => { clearTimeout(t); resolve(v); }, (e) => { clearTimeout(t); reject(e); });
+  });
+}
+
 /** The company this browser works for: the poolos_company cookie, '' for the default. */
 export function currentCompany() {
   try {
@@ -190,12 +208,14 @@ function clearLS(key) {
   try { localStorage.removeItem(key); } catch { /* ignore */ }
 }
 
-export function createJobStore({ initialId = null, fetchFromServer = true } = {}) {
+export function createJobStore({ initialId = null, fetchFromServer = true, checkTimeoutMs = 10000 } = {}) {
   const company = currentCompany();
   clearLS(LEGACY_LS_KEY);
   // Tells this store's draft writes from a newer store's on the same job.
   const storeId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
   let destroyed = false;
+  // Bumped by Discard, so an answer to a request sent before it is ignored.
+  let epoch = 0;
 
   // Hydrate from this job's own draft: on /new only a draft never saved,
   // on /jobs/{id}/edit only a draft with that id.
@@ -323,7 +343,8 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
 
   async function performSave() {
     if (get(state).id && !baseChecked) {
-      await checkBase();
+      gateWaiting = true;
+      try { await checkBase(); } finally { gateWaiting = false; }
       if (!baseChecked) return holdOnPhone();
       // The copy had moved: the server copy is on screen and the phone copy set aside.
       if (get(state).status === 'conflict') return 'held';
@@ -354,9 +375,13 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
       adopt(updated);
       writeDraft(edits !== seen);
       if (restoredFromAside) {
+        // The copy was used; an older one, if any, moves up to be offered next.
         restoredFromAside = false;
-        clearSetAside(s.id);
-        state.update((cur) => ({ ...cur, hasSetAside: false }));
+        const [k1, k2] = asideKeys(s.id);
+        const older = readLS(k2);
+        clearLS(k2);
+        if (older) writeLS(k1, older); else clearLS(k1);
+        state.update((cur) => ({ ...cur, hasSetAside: !!older }));
       }
     }
     return 'server';
@@ -400,9 +425,13 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
   // sent: not by the debounce, not on exit.
   let baseChecked = !(recovered && fetchFromServer && id);
   let baseCheck = null;
+  // A save is waiting on the check and sends right after it, so the check need not schedule another.
+  let gateWaiting = false;
   function checkBase() {
     if (baseCheck) return baseCheck;
-    baseCheck = api.getJob(id).then(server => {
+    baseCheck = withTimeout(api.getJob(id), checkTimeoutMs).then(server => {
+      // A store that was left must not write its late answer over a newer store's draft.
+      if (destroyed) return;
       const cur = get(state);
       // The edit counter and `status` are the reliable signals for "typed since
       // mount". Comparing serialised job objects is not: the store holds a job
@@ -413,7 +442,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
       if (recovered) {
         if (draftBase && server.updated_at === draftBase) {
           baseChecked = true;
-          resendRecovered();
+          if (!gateWaiting) resendRecovered();
           return;
         }
         // The job changed since (another device, the swap-A/B button on the job
@@ -444,6 +473,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
     }).catch(err => {
       console.warn('Could not refresh from server:', err);
       baseCheck = null;
+      if (destroyed) return;
       if (!baseChecked) holdOnPhone();
       else resendRecovered();
     });
@@ -468,6 +498,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
     if (s.id && baseChecked && !rejectedError && sentOnExit !== edits && typeof fetch !== 'undefined') {
       sentOnExit = edits;
       const seen = edits;
+      const sentEpoch = epoch;
       // If the page dies before the answer, the next open knows the exit save was sent.
       writeDraft(true, { sentOnExit: true });
       // keepalive lets the request outlive the page. The Worker takes PUT
@@ -482,8 +513,11 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
         }).then(async (r) => {
           // The page may still be alive (a hidden tab): take the answer like any save's.
           if (!r.ok) return;
-          adopt(await r.json());
-          acked = seen;
+          const answer = await r.json();
+          // Discard (or a newer job) came after this was sent: its answer belongs to nothing now.
+          if (sentEpoch !== epoch) return;
+          adopt(answer);
+          acked = Math.max(acked, seen);
           if (edits === seen) {
             queue.cancel();
             state.update((cur) => ({ ...cur, status: 'saved', lastSaved: new Date(), error: null, retryInMs: null }));
@@ -536,6 +570,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
     },
     cancelPending: () => queue.cancel(),
     discard: () => {
+      epoch += 1;
       queue.cancel();
       // Nothing left that the server has not taken.
       acked = edits;

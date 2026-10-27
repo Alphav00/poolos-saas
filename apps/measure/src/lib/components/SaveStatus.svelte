@@ -11,6 +11,7 @@
   export let canRestore = false;   // a phone copy was set aside by a conflict
   export let onRestore = () => {};
 
+  let confirmingRestore = false;
   let countdown = null;
   let timer = null;
 
@@ -54,7 +55,7 @@
   {:else if status === 'saved'}
     <span class="text-green-400">✓ Saved {relTime(lastSaved)}</span>
   {:else if status === 'local'}
-    <span class="text-yellow-300" title="A new job goes to the server once it has four perimeter points">● On this phone only</span>
+    <span class="text-yellow-300" title={error ? 'See the details below' : 'A new job goes to the server once it has four perimeter points'}>● On this phone only</span>
   {:else if status === 'error'}
     <span class="text-red-400">⚠ Save failed{countdown !== null ? ` (retry in ${countdown}s)` : ''}</span>
     <button class="text-pool-500 underline" on:click={onSaveNow}>Retry</button>
@@ -68,7 +69,13 @@
   {/if}
 
   {#if canRestore}
-    <button class="text-pool-500 underline" on:click={onRestore} title="Replace what is on screen with the edits kept on this phone from an earlier conflict">Use my phone edits instead</button>
+    {#if confirmingRestore}
+      <span class="text-yellow-300 text-xs">This replaces what is on screen (the server copy) with the edits kept on this phone.</span>
+      <button class="text-red-400 underline" on:click={() => { confirmingRestore = false; onRestore(); }}>Yes, replace it</button>
+      <button class="text-ink-100/50 underline" on:click={() => (confirmingRestore = false)}>Cancel</button>
+    {:else}
+      <button class="text-pool-500 underline" on:click={() => (confirmingRestore = true)}>Use my phone edits instead</button>
+    {/if}
   {/if}
 
   {#if status !== 'saving' && status !== 'idle'}

@@ -41,7 +41,7 @@ globalThis.fetch = async (url, opts = {}) => {
 const jsonRes = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
 
-const { createJobStore, emptyJob, draftKey, canLeave } = await import('../src/lib/stores/jobStore.js');
+const { createJobStore, emptyJob, draftKey, canLeave, whyNotLeave } = await import('../src/lib/stores/jobStore.js');
 const { get } = await import('svelte/store');
 
 function reset() {
@@ -574,6 +574,111 @@ await guarded('30', async () => {
   eq(puts().map((c) => c.body?.notes), ['phone edit'], '30: sent once, with the phone edit');
   eq(get(store).status, 'saved', '30: saved');
   store.destroy();
+});
+
+// ---------- second review of the follow-ups ----------
+// ---------- 31. a closed store's late server answer does not overwrite a newer store's draft ----------
+await guarded('31', async () => {
+  reset();
+  staleDraft('job-34', 'phone edit');
+  let release;
+  respond = async (c) => (c.method === 'GET'
+    ? new Promise((r) => { release = () => r(jsonRes(serverJob('job-34', 'server copy'))); })
+    : jsonRes({ ...c.body, id: 'job-34', updated_at: 't9' }));
+  const a = createJobStore({ initialId: 'job-34' });
+  a.destroy();
+  const b = createJobStore({ initialId: 'job-34', fetchFromServer: false });
+  get(b).job.notes = 'typed in b';
+  b.markDirty();
+  await sleep(300);
+  eq(draftOf('job-34')?.job?.notes, 'typed in b', '31: the newer store wrote its draft');
+  release();
+  await sleep(60);
+  eq(draftOf('job-34')?.job?.notes, 'typed in b', '31: the closed store did not write the server copy over it');
+  eq(asideOf('job-34'), null, '31: and set nothing aside');
+  b.destroy();
+});
+
+// ---------- 32. an exit save answered after Discard does not bind the blank job to the old one ----------
+await guarded('32', async () => {
+  reset();
+  let release;
+  respond = async (c) => (c.opts.keepalive
+    ? new Promise((r) => { release = () => r(jsonRes({ ...c.body, id: 'job-35', updated_at: 'tZ' })); })
+    : jsonRes({ ...c.body, id: 'job-35', updated_at: 'tY' }));
+  const store = createJobStore({ initialId: 'job-35', fetchFromServer: false });
+  get(store).job.notes = 'to be discarded';
+  store.markDirty();
+  globalThis.document.visibilityState = 'hidden';
+  fire('visibilitychange');
+  store.discard();
+  release();
+  await sleep(60);
+  eq(get(store).id, null, '32: the blank job is not bound to the discarded one');
+  eq(get(store).status, 'idle', '32: and is not marked saved');
+  eq(draftOf('job-35'), null, '32: no draft is written back under the old id');
+  store.destroy();
+});
+
+// ---------- 33. restoring one set-aside copy offers the older one next instead of deleting it ----------
+await guarded('33', async () => {
+  reset();
+  staleDraft('job-36', 'first');
+  respond = async (c) => (c.method === 'GET' ? jsonRes(serverJob('job-36', 'server', 't2')) : jsonRes({ ...c.body, id: 'job-36', updated_at: 't9' }));
+  const one = createJobStore({ initialId: 'job-36' });
+  await sleep(100);
+  one.destroy();
+  ls.set(draftKey('', 'job-36'), JSON.stringify({ id: 'job-36', job: { ...emptyJob(), updated_at: 't2', notes: 'second' }, unsynced: true }));
+  respond = async (c) => (c.method === 'GET' ? jsonRes(serverJob('job-36', 'server', 't3')) : jsonRes({ ...c.body, id: 'job-36', updated_at: 't9' }));
+  const two = createJobStore({ initialId: 'job-36' });
+  await sleep(100);
+  eq(two.restoreSetAside(), true, '33: restore');
+  await sleep(700);
+  eq(get(two).status, 'saved', '33: saved');
+  eq(asideOf('job-36', 1)?.job?.notes, 'first', '33: the older copy moved up to be offered next');
+  eq(asideOf('job-36', 2), null, '33: second slot empty');
+  eq(get(two).hasSetAside, true, '33: still offered');
+  two.destroy();
+});
+
+// ---------- 34. Save now before the check, same base: one PUT, not two ----------
+await guarded('34', async () => {
+  reset();
+  staleDraft('job-37', 'phone edit');
+  let release;
+  respond = async (c) => (c.method === 'GET'
+    ? new Promise((r) => { release = () => r(jsonRes(serverJob('job-37', 'server', 't1'))); })
+    : jsonRes({ ...c.body, id: 'job-37', updated_at: 't9' }));
+  const store = createJobStore({ initialId: 'job-37' });
+  const saving = store.saveNow();
+  await sleep(30);
+  release();
+  await saving;
+  await sleep(800);
+  eq(puts().length, 1, '34: exactly one PUT, no second one after the debounce');
+  store.destroy();
+});
+
+// ---------- 35. a server read that never answers ends in "on this phone", not a hang ----------
+await guarded('35', async () => {
+  reset();
+  staleDraft('job-38', 'phone edit');
+  respond = async (c) => (c.method === 'GET' ? new Promise(() => {}) : jsonRes({ ...c.body, id: 'job-38', updated_at: 't9' }));
+  const store = createJobStore({ initialId: 'job-38', checkTimeoutMs: 150 });
+  const outcome = await Promise.race([store.saveNow().then(() => 'settled'), sleep(2500).then(() => 'hung')]);
+  eq(outcome, 'settled', '35: Save now comes back');
+  eq(get(store).status, 'local', '35: held on the phone');
+  ok(/did not answer/i.test(get(store).error || '') || /Could not reach/i.test(get(store).error || ''), '35: with a reason');
+  eq(puts().length, 0, '35: nothing sent');
+  store.destroy();
+});
+
+// ---------- 36. Finish refused: the editor can say why ----------
+await guarded('36', async () => {
+  eq(whyNotLeave({ status: 'saved', id: 'a' }), '', '36: nothing to say when it can leave');
+  ok(/four perimeter points/i.test(whyNotLeave({ status: 'local', id: null, error: null })), '36: phone-only job says four points');
+  ok(whyNotLeave({ status: 'rejected', id: 'a', error: 'wall_heights: labels must be unique' }).includes('wall_heights: labels must be unique'), '36: a refused save repeats the reason');
+  ok(whyNotLeave({ status: 'dirty', id: 'a', error: null }).length > 0, '36: any other refusal still says something');
 });
 
 console.log(`jobStore: ${pass} passed, ${fail} failed`);
