@@ -19,9 +19,11 @@ jobs:
     # Only branches in this repository: forks get no Cloudflare token.
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    # The secret of this environment is released only after the owner approves the
-    # run (Settings > Environments > preview > Required reviewers). GitHub enforces
-    # that, so editing this file on a branch cannot skip it.
+    # The protection lives in this environment's settings, not in this file
+    # (Settings > Environments > preview): a required reviewer, and the token stored
+    # as a secret of THIS environment instead of a repository secret. GitHub enforces
+    # both, so editing this file on a branch cannot skip them. Until they are set,
+    # this line only records a deployment.
     environment: preview
     permissions:
       contents: read
