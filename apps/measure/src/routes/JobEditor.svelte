@@ -13,6 +13,7 @@
   let initialStep = null;
   // Shown when Finish is refused, so the tap is not silent.
   let finishNote = '';
+  $: if (canLeave($store)) finishNote = '';
   let lastSeenId = null;
 
   // When the store gets a real id, reflect it in the URL.

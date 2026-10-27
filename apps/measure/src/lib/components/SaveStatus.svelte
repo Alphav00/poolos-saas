@@ -12,6 +12,7 @@
   export let onRestore = () => {};
 
   let confirmingRestore = false;
+  $: if (!canRestore) confirmingRestore = false;
   let countdown = null;
   let timer = null;
 

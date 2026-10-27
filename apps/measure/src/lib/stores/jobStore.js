@@ -352,6 +352,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true, check
     const s = get(state);
     const seen = edits;
     const payload = serverPayload(s.job);
+    const myEpoch = epoch;
     if (!s.id) {
       if (!canCreate(payload)) {
         // Not enough for the server yet; the phone holds it.
@@ -359,6 +360,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true, check
         return 'local';
       }
       const created = await api.createJob(payload);
+      if (myEpoch !== epoch) return 'discarded';
       acked = seen;
       adopt(created);
       clearDraft(draftKey(company, null));
@@ -371,6 +373,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true, check
       }
     } else {
       const updated = await api.updateJob(s.id, payload);
+      if (myEpoch !== epoch) return 'discarded';
       acked = seen;
       adopt(updated);
       writeDraft(edits !== seen);
@@ -391,7 +394,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true, check
 
   queue.on('dirty', () => state.update(s => ({ ...s, status: 'dirty' })));
   queue.on('saving', () => state.update(s => ({ ...s, status: 'saving', error: null })));
-  queue.on('saved', (e) => e?.result === 'held' || state.update(s => (
+  queue.on('saved', (e) => e?.result === 'held' || e?.result === 'discarded' || state.update(s => (
     e?.result === 'local'
       ? { ...s, status: 'local', error: null, retryInMs: null }
       : { ...s, status: 'saved', lastSaved: new Date(), error: null, retryInMs: null }
@@ -429,9 +432,14 @@ export function createJobStore({ initialId = null, fetchFromServer = true, check
   let gateWaiting = false;
   function checkBase() {
     if (baseCheck) return baseCheck;
-    baseCheck = withTimeout(api.getJob(id), checkTimeoutMs).then(server => {
-      // A store that was left must not write its late answer over a newer store's draft.
-      if (destroyed) return;
+    // The limit applies only while a recovered draft waits on this check; a plain refresh of the job just waits for the server.
+    const read = api.getJob(id);
+    baseCheck = (baseChecked ? read : withTimeout(read, checkTimeoutMs)).then(server => {
+      if (destroyed) {
+        // A store that was left writes nothing, but the save it flushed on leaving may go once the draft is confirmed current.
+        if (recovered && draftBase && server.updated_at === draftBase) baseChecked = true;
+        return;
+      }
       const cur = get(state);
       // The edit counter and `status` are the reliable signals for "typed since
       // mount". Comparing serialised job objects is not: the store holds a job

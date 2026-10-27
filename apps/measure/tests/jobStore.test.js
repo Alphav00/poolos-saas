@@ -668,7 +668,7 @@ await guarded('35', async () => {
   const outcome = await Promise.race([store.saveNow().then(() => 'settled'), sleep(2500).then(() => 'hung')]);
   eq(outcome, 'settled', '35: Save now comes back');
   eq(get(store).status, 'local', '35: held on the phone');
-  ok(/did not answer/i.test(get(store).error || '') || /Could not reach/i.test(get(store).error || ''), '35: with a reason');
+  ok(/Could not reach/i.test(get(store).error || ''), '35: with a reason');
   eq(puts().length, 0, '35: nothing sent');
   store.destroy();
 });
@@ -679,6 +679,55 @@ await guarded('36', async () => {
   ok(/four perimeter points/i.test(whyNotLeave({ status: 'local', id: null, error: null })), '36: phone-only job says four points');
   ok(whyNotLeave({ status: 'rejected', id: 'a', error: 'wall_heights: labels must be unique' }).includes('wall_heights: labels must be unique'), '36: a refused save repeats the reason');
   ok(whyNotLeave({ status: 'dirty', id: 'a', error: null }).length > 0, '36: any other refusal still says something');
+});
+
+// ---------- third pass: what the fresh review of the second round found ----------
+// ---------- 37. the read limit does not cut off a plain refresh of a job with no draft ----------
+await guarded('37', async () => {
+  reset();
+  respond = async (c) => (c.method === 'GET'
+    ? new Promise((r) => setTimeout(() => r(jsonRes(serverJob('job-39', 'server copy'))), 300))
+    : jsonRes({ ...c.body, id: 'job-39', updated_at: 't9' }));
+  const store = createJobStore({ initialId: 'job-39', checkTimeoutMs: 100 });
+  await sleep(600);
+  eq(get(store).job.notes, 'server copy', '37: a slow plain load still shows the server copy');
+  store.destroy();
+});
+
+// ---------- 38. leaving while the check is pending still sends the flushed save, once the draft is current ----------
+await guarded('38', async () => {
+  reset();
+  staleDraft('job-40', 'phone edit');
+  let release;
+  respond = async (c) => (c.method === 'GET'
+    ? new Promise((r) => { release = () => r(jsonRes(serverJob('job-40', 'server', 't1'))); })
+    : jsonRes({ ...c.body, id: 'job-40', updated_at: 't9' }));
+  const store = createJobStore({ initialId: 'job-40' });
+  store.markDirty();
+  store.destroy();
+  release();
+  await sleep(300);
+  eq(puts().map((c) => c.body?.notes), ['phone edit'], '38: the save flushed on leaving went out once, with the phone edit');
+});
+
+// ---------- 39. a create answered after Discard does not bind the blank job to the new id ----------
+await guarded('39', async () => {
+  reset();
+  let release;
+  respond = async (c) => (c.method === 'POST'
+    ? new Promise((r) => { release = () => r(jsonRes({ ...c.body, id: 'job-new-1', created_at: 't0', updated_at: 't0' })); })
+    : jsonRes({}));
+  const store = createJobStore({ fetchFromServer: false });
+  get(store).job.measurement.perimeter_points = pts(4);
+  store.markDirty();
+  await sleep(600);
+  store.discard();
+  release();
+  await sleep(60);
+  eq(get(store).id, null, '39: the blank job stays unbound');
+  eq(get(store).status, 'idle', '39: and is not marked saved');
+  eq(JSON.parse(ls.get(draftKey('', 'job-new-1')) || 'null'), null, '39: no draft under the new id');
+  store.destroy();
 });
 
 console.log(`jobStore: ${pass} passed, ${fail} failed`);
