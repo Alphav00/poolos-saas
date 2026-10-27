@@ -147,7 +147,7 @@
     {:else if route[0] === 'more' && route[1] === 'staff'}
       <Staff isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more' && route[1] === 'chemistry'}
-      <ChemSetup />
+      <ChemSetup isOwner={me?.isOwner ?? false} />
     {:else if route[0] === 'more'}
       <More email={me?.email ?? ''} isOwner={me?.isOwner ?? false} role={me?.role ?? null} {boards} />
     {:else}

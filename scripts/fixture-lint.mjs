@@ -13,7 +13,7 @@ import { join, relative, sep } from 'node:path';
 
 const root = process.argv[2] ?? process.cwd();
 const denylistPath = join(root, 'tests', 'denylist.txt');
-const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', '.wrangler', 'inputs']);
+const SKIP_DIRS = new Set(['node_modules', '.git', 'dist', '.wrangler', 'inputs', '.claude']);
 const TEST_DIRS = new Set(['test', 'tests', '__tests__', 'fixtures']);
 const DATA_NAME = /^(fixtures?|demo|sample|generator)/i;
 const SKIP_TOP = new Set(['brands', 'docs']);

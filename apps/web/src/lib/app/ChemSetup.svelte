@@ -3,6 +3,8 @@
   import { SCALES } from '../field/scales'
   import { loadProducts, loadTargets, SAMPLE_PRODUCTS, SAMPLE_TARGETS, saveProducts, saveTargets } from '../field/settings'
 
+  let { isOwner = false }: { isOwner?: boolean } = $props()
+
   const KINDS = Object.keys(PRODUCT_WORDS) as ProductKind[]
   const PARAMS = SCALES.filter((s) => s.key !== 'temp').map((s) => ({ key: s.key as TargetParam, label: s.label, unit: s.unit }))
 
@@ -96,7 +98,10 @@
     Doses are worked out from these. Strengths come off the label, so every dose can name its product and basis. Targets are your
     company's own ranges; say where they come from, and that line shows under every dose.
   </p>
-  {#if phase === 'ready' && !products.length && !targets.source}
+  {#if !isOwner}
+    <p class="sm" style="margin-top:4px">Only an owner can change these.</p>
+  {/if}
+  {#if isOwner && phase === 'ready' && !products.length && !targets.source}
     <button class="btn ghost" onclick={useSample}>Load the sample setup (made up; check it)</button>
   {/if}
 </section>
@@ -148,7 +153,7 @@
     <label class="f">Where these targets come from (shown under every dose) <textarea rows="2" bind:value={targets.source}></textarea></label>
   </section>
 
-  <button class="btn" onclick={saveAll}>Save setup</button>
+  {#if isOwner}<button class="btn" onclick={saveAll}>Save setup</button>{/if}
   {#if note}<p class="status" role="status">{note}</p>{/if}
 {/if}
 

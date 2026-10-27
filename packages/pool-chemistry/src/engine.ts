@@ -67,7 +67,9 @@ export class Phreeqc {
     const m = await new Promise<PhreeqcModule>((resolve, reject) => {
       factory({
         instantiateWasm(imports, done) {
-          WebAssembly.instantiate(wasm, imports).then((instance) => done(instance, wasm), reject);
+          WebAssembly.instantiate(wasm, imports)
+            .then((instance) => done(instance, wasm))
+            .catch(reject);
           return {};
         },
       }).then(resolve, reject);
