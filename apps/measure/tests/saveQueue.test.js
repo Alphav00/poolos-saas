@@ -260,10 +260,30 @@ async function test11() {
   assertEq(got, 'local', 'test11: saved event carries the result');
 }
 
+// ---------- 12. idle() waits out the save in flight and its follow-up ----------
+
+async function test12() {
+  let saveCount = 0;
+  const q = new SaveQueue({ save: async () => { saveCount++; await sleep(30); }, debounceMs: 10 });
+  let idle = false;
+  await q.idle();
+  q.flush();
+  q.flush();  // coalesced into a follow-up save
+  const waited = q.idle().then(() => { idle = true; });
+  await sleep(40);
+  assertEq(idle, false, 'test12: still busy during the follow-up');
+  await waited;
+  assertEq(saveCount, 2, 'test12: both saves ran before idle');
+  assertEq(q.status.scheduled, false, 'test12: nothing scheduled');
+  q.schedule();
+  assertEq(q.status.scheduled, true, 'test12: scheduled shows a pending save');
+  q.cancel();
+}
+
 // ---------- run all ----------
 
 (async () => {
-  const tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11];
+  const tests = [test1, test2, test3, test4, test5, test6, test7, test8, test9, test10, test11, test12];
   for (const t of tests) {
     try {
       await t();

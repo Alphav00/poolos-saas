@@ -1,7 +1,7 @@
 <script>
   import { onMount } from 'svelte';
 
-  export let status = 'idle';     // 'idle'|'dirty'|'saving'|'saved'|'local'|'error'|'fatal'|'rejected'
+  export let status = 'idle';     // 'idle'|'dirty'|'saving'|'saved'|'local'|'error'|'fatal'|'rejected'|'conflict'
   export let lastSaved = null;
   export let error = null;
   export let retryInMs = null;
@@ -61,6 +61,8 @@
     <button class="text-pool-500 underline" on:click={onSaveNow}>Retry now</button>
   {:else if status === 'rejected'}
     <span class="text-red-500 font-bold">⚠ Server would not take this save (kept on this phone)</span>
+  {:else if status === 'conflict'}
+    <span class="text-yellow-300 font-bold">⚠ Changed elsewhere: showing the server copy</span>
   {/if}
 
   {#if status !== 'saving' && status !== 'idle'}
@@ -69,7 +71,7 @@
 
   <button class="text-red-400/70 underline" on:click={onDiscard} title="Discard this job and start over">Discard</button>
 
-  {#if error && (status === 'error' || status === 'fatal' || status === 'rejected')}
+  {#if error && (status === 'error' || status === 'fatal' || status === 'rejected' || status === 'conflict')}
     <details class="text-xs text-ink-100/50">
       <summary class="cursor-pointer">details</summary>
       <pre class="mt-1 p-2 bg-ink-900 rounded text-xs overflow-x-auto">{error}</pre>

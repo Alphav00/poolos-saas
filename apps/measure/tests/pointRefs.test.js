@@ -2,7 +2,7 @@
  * Tests for perimeter point deletion and the references that follow it.
  * Run with: node tests/pointRefs.test.js
  */
-import { deletePerimeterPoint, pointRefsSnapshot, restorePointRefs } from '../src/lib/utils/pointRefs.js';
+import { deletePerimeterPoint, removePoint, undoDeletePoint } from '../src/lib/utils/pointRefs.js';
 
 let pass = 0, fail = 0;
 const fails = [];
@@ -86,18 +86,51 @@ function job() {
   eq(after.measurement.cross_dimensions[0], { from_point: null, to_point: 3, distance_ft: 30 }, '4: works without liner');
 }
 
-// ---------- 5. Undo restores points and references, not other fields ----------
+// ---------- 5. Undo reverses the delete, not other fields ----------
 {
   const j = job();
-  const snap = pointRefsSnapshot(j);
-  const { job: after } = deletePerimeterPoint(j, 3);
-  after.measurement.shallow_depth_ft = 4;  // typed after the delete
-  restorePointRefs(after, snap);
-  eq(after.measurement.perimeter_points, job().measurement.perimeter_points, '5: points restored');
-  eq(after.measurement.cross_dimensions, job().measurement.cross_dimensions, '5: cross dims restored');
-  eq(after.measurement.liner.fittings, job().measurement.liner.fittings, '5: fittings restored');
-  eq(after.hardware, job().hardware, '5: padding restored');
-  eq(after.measurement.shallow_depth_ft, 4, '5: later edits kept');
+  const { undo } = removePoint(j, 3);
+  j.measurement.shallow_depth_ft = 4;  // typed after the delete
+  undoDeletePoint(j, undo);
+  eq(j.measurement.perimeter_points, job().measurement.perimeter_points, '5: points restored');
+  eq(j.measurement.cross_dimensions, job().measurement.cross_dimensions, '5: cross dims restored');
+  eq(j.measurement.obstacles, job().measurement.obstacles, '5: obstacles restored');
+  eq(j.measurement.liner, job().measurement.liner, '5: liner refs restored');
+  eq(j.hardware, job().hardware, '5: padding restored');
+  eq(j.measurement.shallow_depth_ft, 4, '5: later edits kept');
+}
+
+// ---------- 6. Undo leaves list edits made since the delete ----------
+{
+  const j = job();
+  const { undo } = removePoint(j, 3);
+  const m = j.measurement;
+  // After the delete: the skimmer is re-pointed at (new) 4, i.e. old point 5,
+  // the deep wall height is relabelled, and a cross dimension is added.
+  m.liner.fittings[0].near_point = 4;
+  m.liner.wall_heights[1].label = 'Deep end';
+  m.cross_dimensions.push({ from_point: 1, to_point: 5, distance_ft: 22 });
+  undoDeletePoint(j, undo);
+  eq(m.liner.fittings[0].near_point, 5, '6: re-pointed fitting kept, shifted with its point');
+  eq(m.liner.wall_heights[1], { label: 'Deep end', at_point: 6, height_ft: 4 }, '6: relabel kept');
+  eq(m.liner.wall_heights[0].at_point, 3, '6: cleared ref restored');
+  eq(m.cross_dimensions.length, 3, '6: added row kept');
+  eq(m.cross_dimensions[2], { from_point: 1, to_point: 6, distance_ft: 22 }, '6: added row follows its points');
+  eq(m.cross_dimensions[1], { from_point: 3, to_point: 6, distance_ft: 16 }, '6: cleared end restored');
+}
+
+// ---------- 7. Two deletes undo in order; a removed row is not revived ----------
+{
+  const j = job();
+  const first = removePoint(j, 3).undo;
+  const second = removePoint(j, 4).undo;  // old point 5
+  j.measurement.obstacles = [];  // the obstacle row is gone since
+  undoDeletePoint(j, second);
+  undoDeletePoint(j, first);
+  eq(j.measurement.perimeter_points, job().measurement.perimeter_points, '7: points back');
+  eq(j.measurement.spa, job().measurement.spa, '7: spa back');
+  eq(j.measurement.break_off_points, job().measurement.break_off_points, '7: break-off back');
+  eq(j.measurement.obstacles, [], '7: removed row stays removed');
 }
 
 console.log(`pointRefs: ${pass} passed, ${fail} failed`);

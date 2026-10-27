@@ -21,6 +21,7 @@
  *   - If edits come in during retry, the retry is canceled and a fresh save
  *     is run with the latest snapshot
  *   - run() is safe to call from anywhere; concurrent calls are coalesced
+ *   - idle() waits out the save in flight, so a caller can leave after it
  */
 export class SaveQueue {
   constructor({
@@ -49,6 +50,7 @@ export class SaveQueue {
     this._retries = 0;
     this._listeners = new Map();
     this._lastError = null;
+    this._idleWaiters = [];
   }
 
   on(event, fn) {
@@ -84,9 +86,16 @@ export class SaveQueue {
     if (this._timer) { clearTimeout(this._timer); this._timer = null; }
   }
 
+  /** Resolves once no save is in flight (a follow-up save included). */
+  idle() {
+    if (!this._inFlight) return Promise.resolve();
+    return new Promise((resolve) => this._idleWaiters.push(resolve));
+  }
+
   get status() {
     return {
       inFlight: this._inFlight,
+      scheduled: this._timer !== null,
       retries: this._retries,
       lastError: this._lastError,
     };
@@ -143,6 +152,11 @@ export class SaveQueue {
         this._needResave = false;
         // Fire-and-forget: the latest snapshot is what gets saved.
         this.run();
+      }
+      if (!this._inFlight) {
+        const waiters = this._idleWaiters;
+        this._idleWaiters = [];
+        for (const w of waiters) w();
       }
     }
   }

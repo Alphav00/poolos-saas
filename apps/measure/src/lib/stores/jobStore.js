@@ -15,6 +15,11 @@
  * (four perimeter points); half-finished rows stay in the draft but are left
  * out of what is sent (utils/serverPayload.js).
  *
+ * An edit route's unsent draft is only sent if the server copy has not moved
+ * since the draft was based on it (same updated_at); otherwise the server copy
+ * is shown and the draft is set aside. A draft the server rejected is shown
+ * but not sent again until the next edit.
+ *
  * Components use:
  *   $job.job.meta.customer_name      // read
  *   $job.job.meta.customer_name = X  // write (mutation is fine, Svelte triggers reactivity)
@@ -54,9 +59,10 @@ export function draftKey(company, id) {
   return `${LS_PREFIX}:${company || 'default'}:${id || 'new'}`;
 }
 
-/** 4xx other than timeout / rate limit: the server will say the same again. */
-const isPermanent = (e) =>
-  typeof e?.status === 'number' && e.status >= 400 && e.status < 500 && e.status !== 408 && e.status !== 429;
+/** Answers the same body will get again. 401/403 are not: signing in again fixes them. */
+const PERMANENT = new Set([400, 404, 409, 413, 422]);
+const isPermanent = (e) => PERMANENT.has(e?.status);
+const isSignedOut = (e) => e?.status === 401 || e?.status === 403;
 
 /**
  * The liner-only measurement block.
@@ -178,12 +184,18 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
   const id = initialId;
   let initialJob = null;
   let recovered = false;
+  // The server's updated_at the draft was edited from.
+  let draftBase = null;
+  // The server's answer when it last refused this draft; null once edited.
+  let rejectedError = null;
   const cached = readLS(draftKey(company, id));
   if (cached && cached.job && (id ? cached.id === id : !cached.id)) {
     initialJob = cached.job;
     // An edit route's draft only wins over the server copy when it holds
     // edits the server has not taken; a new draft is unsaved by definition.
     recovered = id ? cached.unsynced === true : true;
+    draftBase = cached.job.updated_at ?? null;
+    if (recovered && cached.rejected) rejectedError = String(cached.rejected);
   }
   if (!initialJob) {
     initialJob = emptyJob();
@@ -192,21 +204,29 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
   const state = writable({
     job: initialJob,
     id,
-    status: 'idle',           // 'idle'|'dirty'|'saving'|'saved'|'local'|'error'|'fatal'|'rejected'
+    // 'idle'|'dirty'|'saving'|'saved'|'local'|'error'|'fatal'|'rejected'|'conflict'
+    status: rejectedError ? 'rejected' : 'idle',
     lastSaved: null,
-    error: null,
+    error: rejectedError,
     retryInMs: null,
   });
 
   let queue = null;
   // Counts edits, so a save knows whether anything changed while it was out.
   let edits = 0;
+  // The edit count the server last took; a recovered draft starts behind.
+  let acked = recovered ? -1 : 0;
+  // The edit count last sent on the way out, so pagehide after
+  // visibilitychange does not send it twice.
+  let sentOnExit = null;
   let lsTimer = null;
 
   function writeDraft(unsynced) {
     if (lsTimer) { clearTimeout(lsTimer); lsTimer = null; }
     const s = get(state);
-    writeLS(draftKey(company, s.id), { id: s.id, job: s.job, unsynced });
+    const draft = { id: s.id, job: s.job, unsynced };
+    if (unsynced && rejectedError) draft.rejected = rejectedError;
+    writeLS(draftKey(company, s.id), draft);
   }
 
   // Debounced: Svelte passes a bound value up to the job a tick after the
@@ -218,6 +238,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
 
   function markDirty() {
     edits += 1;
+    rejectedError = null;
     scheduleDraftWrite();
     queue.schedule();
   }
@@ -244,6 +265,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
         return 'local';
       }
       const created = await api.createJob(payload);
+      acked = seen;
       adopt(created);
       clearLS(draftKey(company, null));
       writeDraft(edits !== seen);
@@ -255,6 +277,7 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
       }
     } else {
       const updated = await api.updateJob(s.id, payload);
+      acked = seen;
       adopt(updated);
       writeDraft(edits !== seen);
     }
@@ -271,53 +294,88 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
       : { ...s, status: 'saved', lastSaved: new Date(), error: null, retryInMs: null }
   )));
   queue.on('error', (e) => {
+    const message = isSignedOut(e.error)
+      ? 'Signed out or not allowed: sign in again, then Retry'
+      : e.error?.message || String(e.error);
+    if (e.permanent) {
+      // Remember the refusal with the draft, so reopening the job does not
+      // send the same body again.
+      rejectedError = message;
+      writeDraft(true);
+    }
     state.update(s => ({
       ...s,
       status: e.permanent ? 'rejected' : e.fatal ? 'fatal' : 'error',
-      error: e.error?.message || String(e.error),
+      error: message,
       retryInMs: e.retryInMs ?? null,
     }));
   });
 
-  // A recovered draft has edits the server has not seen: send them.
-  if (recovered) {
-    queue.schedule();
+  // A recovered draft has edits the server has not seen: send them, unless
+  // the server already refused it (the next edit tries again).
+  function resendRecovered() {
+    if (recovered && !rejectedError) queue.schedule();
   }
 
   if (fetchFromServer && id) {
     api.getJob(id).then(server => {
       const cur = get(state);
-      // Adopt the server copy unless the tech has typed something since mount
-      // (or the draft on the phone holds edits the server never took).
+      // Adopt the server copy unless the tech has typed something since mount.
       //
       // The edit counter and `status` are the reliable signals for that.
       // Comparing serialised job objects is not — the store holds a job while
       // the server returns a job, and any field the API normalises (Decimals
       // to strings, defaults filled in) makes the two differ even when
       // nothing was edited.
-      const hasUnsavedEdits = recovered || edits > 0 || cur.status === 'dirty' || cur.status === 'saving';
+      const hasUnsavedEdits = edits > 0 || cur.status === 'dirty' || cur.status === 'saving';
       if (hasUnsavedEdits) return;
+
+      // The draft on the phone wins only over the copy it was edited from.
+      // If the job changed since (another device, the swap-A/B button on the
+      // job view), sending the draft would overwrite that change.
+      let conflict = false;
+      if (recovered) {
+        if (draftBase && server.updated_at === draftBase) {
+          resendRecovered();
+          return;
+        }
+        conflict = true;
+        writeLS(`${draftKey(company, id)}:set-aside`, { id, job: cur.job, set_aside_at: new Date().toISOString() });
+        recovered = false;
+        rejectedError = null;
+        acked = edits;
+      }
 
       writeLS(draftKey(company, server.id), { id: server.id, job: server, unsynced: false });
       state.set({
         job: server,
         id: server.id,
-        status: 'idle',
+        status: conflict ? 'conflict' : 'idle',
         lastSaved: new Date(),
-        error: null,
+        error: conflict
+          ? 'This job changed on the server since the edits on this phone. The server copy is shown; the phone edits were set aside, not sent.'
+          : null,
         retryInMs: null,
       });
     }).catch(err => {
       console.warn('Could not refresh from server:', err);
+      resendRecovered();
     });
+  } else {
+    resendRecovered();
   }
 
-  function onBeforeUnload() {
+  // Leaving the page: beforeunload on desktop; pagehide and
+  // visibilitychange=hidden are what phones fire reliably.
+  function onLeave(ev) {
+    if (ev?.type === 'visibilitychange' && document.visibilityState !== 'hidden') return;
     const s = get(state);
-    if (s.status !== 'dirty' && s.status !== 'local' && !lsTimer) return;
+    // Anything the server has not taken, whether waiting, in flight or failed.
+    if (edits === acked && !lsTimer) return;
     // The draft on the phone first: that write cannot fail on the network.
     writeDraft(true);
-    if (s.status === 'dirty' && s.id && typeof fetch !== 'undefined') {
+    if (s.id && !rejectedError && sentOnExit !== edits && typeof fetch !== 'undefined') {
+      sentOnExit = edits;
       // keepalive lets the request outlive the page. The Worker takes PUT
       // for a job (sendBeacon can only POST).
       try {
@@ -332,7 +390,11 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
     }
   }
   if (typeof window !== 'undefined') {
-    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('beforeunload', onLeave);
+    window.addEventListener('pagehide', onLeave);
+  }
+  if (typeof document !== 'undefined' && document.addEventListener) {
+    document.addEventListener('visibilitychange', onLeave);
   }
 
   /**
@@ -361,10 +423,20 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
     update: state.update,
     setProductType,
     markDirty,
-    saveNow: () => queue.flush(),
+    // Resolves once the save (and any follow-up) is done, so a caller can
+    // leave the page knowing the server has the edits.
+    saveNow: async () => {
+      const r = await queue.flush();
+      await queue.idle();
+      return r;
+    },
     cancelPending: () => queue.cancel(),
     discard: () => {
       queue.cancel();
+      // Nothing left that the server has not taken.
+      acked = edits;
+      recovered = false;
+      rejectedError = null;
       if (lsTimer) { clearTimeout(lsTimer); lsTimer = null; }
       clearLS(draftKey(company, get(state).id));
       clearLS(draftKey(company, null));
@@ -378,11 +450,20 @@ export function createJobStore({ initialId = null, fetchFromServer = true } = {}
       });
     },
     destroy: () => {
-      queue.cancel();
+      // Leaving the editor (Finish on the last step, the back button) must
+      // not drop an edit still waiting on the debounce: send it now. The
+      // save finishes after unmount and updates the draft as usual.
+      if (queue.status.scheduled || get(state).status === 'dirty') {
+        queue.flush();
+      }
       // Keep whatever was typed in the last moment before leaving.
       if (lsTimer) writeDraft(true);
       if (typeof window !== 'undefined') {
-        window.removeEventListener('beforeunload', onBeforeUnload);
+        window.removeEventListener('beforeunload', onLeave);
+        window.removeEventListener('pagehide', onLeave);
+      }
+      if (typeof document !== 'undefined' && document.removeEventListener) {
+        document.removeEventListener('visibilitychange', onLeave);
       }
     },
   };

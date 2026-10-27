@@ -111,6 +111,25 @@ function draft() {
   eq(errorMessage(null, 500), 'HTTP 500', '6: empty body');
 }
 
+// ---------- 7. A cleared number box from bind:value (null) ----------
+{
+  const job = {
+    measurement: { ab_distance_ft: 20, ab_offset_from_pool_ft: null, pool_length: null, perimeter_points: pts(4) },
+    cover_spec: { overlap_standard_in: null, overlap_planter_in: null },
+    liner_spec: { waste_factor_pct: null, warranty_years: null },
+    hardware: { y_straps: null, lawn_stakes: '', perimeter_padding_from_pt: null },
+  };
+  const body = serverPayload(job);
+  eq('ab_offset_from_pool_ft' in body.measurement, false, '7: defaulted null dropped (offset)');
+  eq('overlap_standard_in' in body.cover_spec, false, '7: defaulted null dropped (overlap)');
+  eq('waste_factor_pct' in body.liner_spec, false, '7: defaulted null dropped (waste)');
+  eq('y_straps' in body.hardware, false, '7: defaulted null dropped (int)');
+  eq('lawn_stakes' in body.hardware, false, '7: defaulted blank dropped');
+  eq(body.measurement.pool_length, null, '7: optional null kept');
+  eq(body.cover_spec.overlap_planter_in, null, '7: optional null kept (planter)');
+  eq(body.hardware.perimeter_padding_from_pt, null, '7: optional point null kept');
+}
+
 console.log(`serverPayload: ${pass} passed, ${fail} failed`);
 if (fail) {
   for (const f of fails) console.log('  FAIL', f);

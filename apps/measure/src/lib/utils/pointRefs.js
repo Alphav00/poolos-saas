@@ -43,16 +43,31 @@ function refSlots(job) {
  * Returns a new job (the input is not touched) whose points are renumbered
  * 1..N and whose references follow them: n > num becomes n - 1, n == num
  * becomes null. `cleared` lists the references that pointed at the deleted
- * point, e.g. "Cross dimension 2 (to)".
+ * point, e.g. "Cross dimension 2 (to)". `undo` is what undoDeletePoint needs
+ * to reverse it later.
  */
 export function deletePerimeterPoint(job, num) {
   const next = clone(job);
+  return { job: next, ...removePoint(next, num) };
+}
+
+/**
+ * deletePerimeterPoint on the job itself, in place. The form uses this so
+ * the rows an undo entry remembers stay the job's own rows.
+ */
+export function removePoint(job, num) {
   const target = Number(num);
-  next.measurement.perimeter_points = (next.measurement.perimeter_points || [])
+  const m = job.measurement;
+  const points = m.perimeter_points || [];
+  const index = points.findIndex((p) => Number(p.number) === target);
+  const removed = index >= 0 ? clone(points[index]) : null;
+  m.perimeter_points = points
     .filter((p) => Number(p.number) !== target)
     .map((p, i) => ({ ...p, number: i + 1 }));
   const cleared = [];
-  for (const [obj, key, label] of refSlots(next)) {
+  // The rows whose reference was cleared, to put back on undo.
+  const clearedSlots = [];
+  for (const [obj, key, label] of refSlots(job)) {
     const raw = obj[key];
     if (raw == null || raw === '') continue;
     const n = Number(raw);
@@ -60,49 +75,41 @@ export function deletePerimeterPoint(job, num) {
     if (n === target) {
       obj[key] = null;
       cleared.push(label);
+      clearedSlots.push({ row: obj, key });
     } else if (n > target) {
       obj[key] = n - 1;
     }
   }
-  return { job: next, cleared };
-}
-
-/** A deep copy of the points and every reference to them, for undo. */
-export function pointRefsSnapshot(job) {
-  const m = job.measurement || {};
-  const liner = m.liner;
-  return clone({
-    perimeter_points: m.perimeter_points || [],
-    cross_dimensions: m.cross_dimensions,
-    break_off_points: m.break_off_points,
-    obstacles: m.obstacles,
-    spa: m.spa,
-    step: m.step,
-    liner: liner ? { steps: liner.steps, wall_heights: liner.wall_heights, fittings: liner.fittings } : null,
-    padding: job.hardware
-      ? { from: job.hardware.perimeter_padding_from_pt, to: job.hardware.perimeter_padding_to_pt }
-      : null,
-  });
+  return { cleared, undo: { num: target, index, point: removed, clearedSlots } };
 }
 
 /**
- * Put a snapshot back onto a job, in place. Only the point-bearing fields
- * move; anything else typed since (depths, notes) is left alone.
+ * Reverse a delete on the job as it is now, in place.
+ *
+ * This is the inverse remap, not a restored copy: the point goes back at its
+ * place, every reference n >= num becomes n + 1 (including ones picked after
+ * the delete), and a reference the delete cleared gets num back if that row
+ * is still there and still blank. Any other edit since the delete (a fitting
+ * re-pointed, a row added or removed, depths) is left as it is.
  */
-export function restorePointRefs(job, snap) {
-  const s = clone(snap);
+export function undoDeletePoint(job, undo) {
+  if (!undo || !undo.point) return job;
   const m = job.measurement;
-  for (const k of ['perimeter_points', 'cross_dimensions', 'break_off_points', 'obstacles', 'spa', 'step']) {
-    if (s[k] !== undefined) m[k] = s[k];
+  const target = undo.num;
+  const points = [...(m.perimeter_points || [])];
+  const at = Math.max(0, Math.min(undo.index, points.length));
+  points.splice(at, 0, clone(undo.point));
+  m.perimeter_points = points.map((p, i) => ({ ...p, number: i + 1 }));
+  const slots = refSlots(job);
+  for (const [obj, key] of slots) {
+    const raw = obj[key];
+    if (raw == null || raw === '') continue;
+    const n = Number(raw);
+    if (Number.isFinite(n) && n >= target) obj[key] = n + 1;
   }
-  if (s.liner && m.liner) {
-    for (const k of ['steps', 'wall_heights', 'fittings']) {
-      if (s.liner[k] !== undefined) m.liner[k] = s.liner[k];
-    }
-  }
-  if (s.padding && job.hardware) {
-    job.hardware.perimeter_padding_from_pt = s.padding.from;
-    job.hardware.perimeter_padding_to_pt = s.padding.to;
+  const live = new Set(slots.map(([obj]) => obj));
+  for (const { row, key } of undo.clearedSlots || []) {
+    if (live.has(row) && (row[key] == null || row[key] === '')) row[key] = target;
   }
   return job;
 }

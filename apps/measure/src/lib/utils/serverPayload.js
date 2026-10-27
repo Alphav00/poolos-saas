@@ -5,8 +5,11 @@
  * included. The server checks every save against the job models in
  * @poolos/measure-core and rejects the whole body for one bad row, so the
  * payload leaves out what cannot pass yet:
- *   - cleared number boxes ('') are dropped, so the server uses its default
- *     (or reports the one required field that is really missing)
+ *   - cleared number boxes are dropped, so the server uses its default
+ *     (or reports the one required field that is really missing). A cleared
+ *     box is '' or, from bind:value on type=number, null; null is only
+ *     dropped for fields the server requires but fills in itself, since
+ *     elsewhere null is how a field is cleared
  *   - cross dimensions and break-offs without both points and a distance
  *   - obstacles without a kind
  *   - wall heights without a label or a height
@@ -24,16 +27,25 @@ const FIELDS = ['meta', 'product_type', 'measurement', 'cover_spec', 'liner_spec
 // Keys whose values are numbers. A cleared input for one of these sends ''.
 const NUMERIC_KEY = /(?:_ft|_in|_pct|_mil|_years|_days|_point|_pt)$|^(?:number|index|order|pool_length|pool_width|y_straps|wood_deck_anchors|beauty_rings|lawn_stakes)$/;
 
+// Required numbers the server defaults when they are left out (models.ts).
+// Sending null for one of these is a 422; leaving it out is not.
+const DEFAULTED = new Set([
+  'ab_offset_from_pool_ft', 'overlap_standard_in', 'waste_factor_pct', 'thickness_mil',
+  'recent_rainfall_days', 'y_straps', 'wood_deck_anchors', 'beauty_rings', 'lawn_stakes',
+  'paver_tubes_ft',
+]);
+
 const blank = (v) => v === null || v === undefined || v === '';
 const isNum = (v) => !blank(v) && Number.isFinite(Number(v));
 
-/** Deep copy, dropping '' from numeric keys. */
+/** Deep copy, dropping cleared numbers ('' anywhere numeric, null where defaulted). */
 function dropBlankNumbers(v) {
   if (Array.isArray(v)) return v.map(dropBlankNumbers);
   if (v && typeof v === 'object') {
     const out = {};
     for (const [k, x] of Object.entries(v)) {
-      if (x === '' && NUMERIC_KEY.test(k)) continue;
+      if (x === '' && (NUMERIC_KEY.test(k) || DEFAULTED.has(k))) continue;
+      if ((x === null || x === undefined) && DEFAULTED.has(k)) continue;
       out[k] = dropBlankNumbers(x);
     }
     return out;
