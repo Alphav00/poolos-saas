@@ -1,6 +1,6 @@
 import type { Viewer } from './auth';
 import { checkFeedbackDoc, stampFeedback } from './feedback';
-import { checkFieldDoc, stampStaff } from './field';
+import { checkFieldDoc, stampSettings, stampStaff } from './field';
 import { boardKey } from './company';
 import { checkMessageDoc, stampMessage } from './messages';
 import { canEditPools, roleFor } from './roles';
@@ -133,11 +133,13 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	}
 	if (!collection || !COLLECTION.test(collection)) return fail(400, 'bad_request', 'Bad collection name');
 	if (id !== undefined && !DOC_ID.test(id)) return fail(400, 'bad_request', 'Bad document id');
-	// Staff and pool profiles are read by the whole team. Owners manage staff;
+	// Staff, pool profiles and the chemistry setup are read by the whole team.
+	// Owners manage staff and enter the chemistry setup (DESIGN §14.1);
 	// owners and staff on file as Lead or Dispatcher change pool profiles.
 	// The role lookup runs only on these writes.
 	if (board === 'field' && id !== undefined && request.method !== 'GET') {
 		if (collection === 'staff' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can change staff');
+		if (collection === 'settings' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can change the chemistry setup');
 		if (collection === 'pools' && !viewer.isOwner && !canEditPools(false, await roleFor(env, viewer.email, viewer.company))) {
 			return fail(403, 'forbidden', 'Only an owner, a Lead or a Dispatcher can change pool profiles');
 		}
@@ -159,32 +161,54 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 		});
 	}
 
-	const row = await env.DB.prepare('SELECT id, data, updated_at, deleted FROM board_docs WHERE board = ? AND collection = ? AND id = ?')
-		.bind(key, collection, id)
-		.first<DocRow>();
-	const current = row && !row.deleted ? row : null;
+	const readRow = () =>
+		env.DB.prepare('SELECT id, data, updated_at, deleted FROM board_docs WHERE board = ? AND collection = ? AND id = ?')
+			.bind(key, collection, id)
+			.first<DocRow>();
 
 	if (request.method === 'GET') {
-		if (!current) return json({ exists: false, id, data: null });
-		return json({ exists: true, id, data: JSON.parse(current.data), updated_at: current.updated_at });
+		const row = await readRow();
+		if (!row || row.deleted) return json({ exists: false, id, data: null });
+		return json({ exists: true, id, data: JSON.parse(row.data), updated_at: row.updated_at });
 	}
 	if (request.method !== 'PUT' && request.method !== 'PATCH' && request.method !== 'DELETE') {
 		return fail(405, 'method_not_allowed', 'Use GET, PUT, PATCH or DELETE');
 	}
+	let body: Record<string, unknown> | null = null;
+	if (request.method !== 'DELETE') {
+		const read = await readBody(request);
+		if (read instanceof Response) return read;
+		body = read;
+	}
+	// Each write only lands on the version it was worked out from, so two phones
+	// changing one document at once never silently drop the other's change: the
+	// loser reads again, merges again and is checked again.
+	for (let attempt = 0; attempt < WRITE_ATTEMPTS; attempt++) {
+		const res = await writeDoc(env, viewer, board, key, collection, id, request.method, body, await readRow());
+		if (res) return res;
+	}
+	return fail(409, 'conflict', 'The document kept changing while saving; try again');
+}
 
+const WRITE_ATTEMPTS = 3;
+
+/** One try at a PUT, PATCH or DELETE against the row as read; null when the row changed before the write landed. */
+async function writeDoc(
+	env: Env, viewer: Viewer, board: string, key: string, collection: string, id: string,
+	method: 'PUT' | 'PATCH' | 'DELETE', body: Record<string, unknown> | null, row: DocRow | null,
+): Promise<Response | null> {
+	const current = row && !row.deleted ? row : null;
 	let op: 'set' | 'update' | 'delete';
 	let next: Record<string, unknown>;
 	let logged: Record<string, unknown>;
-	if (request.method === 'DELETE') {
+	if (method === 'DELETE' || !body) {
 		if (!current) return json({ id, deleted: true });
 		op = 'delete';
 		next = JSON.parse(current.data) as Record<string, unknown>;
 		logged = {};
 	} else {
-		const body = await readBody(request);
-		if (body instanceof Response) return body;
 		logged = body;
-		if (request.method === 'PATCH') {
+		if (method === 'PATCH') {
 			if (!current) return fail(404, 'not_found', 'Document does not exist; use PUT to create it');
 			op = 'update';
 			next = { ...(JSON.parse(current.data) as Record<string, unknown>), ...body };
@@ -201,6 +225,9 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	}
 	if (board === 'field' && collection === 'staff' && op !== 'delete') {
 		next = stampStaff(next, current ? (JSON.parse(current.data) as Record<string, unknown>) : null, viewer.email, at);
+	}
+	if (board === 'field' && collection === 'settings' && op !== 'delete') {
+		next = stampSettings(next, viewer.email, at);
 	}
 	// A post is changed or removed only by its author or an owner.
 	if (board === 'messages' && current && !viewer.isOwner) {
@@ -224,15 +251,19 @@ export async function handleBoards(request: Request, env: Env, viewer: Viewer, p
 	if (op === 'delete' && board === 'feedback' && !viewer.isOwner) return fail(403, 'forbidden', 'Only an owner can delete a report');
 	const data = JSON.stringify(next);
 	if (data.length > MAX_DOC_BYTES) return fail(413, 'too_large', 'Document is larger than 512 KB');
-	await env.DB.batch([
+	// The upsert only applies when the row is still the version read (or still
+	// absent); the log line is only kept when it did (changes() of the upsert).
+	const [written] = await env.DB.batch([
 		env.DB.prepare(
 			`INSERT INTO board_docs (board, collection, id, data, updated_at, updated_by, deleted) VALUES (?,?,?,?,?,?,?)
 			 ON CONFLICT (board, collection, id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at,
-			   updated_by = excluded.updated_by, deleted = excluded.deleted`,
-		).bind(key, collection, id, data, at, viewer.email, op === 'delete' ? 1 : 0),
-		env.DB.prepare('INSERT INTO board_writes (board, collection, id, op, data, at, by) VALUES (?,?,?,?,?,?,?)').bind(
+			   updated_by = excluded.updated_by, deleted = excluded.deleted
+			 WHERE board_docs.updated_at IS ?`,
+		).bind(key, collection, id, data, at, viewer.email, op === 'delete' ? 1 : 0, row?.updated_at ?? null),
+		env.DB.prepare('INSERT INTO board_writes (board, collection, id, op, data, at, by) SELECT ?,?,?,?,?,?,? WHERE changes() > 0').bind(
 			key, collection, id, op, JSON.stringify(logged), at, viewer.email,
 		),
 	]);
+	if (!written?.meta.changes) return null;
 	return op === 'delete' ? json({ id, deleted: true, updated_at: at }) : json({ id, data: next, updated_at: at });
 }
