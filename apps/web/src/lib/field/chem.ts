@@ -181,6 +181,28 @@ export function plan(reading: Reading | null, targets: Targets | null, products:
   return { asks, notes }
 }
 
+/** Where a pool's cell range stands: no cell, still asking, the ask failed, or the engine's answer. */
+export type CellState =
+  | { status: 'none' }
+  | { status: 'loading' }
+  | { status: 'failed' }
+  | { status: 'answered'; answer: Answer<CellRange> }
+
+/**
+ * plan() for a pool whose cell range may not be in yet. While it loads, salt
+ * waits rather than being dosed to the company's range; once the ask failed or
+ * the engine has no range on file, salt falls back to the company's range and
+ * the screen says so.
+ */
+export function planWithCell(reading: Reading | null, targets: Targets | null, products: Product[], cell: CellState): Plan {
+  if (cell.status === 'answered') return plan(reading, targets, products, cell.answer.ok ? cell.answer.value : null)
+  if (cell.status !== 'loading' || !targets) return plan(reading, targets, products, null)
+  const { salt: _salt, ...ranges } = targets.ranges
+  const p = plan(reading, { ...targets, ranges }, products, null)
+  if (reading?.values.salt !== undefined) p.notes.push({ param: 'salt', text: 'Salt dose waits for the cell’s range' })
+  return p
+}
+
 async function post<T>(path: string, body: unknown): Promise<Answer<T>> {
   const res = await fetch(path, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
   if (res.status === 200 || res.status === 422) return (await res.json()) as Answer<T>

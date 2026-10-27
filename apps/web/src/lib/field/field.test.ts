@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { amountWords, plan, strengthWords, waterFrom, type Product, type Targets } from './chem'
+import { amountWords, plan, planWithCell, strengthWords, waterFrom, type Product, type Targets } from './chem'
 import { compare } from './compare'
 import { DEMO_CUSTOMER_NAMES, generateCustomer, slugify } from './generator'
 import DENYLIST from '../../../../../tests/denylist.txt?raw'
@@ -182,6 +182,25 @@ describe('chemistry: salt by the cell manufacturer', () => {
   it('falls back to the company range without a cell', () => {
     expect(plan(reading, targets, [salt], null).asks[0]).toMatchObject({ target: 3200 })
     expect(plan(reading, targets, [salt], null).asks[0]!.cell).toBeUndefined()
+  })
+
+  it('holds salt back while the cell range loads, and says so', () => {
+    const p = planWithCell({ method: 'drop', values: { salt: 2700, ph: 8.2 } }, { ...targets, ranges: { ...targets.ranges, ph: [7.4, 7.6] } }, [salt], { status: 'loading' })
+    expect(p.asks).toEqual([])
+    expect(p.notes).toEqual([
+      { param: 'ph', text: 'above target · no muriatic acid set up' },
+      { param: 'salt', text: 'Salt dose waits for the cell’s range' },
+    ])
+    // no salt reading: nothing to wait for
+    expect(planWithCell({ method: 'drop', values: { ph: 7.5 } }, targets, [salt], { status: 'loading' }).notes).toEqual([])
+  })
+
+  it('uses the manufacturer range once answered, and the company range when the ask failed or had no range', () => {
+    expect(planWithCell(reading, targets, [salt], { status: 'answered', answer: { ok: true, value: cell } }).asks[0]).toMatchObject({ target: 3400 })
+    const noRange = { status: 'answered' as const, answer: { ok: false as const, questions: [{ field: 'cell', ask: 'Which cell?' }] } }
+    expect(planWithCell(reading, targets, [salt], noRange).asks[0]).toMatchObject({ target: 3200 })
+    expect(planWithCell(reading, targets, [salt], { status: 'failed' }).asks[0]).toMatchObject({ target: 3200 })
+    expect(planWithCell(reading, targets, [salt], { status: 'none' }).asks[0]).toMatchObject({ target: 3200 })
   })
 })
 
