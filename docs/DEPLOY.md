@@ -39,35 +39,8 @@ cannot be skipped by custom rules on the Free plan, so the check accepts that
 one case, with a warning that Access could not be verified from CI. Any other
 `403` still fails. To verify Access for real, request the site from a browser.
 
-## Preview: try a branch before it merges
-
-Every pull request from a branch in this repo is deployed by
-`.github/workflows/preview.yml` to **https://poolos-preview.pathofphi.com**.
-The live site is not touched.
-
-| | Live | Preview |
-|---|---|---|
-| Worker | `poolos-api` | `poolos-preview` |
-| Address | poolos.pathofphi.com | poolos-preview.pathofphi.com |
-| D1 database | `poolos` | `poolos-preview` (own data, starts empty) |
-| R2 bucket | `poolos-files` | `poolos-files` (shared; the app does not use it yet) |
-| Deployed by | push to `main` (deploy.yml) | pull request push (preview.yml) |
-| Brand pack | `ccs-pools,sm-pools,blue-devil-pools` (default `ccs-pools`) | `ccs-pools,sm-pools,blue-devil-pools` (default `ccs-pools`) |
-
-The settings are `env.preview` in `apps/api/wrangler.jsonc`. There is one
-preview: the last pushed pull request wins.
-
-**One-time, in the Zero Trust dashboard:** Access → Applications → PoolOS →
-Configure → add the domain `poolos-preview.pathofphi.com`. Same policy, same
-email list. Until then the preview answers "Sign in required" to everyone
-and the workflow ends with a warning instead of failing.
-
 Problem reports are filed in Linear by the tester from the app, under their
-own Linear sign-in; neither Worker holds a Linear key.
-
-To remove the preview: delete the `poolos-preview` Worker and the
-`poolos-preview` D1 database in the dashboard, then the certificate for
-poolos-preview.pathofphi.com under SSL/TLS → Edge Certificates.
+own Linear sign-in; the Worker holds no Linear key.
 
 ## Letting colleagues in
 

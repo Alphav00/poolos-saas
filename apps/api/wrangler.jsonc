@@ -31,33 +31,4 @@
 		{ "binding": "DB", "database_name": "poolos", "database_id": "ff199d7f-f102-4fb0-97f1-0c7237b7a0e5", "migrations_dir": "migrations" },
 	],
 	"r2_buckets": [{ "binding": "FILES", "bucket_name": "poolos-files" }],
-	// A second copy for trying a branch before it merges: its own Worker,
-	// hostname and database (docs/DEPLOY.md, "Preview"). Deployed by
-	// .github/workflows/preview.yml with `--env preview`. Vars and bindings
-	// are not inherited from the top level, so they are repeated here.
-	"env": {
-		"preview": {
-			"name": "poolos-preview",
-			"workers_dev": false,
-			"preview_urls": false,
-			"routes": [{ "pattern": "poolos-preview.pathofphi.com", "custom_domain": true }],
-			"assets": {
-				"directory": "../web/dist",
-				"binding": "ASSETS",
-				"run_worker_first": true,
-			},
-			"vars": {
-				"ACCESS_TEAM_DOMAIN": "phi-agents.cloudflareaccess.com",
-				// Same PoolOS Access application, with poolos-preview.pathofphi.com
-				// added as a second domain, so the audience tag is the same.
-				"ACCESS_AUD": "4db28440a6320c1dc9f22f201073ece46307c61d2e3c116e2980f88c1f8c034f",
-				"OWNER_EMAILS": "alphav00@gmail.com",
-				"COMPANY_LOCK": "staff",
-			},
-			"d1_databases": [
-				{ "binding": "DB", "database_name": "poolos-preview", "database_id": "44bdada6-ea19-4fee-8bf8-e6a827c13e8e", "migrations_dir": "migrations" },
-			],
-			"r2_buckets": [{ "binding": "FILES", "bucket_name": "poolos-files" }],
-		},
-	},
 }

@@ -44,7 +44,6 @@ Before every push, `pnpm check` must pass: lint, typecheck, fixture lint, all te
 
 ## Deploy
 - Merging to `main` deploys poolos.pathofphi.com (`.github/workflows/deploy.yml`, `BRAND=ccs-pools,sm-pools,blue-devil-pools`, DECISIONS d0021, d0037).
-- A pull request deploys poolos-preview.pathofphi.com with its own D1 database (`.github/workflows/preview.yml`). See `docs/DEPLOY.md`.
 
 ## Commits and PRs
 - One feature per PR. Keep diffs to what the feature needs.
