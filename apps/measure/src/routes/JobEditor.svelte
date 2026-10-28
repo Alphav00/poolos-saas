@@ -1,7 +1,7 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { navigate } from 'svelte-routing';
-  import { createJobStore } from '../lib/stores/jobStore.js';
+  import { createJobStore, canLeave, whyNotLeave } from '../lib/stores/jobStore.js';
   import Wizard from '../lib/wizard/Wizard.svelte';
   import { firstIncompleteStep } from '../lib/wizard/steps.js';
 
@@ -11,6 +11,9 @@
   const store = createJobStore({ initialId: id });
 
   let initialStep = null;
+  // Shown when Finish is refused, so the tap is not silent.
+  let finishNote = '';
+  $: if (canLeave($store)) finishNote = '';
   let lastSeenId = null;
 
   // When the store gets a real id, reflect it in the URL.
@@ -31,7 +34,14 @@
     // the view, the order form and reconstruct all read the server copy, and
     // an edit typed in the last moment may still be waiting on the debounce.
     await store.saveNow();
-    navigate(`/measure/jobs/${$store.id || ''}`);
+    // Leave only once the server has the job; otherwise the status chip says why
+    // (on this phone only, refused, could not be checked) and the edits stay here.
+    if (canLeave($store)) {
+      finishNote = '';
+      navigate(`/measure/jobs/${$store.id}`);
+    } else {
+      finishNote = whyNotLeave($store);
+    }
   }
 
   onDestroy(() => {
@@ -41,4 +51,7 @@
   });
 </script>
 
+{#if finishNote}
+  <div class="text-sm text-yellow-300 bg-ink-900 rounded p-2 mb-2" role="alert">{finishNote}</div>
+{/if}
 <Wizard {store} {initialStep} {onFinish} />

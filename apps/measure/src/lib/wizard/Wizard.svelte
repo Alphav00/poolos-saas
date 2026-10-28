@@ -118,6 +118,8 @@
         retryInMs={$store.retryInMs}
         onRetry={() => store.saveNow()}
         onSaveNow={() => store.saveNow()}
+        canRestore={$store.hasSetAside}
+        onRestore={() => store.restoreSetAside()}
         onDiscard={() => {
           if (confirm('Discard this job and start over?')) {
             store.discard();
