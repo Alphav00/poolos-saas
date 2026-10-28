@@ -10,7 +10,7 @@
   const H = 120
   const TOP = 6
   const y = (v: number) => 100 - (Math.max(0, Math.min(v, TOP)) / TOP) * 80
-  const step = $derived(W / (visits.length + 1.2))
+  const step = $derived((W - 40) / Math.max(1, visits.length))
   const x = (i: number) => 20 + i * step
 
   const line = $derived(
