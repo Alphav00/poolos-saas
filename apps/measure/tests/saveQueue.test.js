@@ -214,7 +214,10 @@ async function test9() {
   });
 
   q.schedule();
-  await sleep(40);
+  // Wait for the first failed attempt to be recorded rather than sleeping a fixed 40 ms: on a busy
+  // runner the 10 ms debounce plus the 20 ms save can take longer than that (same cause as test8).
+  const deadline = Date.now() + 2000;
+  while (q.status.retries < 1 && Date.now() < deadline) await sleep(5);
   // After 1 failed attempt, status should reflect inFlight or recent error
   const s = q.status;
   assert(s.retries >= 1, `test9: retries recorded, got ${s.retries}`);
