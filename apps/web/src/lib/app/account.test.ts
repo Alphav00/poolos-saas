@@ -1,6 +1,6 @@
 import type { Brand } from 'virtual:brand'
-import { describe, expect, it } from 'vitest'
-import { allowedFrom, companyCookie, cookieNames, matchUsername, pickCompany, savedUsername, saveUsername, signInBy } from './account.svelte'
+import { afterEach, describe, expect, it } from 'vitest'
+import { allowedBrands, allowedFrom, brand, companyCookie, cookieNames, matchUsername, pickCompany, savedUsername, saveUsername, setAllowed, signIn, signInBy } from './account.svelte'
 
 const pack = (id: string, name: string): Brand => ({ id, name, shortName: name, legalName: name, tagline: '', pilot: true, linear: null, loader: null, logo: '', mark: '' })
 const PACKS = [pack('blue-lagoon', 'Blue Lagoon Pools'), pack('k-and-r', 'K&R Pools')]
@@ -96,4 +96,28 @@ describe('pickCompany', () => {
   })
   it('asks when there are several and none is saved', () => expect(pickCompany(null, PACKS)).toEqual({ ask: PACKS }))
   it('has nowhere to go without a staff list', () => expect(pickCompany('k-and-r', [])).toEqual({ none: true }))
+})
+
+describe('signIn', () => {
+  const original = allowedBrands()
+  afterEach(() => setAllowed(original))
+
+  it('refuses a name that is not one of the allowed companies, and changes nothing', () => {
+    setAllowed(PACKS)
+    const before = brand().id
+    expect(signIn('not-a-company')).toBe(false)
+    expect(signIn('')).toBe(false)
+    expect(brand().id).toBe(before)
+  })
+  it('refuses a company this person may not open even though the build carries it', () => {
+    setAllowed([PACKS[0]!])
+    const before = brand().id
+    expect(signIn('k-and-r')).toBe(false)
+    expect(brand().id).toBe(before)
+  })
+  it('opens an allowed company by id or by name, and the app then wears it', () => {
+    setAllowed(PACKS)
+    expect(['reload', 'in place']).toContain(signIn('K&R Pools'))
+    expect(brand().id).toBe('k-and-r')
+  })
 })

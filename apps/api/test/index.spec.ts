@@ -1,5 +1,5 @@
 import { env } from 'cloudflare:test';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { call, migrate, ORIGIN, token } from './helpers';
 
 beforeAll(migrate);
@@ -294,5 +294,32 @@ describe('concurrent edits', () => {
 		for (const f of kept) expect(got.data[f], f).toBe(true);
 		const log = await env.DB.prepare("SELECT count(*) AS n FROM board_writes WHERE board = 'agent-board' AND collection = 'cards' AND id = 'c-race'").first<{ n: number }>();
 		expect(log?.n).toBe(1 + kept.length);
+	});
+
+	it('keeps both writes when two land in the same millisecond, with a later time for the second', async () => {
+		const doc = '/api/boards/agent-board/cards/c-same-ms';
+		const as = 'owner@example.test';
+		const now = vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-27T12:00:00.000Z'));
+		try {
+			const put = (await (await call(doc, { method: 'PUT', as, body: { data: { title: 'Same ms' } } })).json()) as { updated_at: string };
+			// One after the other, the clock not moving.
+			const a = (await (await call(doc, { method: 'PATCH', as, body: { data: { a: 1 } } })).json()) as { updated_at: string };
+			const b = (await (await call(doc, { method: 'PATCH', as, body: { data: { b: 2 } } })).json()) as { updated_at: string };
+			expect(Date.parse(a.updated_at)).toBeGreaterThan(Date.parse(put.updated_at));
+			expect(Date.parse(b.updated_at)).toBeGreaterThan(Date.parse(a.updated_at));
+			// Both at once, the clock not moving: neither is lost and neither is told to retry.
+			const [c, d] = await Promise.all([
+				call(doc, { method: 'PATCH', as, body: { data: { c: 3 } } }),
+				call(doc, { method: 'PATCH', as, body: { data: { d: 4 } } }),
+			]);
+			expect([c.status, d.status]).toEqual([200, 200]);
+			const got = (await (await call(doc, { as })).json()) as { data: Record<string, unknown>; updated_at: string };
+			expect(got.data).toMatchObject({ title: 'Same ms', a: 1, b: 2, c: 3, d: 4 });
+			expect(Date.parse(got.updated_at)).toBeGreaterThan(Date.parse(b.updated_at));
+			const log = await env.DB.prepare("SELECT count(*) AS n FROM board_writes WHERE board = 'agent-board' AND collection = 'cards' AND id = 'c-same-ms'").first<{ n: number }>();
+			expect(log?.n).toBe(5);
+		} finally {
+			now.mockRestore();
+		}
 	});
 });
