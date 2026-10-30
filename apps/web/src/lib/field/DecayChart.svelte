@@ -9,9 +9,11 @@
   const W = 342
   const H = 120
   const TOP = 6
+  const PADDING_LEFT = 20
+  const PADDING_RIGHT = 60
   const y = (v: number) => 100 - (Math.max(0, Math.min(v, TOP)) / TOP) * 80
-  const step = $derived(W / (visits.length + 1.2))
-  const x = (i: number) => 20 + i * step
+  const step = $derived((W - PADDING_LEFT - PADDING_RIGHT) / Math.max(1, visits.length))
+  const x = (i: number) => PADDING_LEFT + i * step
 
   const line = $derived(
     visits
