@@ -131,8 +131,8 @@
 <div class="bar"><span class="t">Message board</span></div>
 
 <section class="card" style="margin-top:0">
-  <label class="fl"><span class="h">New message</span>
-    <textarea bind:value={text} maxlength="1000" rows="3" placeholder="e.g. Pump room key is back on the hook"></textarea>
+  <label class="fl" for="new-message-text"><span class="h">New message</span>
+    <textarea id="new-message-text" bind:value={text} maxlength="1000" rows="3" placeholder="e.g. Pump room key is back on the hook"></textarea>
   </label>
   <div class="seg cats" role="group" aria-label="Category">
     {#each CATEGORIES as c (c)}
