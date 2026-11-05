@@ -154,7 +154,7 @@
     <a class="card tap" href="#/field">
       <div class="row"><h2 class="h">Today's route</h2><span class="xs">{dayName(dayOf(now))}</span></div>
       <div class="big" style="margin-top:4px">{stops.length} stop{stops.length === 1 ? '' : 's'}</div>
-      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={stops.length} aria-valuenow={done} aria-label="Stops done">
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax={stops.length} aria-valuenow={done} aria-valuetext={`${done} of ${stops.length} stops done`} aria-label="Stops done">
         <span style:width={`${(done / stops.length) * 100}%`}></span>
       </div>
       <div class="row xs" style="margin-top:4px"><span>{done} of {stops.length} done</span><span>{stops.length - done} to go</span></div>
