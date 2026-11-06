@@ -52,7 +52,7 @@ describe('new customer ids', () => {
     expect(r.id).not.toBe('jo-reyes-aaaa')
   })
 
-  it('does not replace a customer added since the screen loaded when adding a demo one', async () => {
+  it('gives a demo customer an id no record on file uses, even when every demo name is taken', async () => {
     // Every demo name is taken by someone, shown or not; the new id must still be free.
     const { DEMO_CUSTOMER_NAMES } = await import('./generator')
     const { slugify } = await import('./generator')
