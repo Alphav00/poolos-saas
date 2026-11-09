@@ -43,7 +43,7 @@ Before every push, `pnpm check` must pass: lint, typecheck, fixture lint, all te
 - Measure: plain Node scripts in `apps/measure/tests/`.
 
 ## Deploy
-- Merging to `main` deploys poolos.pathofphi.com (`.github/workflows/deploy.yml`, `BRAND=ccs-pools,sm-pools,blue-devil-pools`, DECISIONS d0021, d0037).
+- Merging to `main` deploys poolos.pathofphi.com (`.github/workflows/deploy.yml`, `BRAND=poolos,sm-pools,blue-devil-pools`, DECISIONS d0021, d0037, d0040). `brands/ccs-pools/` stays in the repo but is not shipped.
 
 ## Commits and PRs
 - One feature per PR. Keep diffs to what the feature needs.

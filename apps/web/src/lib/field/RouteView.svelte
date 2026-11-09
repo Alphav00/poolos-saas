@@ -109,9 +109,9 @@
   .stops li:first-child { border-top: 0; }
   .stops .stop { flex: 1; min-width: 0; border-top: 0; }
   .move { display: flex; gap: 4px; flex: none; }
-  .move button { width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--soft); color: var(--brand-link); font-size: 13px; cursor: pointer; }
+  .move button { width: 44px; height: 44px; border: 0; border-radius: var(--cz-r1); background: var(--inset); box-shadow: inset 0 0 0 var(--cz-bw) var(--line); color: var(--accent-ink); font-size: 13px; cursor: pointer; }
   .move button:disabled { opacity: .35; }
   .addr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .num.day { font-size: 10px; width: 34px; border-radius: 10px; }
+  .num.day { font-size: 10px; width: 34px; border-radius: var(--cz-r1); }
   .stop:has(.num.day) { grid-template-columns: 34px 1fr auto; }
 </style>

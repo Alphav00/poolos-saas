@@ -1,6 +1,6 @@
 import type { Brand } from 'virtual:brand'
 import { describe, expect, it } from 'vitest'
-import { allowedFrom, companyCookie, cookieNames, matchUsername, pickCompany, savedUsername, saveUsername, signInBy } from './account.svelte'
+import { allowedFrom, companyCookie, cookieNames, matchUsername, pickCompany, savedUsername, saveUsername, signInBy, THEMES, themeFor } from './account.svelte'
 
 const pack = (id: string, name: string): Brand => ({ id, name, shortName: name, legalName: name, tagline: '', pilot: true, linear: null, loader: null, logo: '', mark: '' })
 const PACKS = [pack('blue-lagoon', 'Blue Lagoon Pools'), pack('k-and-r', 'K&R Pools')]
@@ -96,4 +96,12 @@ describe('pickCompany', () => {
   })
   it('asks when there are several and none is saved', () => expect(pickCompany(null, PACKS)).toEqual({ ask: PACKS }))
   it('has nowhere to go without a staff list', () => expect(pickCompany('k-and-r', [])).toEqual({ none: true }))
+})
+
+describe('themeFor', () => {
+  it('maps the default pack to the PoolOS theme', () => expect(themeFor('poolos')).toBe('poolos'))
+  it('gives a pack with no theme of its own the PoolOS theme', () => expect(themeFor('blue-lagoon')).toBe('poolos'))
+  it('only names themes tokens.css defines', () => {
+    for (const t of Object.values(THEMES)) expect(['poolos', 'bluedevil', 'smpools']).toContain(t)
+  })
 })

@@ -59,24 +59,24 @@
       onclick={() => pick(i)}
       onkeydown={(e) => onkey(e, i)}
     >
-      <path d={w.path} style:fill={on ? 'var(--brand-sky)' : wedgeColor(i, parts.length)} style:stroke="#fff" stroke-width="2" />
+      <path d={w.path} style:fill={on ? 'var(--accent)' : wedgeColor(i, parts.length)} style:stroke="var(--surface)" stroke-width="2" />
       {#if i === forecastAt}
-        <circle cx={w.lx} cy={w.ly - 5} r="21" fill="none" stroke={on ? '#fff' : '#1d2a36'} stroke-width="3" stroke-dasharray="5 4" />
+        <circle cx={w.lx} cy={w.ly - 5} r="21" fill="none" style:stroke={on ? 'var(--on-accent)' : 'var(--on-highlight)'} stroke-width="3" stroke-dasharray="5 4" />
       {/if}
-      <text x={w.lx} y={w.ly} font-size={on ? 17 : 15} fill={on ? '#fff' : '#1d2a36'}>{fmt(scale.key, scale.values[i])}</text>
+      <text x={w.lx} y={w.ly} font-size={on ? 17 : 15} style:fill={on ? 'var(--on-accent)' : 'var(--on-highlight)'}>{fmt(scale.key, scale.values[i])}</text>
     </g>
   {/each}
-  <circle r="62" fill="#fff" stroke="#e3eaf0" stroke-width="4" />
-  <text class="hub" y="-6" font-size="38" fill="#1d2a36">{fmt(scale.key, value)}</text>
+  <circle r="62" style:fill="var(--surface)" style:stroke="var(--line)" stroke-width="4" />
+  <text class="hub" y="-6" font-size="38" style:fill="var(--ink)">{fmt(scale.key, value)}</text>
   {#if agreement.status !== 'none'}
-    <text class="hub" y="18" font-size="12" fill={agreement.status === 'ok' ? '#1b7d4e' : '#b42b30'}>
+    <text class="hub" y="18" font-size="12" style:fill={agreement.status === 'ok' ? 'color-mix(in srgb, var(--ok) 60%, var(--ink))' : 'color-mix(in srgb, var(--crit) 75%, var(--ink))'}>
       {fmtDelta(scale.key, agreement.delta)} vs forecast
     </text>
   {:else if forecast}
-    <text class="hub" y="18" font-size="12" fill="#6a7c8c">forecast {fmt(scale.key, forecast.value)}</text>
+    <text class="hub" y="18" font-size="12" style:fill="var(--ink-muted)">forecast {fmt(scale.key, forecast.value)}</text>
   {/if}
   {#if ideal}
-    <text class="hub" y="36" font-size="11" font-weight="600" fill="#6a7c8c">ideal {fmt(scale.key, ideal[0])}–{fmt(scale.key, ideal[1])}</text>
+    <text class="hub" y="36" font-size="11" font-weight="600" style:fill="var(--ink-muted)">ideal {fmt(scale.key, ideal[0])}–{fmt(scale.key, ideal[1])}</text>
   {/if}
 </svg>
 
@@ -88,7 +88,7 @@
     max-width: min(340px, calc(100dvh - 300px));
     min-width: 200px;
     margin: 6px auto 0;
-    font-family: Nunito, 'Segoe UI', Arial, sans-serif;
+    font-family: var(--cz-fs, Nunito, 'Segoe UI', Arial, sans-serif);
     font-weight: 900;
     touch-action: manipulation;
     user-select: none;
@@ -103,8 +103,9 @@
     dominant-baseline: auto;
     pointer-events: none;
   }
+  /* Componentia focus: 3px --focus. */
   .wedge:focus-visible path {
-    stroke: #1d2a36;
+    stroke: var(--focus);
     stroke-width: 4;
   }
 </style>
