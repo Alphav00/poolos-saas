@@ -74,11 +74,11 @@
 {/if}
 
 <style>
-  .start { border: 2px solid rgb(var(--brand-sky-rgb) / .5); }
+  .start { border: var(--cz-bw) solid var(--accent-ink); }
   .steps { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 12px; }
   .steps li { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: start; }
   .tick { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; background: var(--blue2); color: var(--brand-link); }
-  .done .tick { background: var(--okbg); color: var(--ok); }
+  .done .tick { background: var(--okbg); color: var(--ink); box-shadow: inset 0 0 0 var(--cz-bw) var(--ok); }
   .done .nm { text-decoration: line-through; opacity: .7; }
   .steps .btn { margin-top: 8px; text-decoration: none; }
   .ask { margin-top: 6px; font-weight: 800; }

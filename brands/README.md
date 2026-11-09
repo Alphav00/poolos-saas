@@ -8,7 +8,8 @@ images are served at `/brand/<file>`.
 ```bash
 pnpm build                               # brands/poolos
 BRAND=ccs-pools pnpm build               # brands/ccs-pools only
-BRAND=ccs-pools,sm-pools pnpm build      # both, with a sign-in (what deploy.yml ships)
+BRAND=ccs-pools,sm-pools pnpm build      # both, with a sign-in
+BRAND=sm-pools,blue-devil-pools pnpm build   # what deploy.yml ships (d0040)
 ```
 
 ## Several packs and the placeholder sign-in
@@ -72,6 +73,18 @@ in Linear. After saving a report, the app offers **Open in Linear**: Linear's
 new-issue page, filled in, which the tester files under their own Linear
 sign-in. Without `linear` the button is not shown. Nothing here is a secret.
 
+### Componentia theme (web app)
+
+The web app wears the Componentia Cybernetical library (DECISIONS d0039).
+Each pack maps to one of its themes on `<html data-theme>`
+(`themeFor` in `apps/web/src/lib/app/account.svelte.ts`): `poolos` → `poolos`,
+`blue-devil-pools` → `bluedevil`, `sm-pools` → `smpools`; any other pack wears
+`poolos`. Inside the app screens (`.field`) the colours are the theme's roles
+(`apps/web/src/vendor/componentia/tokens.css`), and the `--brand-*` variables
+are re-pointed at them. The pack's own colours still drive Measure, the
+loading screen, the theme colour and the manifest. A new pack that needs its
+own look in the web app needs a theme in the library first.
+
 ### Colour scheme and surfaces
 
 `scheme` is `"light"` (default) or `"dark"`. It sets `color-scheme`, which picks
@@ -106,6 +119,8 @@ syntax in Measure.
 build with the missing file or key.
 
 ## ccs-pools
+
+Not shipped since 2026-11-09 (DECISIONS d0040): the folder stays, `deploy.yml` no longer lists it.
 
 From the logo CCS Pools supplied on 2026-10-09: navy `#0e3c5f`, pool blue
 `#139ad1`, aqua `#28a5d5`, duck yellow `#fad321`. The logo's black background

@@ -7,9 +7,11 @@
   import Report from './lib/app/Report.svelte'
   import SignIn from './lib/app/SignIn.svelte'
   import Staff from './lib/app/Staff.svelte'
+  import ReactIsland from './lib/app/ReactIsland.svelte'
   import TabBar from './lib/app/TabBar.svelte'
   import defaultBrand, { brands } from 'virtual:brand'
   import { allowedFrom, BLOCKED, brand, companyCookieHolds, needsSignIn, pickCompany, setAllowed, signedIn, signIn } from './lib/app/account.svelte'
+  import './lib/app/componentia'
   import './lib/app/app.css'
   import Field from './lib/field/Field.svelte'
 
@@ -131,13 +133,13 @@
 </div></main>
 {:else if gate === 'ask' || !signedIn()}
 <main class="field no-tabs"><div class="wrap">
-  {#if error}<p class="alert" role="alert"><b>{error}</b></p>{/if}
+  {#if error}<div class="island-gap"><ReactIsland name="Alert" props={{ tone: 'crit', title: error }} /></div>{/if}
   <SignIn onin={() => (gate = 'in')} />
 </div></main>
 {:else}
 <main class={['field', entering && 'no-tabs']} bind:this={screen}>
   <div class="wrap">
-    {#if error}<p class="alert" role="alert"><b>{error}</b>{#if error === 'Sign in again.'} <a href="/">Sign in</a>{/if}</p>{/if}
+    {#if error}<div class="island-gap"><ReactIsland name="Alert" props={{ tone: 'crit', title: error }} />{#if error === 'Sign in again.'}<a class="btn ghost" href="/">Sign in</a>{/if}</div>{/if}
     {#if route[0] === 'field'}
       <Field path={route} isOwner={me?.isOwner ?? false} canEdit={me?.canEditPools ?? false} />
     {:else if route[0] === 'messages'}
@@ -161,4 +163,6 @@
 <style>
   .nostaff { margin-top: 24px; }
   .nostaff .btn { text-decoration: none; }
+  .island-gap { margin-top: 8px; }
+  .island-gap .btn { text-decoration: none; }
 </style>

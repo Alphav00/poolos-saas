@@ -1,5 +1,6 @@
 <script lang="ts">
   import { brand as current } from './account.svelte'
+  import ReactIsland from './ReactIsland.svelte'
   import GetStarted from '../field/GetStarted.svelte'
   import { loadPools } from '../field/pools'
   import { loadDone, today } from '../field/readings'
@@ -96,7 +97,7 @@
 <header class="brandbar">
   <img src={brand.logo} alt={brand.legalName} class="logo" />
   <div class="who">
-    <div class="bn">{brand.name}</div>
+    <div class="bn"><ReactIsland name="Wordmark" props={{ size: 20, children: brand.name }} /></div>
     <div class="xs">{brand.tagline}</div>
   </div>
 </header>
@@ -106,7 +107,7 @@
     <p class="xs">{greeting}{email ? ` · ${email}` : ''}</p>
     <h1 class="day">{day} <span>· {date}</span></h1>
   </div>
-  <a class="msg" href="#/messages"><span aria-hidden="true">💬</span> Message board</a>
+  <a class="msg" href="#/messages">Open messages</a>
 </header>
 
 {#if brand.pilot}
@@ -115,7 +116,7 @@
       <div class="nm">You're test-driving the app</div>
       <div class="xs">Anything marked DEMO is made up. See something wrong or missing? Tell us.</div>
     </div>
-    <a class="chip" href="#/more/report">🐞 Report</a>
+    <a class="chip" href="#/more/report">Report</a>
   </section>
 {/if}
 
@@ -139,13 +140,13 @@
   {:else}
     <div class="row">
       <div><div class="h">Weather</div><p class="sm" role="status">{weatherNote || 'Uses your location, rounded to about 1 km.'}{#if weatherNote === 'Sign in again.'}<a class="signin" href="/">Sign in</a>{/if}</p></div>
-      <button class="chip" onclick={askLocation} disabled={busy}>{busy ? 'Loading…' : 'Show weather'}</button>
+      <ReactIsland name="Button" props={{ variant: 'secondary', size: 'sm', loading: busy, onClick: askLocation, children: 'Show weather' }} />
     </div>
   {/if}
 </section>
 
 {#if poolsNote}
-  <p class="alert" role="alert"><b>{poolsNote}</b></p>
+  <div class="island-gap"><ReactIsland name="Alert" props={{ tone: 'crit', title: poolsNote }} /></div>
 {:else if pools === null}
   <section class="card"><h2 class="h">Today's route</h2><p class="sm" style="margin-top:4px">Loading customers…</p></section>
 {:else}
@@ -180,13 +181,12 @@
 {/if}
 
 <a class="card tap tool" href="/measure">
-  <span class="tool-icon" aria-hidden="true">📏</span>
   <div style="flex:1"><div class="nm">Measure a liner or cover</div><div class="xs">A/B walk · closure checks · order forms</div></div>
   <span class="chip">Open</span>
 </a>
 
 <section class="card">
-  <div class="row"><h2 class="h">Working today</h2>{#if staff?.length}<span class="xs">{staff.length} on staff{#if staffDemo}<span class="sample" style="margin:0 0 0 4px">DEMO</span>{/if}</span>{/if}</div>
+  <div class="row"><h2 class="h">Working today</h2>{#if staff?.length}<span class="xs staffn">{staff.length} on staff{#if staffDemo}<ReactIsland name="Badge" props={{ tone: 'highlight', children: 'DEMO' }} />{/if}</span>{/if}</div>
   {#if staffNote}
     <p class="sm" role="status" style="margin-top:4px">{staffNote}</p>
   {:else if staff === null}
@@ -200,7 +200,7 @@
         <li>
           <span class="av" aria-hidden="true">{initials(s.name)}</span>
           <div style="min-width:0"><div class="nm">{s.name}</div><div class="xs">{s.route ?? 'No route set'}</div></div>
-          <span class="chip">{s.role}</span>
+          <ReactIsland name="Badge" props={{ children: s.role }} />
         </li>
       {/each}
     </ul>
@@ -212,31 +212,36 @@
   .brandbar { display: flex; align-items: center; gap: 10px; padding: 0 4px 8px; }
   .brandbar .logo { width: 64px; height: 64px; object-fit: contain; flex: none; filter: drop-shadow(0 2px 3px rgba(14, 60, 95, .18)); }
   .brandbar .who { min-width: 0; }
-  .brandbar .bn { font-size: 20px; font-weight: 900; line-height: 1.1; color: var(--brand-title, var(--brand-deep)); }
-  .pilot { display: flex; align-items: center; gap: 10px; background: linear-gradient(180deg, var(--card), var(--brand-ice)); border: 2px solid rgb(var(--brand-accent-rgb) / .8); }
-  .pilot .chip { min-height: 44px; padding: 0 14px; font-weight: 900; text-decoration: none; background: var(--brand-accent); color: var(--brand-deep); }
+  .brandbar .bn { line-height: 1.1; color: var(--on-page); }
+  .pilot { display: flex; align-items: center; gap: 10px; border-color: var(--highlight); }
+  .pilot .chip { min-height: 44px; padding: 0 14px; font-weight: 800; text-decoration: none; border-radius: var(--cz-r1); background: var(--highlight); color: var(--on-highlight); }
   .hello { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; padding: 2px 4px 0; }
   .hello > div { min-width: 0; }
   .hello .xs { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .day { font-size: 22px; font-weight: 900; line-height: 1.15; }
-  .day span { color: var(--mute); font-weight: 800; white-space: nowrap; }
-  .msg { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border-radius: 22px; font-weight: 900; font-size: 13px; color: #fff; text-decoration: none; background: linear-gradient(180deg, var(--brand-primary), var(--brand-primary-dark)); box-shadow: 0 3px 0 var(--brand-deep); text-shadow: 0 1px 0 rgba(0, 0, 0, .25); }
+  .hello .xs { color: var(--on-page-muted); }
+  .day span { color: var(--on-page-muted); font-weight: 800; white-space: nowrap; }
+  /* Componentia Button look (primary, sm), kept a link so it navigates. */
+  .msg { flex: none; display: inline-flex; align-items: center; min-height: calc(var(--cz-tap) - 4px); padding: 0 14px; border-radius: var(--cz-r1); font: 700 13px/1 var(--cz-fs); letter-spacing: .02em; color: var(--on-accent); text-decoration: none; background: var(--accent); box-shadow: var(--shadow-btn); }
   .refresh { min-width: 44px; min-height: 44px; justify-content: center; font-size: 18px; }
-  .signin { display: inline-flex; align-items: center; min-height: 44px; margin-left: 8px; color: var(--brand-link); font-weight: 900; }
+  .signin { display: inline-flex; align-items: center; min-height: 44px; margin-left: 8px; color: var(--accent-ink); font-weight: 900; }
   .tap { display: block; color: inherit; text-decoration: none; }
   .tool { display: flex; align-items: center; gap: 12px; }
-  .tool-icon { font-size: 28px; }
   .now { display: flex; align-items: center; gap: 10px; }
   .icon { font-size: 36px; line-height: 1; }
   .temp { font-size: 32px; font-weight: 900; line-height: 1; }
-  .alert-soft { margin-top: 8px; background: var(--warnbg); color: var(--warn); border-radius: 12px; padding: 8px 10px; font-size: 13px; font-weight: 700; }
-  .progress { height: 10px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 10px; }
-  .progress span { display: block; height: 100%; background: linear-gradient(90deg, #2bb673, #4fd18f); border-radius: 99px; }
-  .next { display: flex; align-items: center; gap: 8px; margin-top: 10px; background: var(--soft); border-radius: 16px; padding: 8px 10px; }
+  .alert-soft { margin-top: 8px; background: var(--warnbg); color: var(--ink); border-inline-start: calc(var(--cz-bw) * 4) solid var(--warn); border-radius: var(--cz-r1); padding: 8px 10px; font-size: 13px; font-weight: 700; }
+  /* Componentia Progress look, kept Svelte: its island has no aria-valuetext and counts 0-100, not stops. */
+  .progress { height: 10px; border-radius: var(--cz-r1); background: var(--inset); box-shadow: inset 0 0 0 1px var(--line); overflow: hidden; margin-top: 10px; }
+  .progress span { display: block; height: 100%; background: var(--accent); border-radius: var(--cz-r1); }
+  .next { display: flex; align-items: center; gap: 8px; margin-top: 10px; background: var(--inset); border-radius: var(--cz-r2); padding: 8px 10px; }
   .crew { list-style: none; margin: 6px 0 0; padding: 0; }
   .crew li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 4px 0; border-top: 1px solid var(--line); }
   .crew li:first-child { border-top: 0; }
   .addstaff { margin-top: 8px; min-height: 44px; padding: 0 14px; text-decoration: none; }
-  .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: var(--brand-link); background: var(--brand-ice); box-shadow: 0 2px 0 rgb(var(--brand-sky-rgb) / .35); }
+  .av { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 12px; color: var(--accent-ink); background: var(--inset); box-shadow: inset 0 0 0 1px var(--line); }
+  .weather :global(.cz-btn) { flex: none; white-space: nowrap; }
+  .staffn { display: inline-flex; align-items: center; gap: 6px; }
+  .island-gap { margin-top: 8px; }
   .nextaddr { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 </style>

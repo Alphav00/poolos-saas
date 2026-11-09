@@ -217,8 +217,8 @@
   .pick button[aria-pressed='true'] { border-color: var(--brand-primary); background: var(--brand-ice); color: var(--brand-link); }
   .sev button { display: flex; flex-direction: column; gap: 1px; }
   .sev button span { font-size: 12px; font-weight: 700; color: var(--mute); }
-  .sev button.blocker[aria-pressed='true'] { border-color: #e5484d; background: var(--badbg); color: var(--bad); }
-  .sev button.major[aria-pressed='true'] { border-color: #f39c12; background: var(--warnbg); color: var(--warn); }
+  .sev button.blocker[aria-pressed='true'] { border-color: var(--crit); background: var(--badbg); color: var(--ink); }
+  .sev button.major[aria-pressed='true'] { border-color: var(--warn); background: var(--warnbg); color: var(--ink); }
   .fl { display: block; margin-top: 12px; }
   .fl i { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 700; }
   .fl input, .fl textarea { display: block; width: 100%; margin-top: 6px; font: inherit; font-size: 16px; font-weight: 700; color: var(--ink); border: 2px solid var(--line); border-radius: 12px; padding: 10px; background: var(--card); resize: vertical; }

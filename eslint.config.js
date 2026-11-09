@@ -7,10 +7,11 @@ export default ts.config(
   // apps/measure is Liner Measure Pro's Svelte 4 app brought over as is; its own
   // test suites cover it (pnpm --filter @poolos/measure test).
   // phreeqc.mjs is Emscripten output from packages/pool-chemistry/phreeqc/build.sh.
+  // apps/web/src/vendor/ is a vendored library, copied byte for byte (its README.md).
   {
     ignores: [
       '**/node_modules/', '**/dist/', '**/.wrangler/', 'reference/', 'inputs/', 'apps/api/worker-configuration.d.ts',
-      'apps/measure/', 'packages/pool-chemistry/phreeqc/phreeqc.mjs',
+      'apps/measure/', 'packages/pool-chemistry/phreeqc/phreeqc.mjs', 'apps/web/src/vendor/',
     ],
   },
   js.configs.recommended,

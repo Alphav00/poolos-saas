@@ -104,6 +104,16 @@ export function allowedBrands(): Brand[] {
   return allowed
 }
 
+/**
+ * The Componentia theme each pack wears (DECISIONS d0039). A pack with no
+ * theme of its own wears the PoolOS one.
+ */
+export const THEMES: Record<string, string> = { poolos: 'poolos', 'blue-devil-pools': 'bluedevil', 'sm-pools': 'smpools' }
+
+export function themeFor(id: string): string {
+  return THEMES[id] ?? 'poolos'
+}
+
 let current = $state<Brand | null>(needsSignIn ? matchUsername(savedUsername(store()) ?? '', brands) : defaultBrand)
 wear(current)
 
@@ -162,7 +172,10 @@ export function companyCookie(b: Brand | null, defaultId: string, secure: boolea
 
 /** Points the page's colours, title, theme colour and company cookie at the brand. */
 function wear(b: Brand | null): void {
-  if (!needsSignIn || typeof document === 'undefined') return
+  if (typeof document === 'undefined') return
+  // Every build wears a theme, the single-pack one too; before sign-in, the default pack's.
+  document.documentElement.dataset.theme = themeFor((b ?? defaultBrand).id)
+  if (!needsSignIn) return
   document.cookie = companyCookie(b, defaultBrand.id, location.protocol === 'https:')
   const root = document.documentElement
   if (b) root.dataset.brand = b.id
