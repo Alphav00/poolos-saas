@@ -9,7 +9,7 @@ images are served at `/brand/<file>`.
 pnpm build                               # brands/poolos
 BRAND=ccs-pools pnpm build               # brands/ccs-pools only
 BRAND=ccs-pools,sm-pools pnpm build      # both, with a sign-in
-BRAND=sm-pools,blue-devil-pools pnpm build   # what deploy.yml ships (d0040)
+BRAND=poolos,sm-pools,blue-devil-pools pnpm build   # what deploy.yml ships (d0040)
 ```
 
 ## Several packs and the placeholder sign-in

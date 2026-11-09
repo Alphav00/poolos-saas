@@ -489,7 +489,7 @@ Every agent on the board adds one suggestion. Rules:
 - 2026-10-12 · §7, §10 · `DECIDED` Chi: the demo route goes and the route works for real on test day. Customers are added in the app with a weekly service day; today's route is those customers in an order the office sets; a stop is done when its readings are saved. A Get started card leads to the first customer. Forecasts, truck load and the accuracy table are gone until the forecasting engine exists. Also fixed: the status colours (ok/warn/bad) were blank since 2026-10-10 because the CSS minifier rewrote light-dark(). See DECISIONS d0024.
 - 2026-10-27 · §3 #1 · `DECIDED` Chi: "Make a new company in PoolOS-SaaS. Blue Devil Pools. With their matching design system." Blue Devil Pools is the third brand pack (`brands/blue-devil-pools`), shipped alongside the others (`BRAND=ccs-pools,sm-pools,blue-devil-pools`). Its colours are the design system's Pine Night tokens; buttons are Leeds blue, not the system's gold, because button text is white. Tests and fixtures may not name it. See DECISIONS d0037 and `brands/README.md`.
 
-- 2026-11-09 · §3 #1, §5.4 · `DECIDED` Chi: the web app wears the Componentia Cybernetical component library, embedded as React islands in Svelte (DECISIONS d0039), and the CCS Pools pack is no longer shipped (`BRAND=sm-pools,blue-devil-pools`; `brands/ccs-pools/` stays; d0040).
+- 2026-11-09 · §3 #1, §5.4 · `DECIDED` Chi: the web app wears the Componentia Cybernetical component library, embedded as React islands in Svelte (DECISIONS d0039), and the CCS Pools pack is no longer shipped (`BRAND=poolos,sm-pools,blue-devil-pools`, poolos first as the default pack; `brands/ccs-pools/` stays; d0040).
 
 ---
 
